@@ -1,0 +1,68 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+}
+
+.appHeader {
+  height: var(--header-height);
+  padding: 0 2rem;
+  background-color: var(--background-secondary);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.appHeader h1 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.appHeader p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.controls {
+  height: var(--controls-height);
+  padding: 0 2rem;
+  background-color: var(--background-primary);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.controlGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.controlGroup label {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.controlGroup button {
+  background-color: var(--background-secondary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.controlGroup button:hover:not(:disabled) {
+  background-color: var(--border-light);
+}
+
+.controlGroup button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

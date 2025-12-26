@@ -1,0 +1,45 @@
+.watercolorBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.baseLayer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transition: background-color var(--duration-slow) var(--ease-apple-smooth);
+}
+
+.washLayer1 {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0.3;
+  mix-blend-mode: multiply;
+  transition: background var(--duration-slow) var(--ease-apple-smooth);
+}
+
+.washLayer2 {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0.2;
+  mix-blend-mode: soft-light;
+  transition: background var(--duration-slow) var(--ease-apple-smooth);
+}
+
+.grainLayer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0.35;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" /></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.4"/></svg>');
+  background-repeat: repeat;
+  background-size: 300px 300px;
+  pointer-events: none;
+}

@@ -1,0 +1,35 @@
+.chordShapeContainer {
+  position: absolute;
+  cursor: pointer;
+  user-select: none;
+}
+
+.chordShapeContainer:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.chordShape {
+  transition: stroke var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.chromaticShimmer {
+  pointer-events: none;
+}
+
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-notation);
+  color: var(--text-primary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+}

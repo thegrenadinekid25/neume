@@ -1,0 +1,98 @@
+/**
+ * CSS Variables for Harmonic Canvas
+ * Colors from TypeScript constants exported as CSS custom properties
+ */
+
+:root {
+  /* Scale Degree Colors - Major */
+  --color-major-I: #D4AF37;
+  --color-major-ii: #6B9080;
+  --color-major-iii: #B98B8B;
+  --color-major-IV: #4A6FA5;
+  --color-major-V: #E07A5F;
+  --color-major-vi: #9B7EBD;
+  --color-major-vii: #6C6C6C;
+
+  /* Scale Degree Colors - Minor */
+  --color-minor-i: #8B4545;
+  --color-minor-ii: #708090;
+  --color-minor-III: #D4A76A;
+  --color-minor-iv: #2D4563;
+  --color-minor-v: #C44536;
+  --color-minor-V: #C44536;
+  --color-minor-VI: #7A9B76;
+  --color-minor-VII: #CC7722;
+
+  /* UI Chrome Colors */
+  --primary-action: #4A90E2;
+  --secondary-action: #7F8C8D;
+  --success: #6B9080;
+  --warning: #E8A87C;
+  --error: #C44536;
+
+  /* Text Colors */
+  --text-primary: #2C3E50;
+  --text-secondary: #7F8C8D;
+  --text-tertiary: #BDC3C7;
+
+  /* Background Colors */
+  --background-primary: #FFFFFF;
+  --background-secondary: #F5F5F5;
+
+  /* Border Colors */
+  --border-light: #E0E0E0;
+  --border-medium: #CCCCCC;
+  --border-dark: #999999;
+
+  /* Chromatic Indicators */
+  --chromatic-shimmer-start: #9B7EBD;
+  --chromatic-shimmer-end: #D4AF37;
+  --chromatic-glow: #9B7EBD;
+
+  /* Animation Colors */
+  --playback-glow: #4A90E2;
+  --selection-stroke: #4A90E2;
+  --hover-stroke: #7F8C8D;
+
+  /* Animation easing (from spec) */
+  --ease-apple-smooth: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --ease-breathe: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  --ease-smooth-in: cubic-bezier(0.0, 0.0, 0.2, 1);
+  --ease-smooth-out: cubic-bezier(0.4, 0.0, 1, 1);
+
+  /* Timing */
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 400ms;
+
+  /* Layout dimensions */
+  --header-height: 50px;
+  --controls-height: 60px;
+  --panel-width: 380px;
+}
+
+/* Dynamic key backgrounds (applied via class) */
+.key-bg-C-major { background-color: #F5F1E8; }
+.key-bg-C-minor { background-color: #F5F1E8; }
+.key-bg-G-major { background-color: #E8F4F0; }
+.key-bg-G-minor { background-color: #E8F4F0; }
+.key-bg-D-major { background-color: #FFF9E5; }
+.key-bg-D-minor { background-color: #FFF9E5; }
+.key-bg-A-major { background-color: #F3EDF7; }
+.key-bg-A-minor { background-color: #F3EDF7; }
+.key-bg-E-major { background-color: #FFF0F0; }
+.key-bg-E-minor { background-color: #FFF0F0; }
+.key-bg-B-major { background-color: #E8F6F8; }
+.key-bg-B-minor { background-color: #E8F6F8; }
+.key-bg-Fs-major { background-color: #EEF4E8; }
+.key-bg-Fs-minor { background-color: #EEF4E8; }
+.key-bg-Db-major { background-color: #FFEEE0; }
+.key-bg-Db-minor { background-color: #FFEEE0; }
+.key-bg-Ab-major { background-color: #EFF0F8; }
+.key-bg-Ab-minor { background-color: #EFF0F8; }
+.key-bg-Eb-major { background-color: #E8F5EC; }
+.key-bg-Eb-minor { background-color: #E8F5EC; }
+.key-bg-Bb-major { background-color: #FFE9E0; }
+.key-bg-Bb-minor { background-color: #FFE9E0; }
+.key-bg-F-major { background-color: #E5F2F8; }
+.key-bg-F-minor { background-color: #E5F2F8; }

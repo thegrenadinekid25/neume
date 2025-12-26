@@ -1,0 +1,7 @@
+.selectionBox {
+  position: absolute;
+  border: 2px dashed var(--primary-action);
+  background-color: rgba(74, 144, 226, 0.1);
+  pointer-events: none;
+  z-index: 999;
+}
