@@ -43,3 +43,4 @@ backend/temp/
 *.wav
 *.mp3
 *.m4a
+.vercel
