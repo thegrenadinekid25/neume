@@ -4,7 +4,7 @@ import styles from './WelcomeTutorial.module.css';
 
 const tutorialSteps = [
   {
-    title: '🎵 Welcome to Harmonic Canvas',
+    title: '🎵 Welcome to Neume',
     description: 'Explore chord progressions through shapes, colors, and intelligent AI',
     position: 'center',
     showButtons: true,

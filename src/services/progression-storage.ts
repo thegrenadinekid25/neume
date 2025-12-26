@@ -14,7 +14,7 @@ export interface SavedProgression {
 }
 
 class ProgressionStorage {
-  private readonly STORAGE_KEY = 'harmonic-canvas-progressions';
+  private readonly STORAGE_KEY = 'neume-progressions';
 
   save(progression: SavedProgression): void {
     const progressions = this.getAll();

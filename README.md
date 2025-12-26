@@ -1,4 +1,4 @@
-# 🎵 Harmonic Canvas
+# 🎵 Neume
 
 **Explore chord progressions through shapes, colors, and intelligent AI**
 
@@ -66,7 +66,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to use the app.
+Open [http://localhost:5173](http://localhost:5173) to use the app.
 
 ---
 
@@ -96,7 +96,7 @@ Press `?` to see all shortcuts, or use these essentials:
 ## 🏗️ Tech Stack
 
 **Frontend:**
-- React 18 + TypeScript
+- React 19 + TypeScript
 - Vite for blazing-fast dev server
 - Zustand for state management
 - Framer Motion for animations
@@ -104,10 +104,10 @@ Press `?` to see all shortcuts, or use these essentials:
 - Tone.js for audio synthesis
 
 **Backend:**
-- Python 3.9+ with FastAPI
-- Anthropic Claude 3.5 Sonnet for AI features
-- Music21 for music theory analysis
+- Python 3.12+ with FastAPI
+- Anthropic Claude Sonnet 4.5 for AI features
 - yt-dlp for YouTube audio extraction
+- Essentia/Librosa for audio analysis
 
 **Performance:**
 - 197 KB gzipped bundle size
@@ -120,7 +120,7 @@ Press `?` to see all shortcuts, or use these essentials:
 ## 📁 Project Structure
 
 ```
-harmonic-canvas/
+neume/
 ├── src/
 │   ├── components/       # React components
 │   │   ├── Canvas/       # Main canvas and shapes
@@ -195,15 +195,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **Built with ❤️ for composers, by composers**
-
-## Project Status
-
-**Week 6: Polish & Launch Prep - COMPLETE** ✅
-
-All features implemented:
-- ✅ Week 1: Foundation (Canvas, Shapes, Playback)
-- ✅ Week 2: Advanced Interactions (Drag, Undo, Selection)
-- ✅ Week 3: Audio System (Web Audio, Tempo, Effects)
-- ✅ Week 4: AI Analysis (YouTube, Why This?)
-- ✅ Week 5: Advanced AI (Build From Bones, Refine This, My Progressions)
-- ✅ Week 6: Polish (Tutorial, Shortcuts, Performance, Launch Prep)

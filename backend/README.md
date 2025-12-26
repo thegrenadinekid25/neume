@@ -1,4 +1,4 @@
-# Harmonic Canvas Backend
+# Neume Backend
 
 Real music information retrieval backend using **Essentia** for chord extraction and **Anthropic Claude** for AI explanations.
 
@@ -207,7 +207,7 @@ isort .
 ```bash
 ANTHROPIC_API_KEY=your_production_key
 CORS_ORIGINS=https://your-frontend.com
-TEMP_DIR=/var/tmp/harmonic-canvas
+TEMP_DIR=/var/tmp/neume
 MAX_FILE_SIZE_MB=50
 ```
 

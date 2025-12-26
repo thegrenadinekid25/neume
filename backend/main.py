@@ -1,5 +1,5 @@
 """
-Harmonic Canvas Backend API
+Neume Backend API
 FastAPI server for chord extraction and AI explanations
 """
 import os
@@ -36,8 +36,8 @@ from models.schemas import (
 load_dotenv()
 
 app = FastAPI(
-    title="Harmonic Canvas API",
-    description="Audio analysis and chord extraction API",
+    title="Neume API",
+    description="Audio analysis and chord extraction API for Neume",
     version="1.0.0"
 )
 
