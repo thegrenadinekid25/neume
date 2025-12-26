@@ -11,11 +11,11 @@ yt-dlp==2025.11.12
 
 # Audio processing - install in specific order
 numpy==1.26.4
-scipy==1.16.3
-llvmlite==0.45.1
-numba==0.62.1
+scipy==1.14.1
+llvmlite==0.43.0
+numba==0.60.0
 soundfile==0.13.1
-librosa==0.11.0
+librosa==0.10.2
 
-# Essentia - using stable version (2.1b6 has metadata issues)
-essentia==2.1b5
+# Essentia - using stable version
+essentia==2.1b6.dev1110
