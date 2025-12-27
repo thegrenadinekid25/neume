@@ -40,6 +40,7 @@ interface DroppableCanvasProps {
   onZoomChange?: (zoom: number) => void;
   onShowHelp?: () => void;
   onTogglePlay?: () => void;
+  onStop?: () => void;
   onTempoChange?: (delta: number) => void;
 }
 
@@ -70,6 +71,7 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
   onZoomChange,
   onShowHelp,
   onTogglePlay,
+  onStop,
   onTempoChange,
 }) => {
   const { sensors } = useDragDrop();
@@ -111,6 +113,7 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
     onTempoChange,
     onShowHelp,
     onTogglePlay,
+    onStop,
   });
 
   // Handle chord click for selection

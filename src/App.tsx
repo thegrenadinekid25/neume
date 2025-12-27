@@ -118,7 +118,7 @@ function App() {
     return Math.max(16, maxBeat + 8); // Add 8 beats buffer after last chord
   }, [chords]);
 
-  const { isPlaying, playheadPosition, togglePlay, tempo, setTempo } = usePlayback(chords, totalBeats);
+  const { isPlaying, playheadPosition, togglePlay, stop, tempo, setTempo } = usePlayback(chords, totalBeats);
 
   useEffect(() => {
     pushState(chords);
@@ -463,10 +463,11 @@ function App() {
         onZoomChange={setZoom}
         onShowHelp={() => setShowShortcuts(true)}
         onTogglePlay={togglePlay}
+        onStop={stop}
         onTempoChange={(delta) => setTempo(Math.max(60, Math.min(220, tempo + delta)))}
       />
 
-      <button className="help-button" onClick={() => setShowHelp(!showHelp)} title="Help">
+      <button className="help-button" onClick={() => setShowShortcuts(!showShortcuts)} title="Keyboard Shortcuts (?)">
         ?
       </button>
 

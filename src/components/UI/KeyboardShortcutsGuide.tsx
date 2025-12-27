@@ -29,33 +29,57 @@ export const KeyboardShortcutsGuide: React.FC<KeyboardShortcutsGuideProps> = ({
   }, [isOpen, onClose]);
 
   const shortcuts = [
-    { category: 'Playback', items: [
-      { keys: 'Space', description: 'Play / Pause' },
-    ]},
-    { category: 'Selection', items: [
-      { keys: 'Click', description: 'Select chord' },
-      { keys: `${mod}+Click`, description: 'Toggle selection' },
-      { keys: 'Shift+Click', description: 'Select range' },
-      { keys: `${mod}+A`, description: 'Select all' },
-      { keys: 'Escape', description: 'Clear selection' },
-      { keys: 'Drag', description: 'Box select' },
-    ]},
-    { category: 'Edit', items: [
-      { keys: `${mod}+D`, description: 'Duplicate selected' },
-      { keys: 'Delete', description: 'Delete selected' },
-      { keys: `${mod}+Z`, description: 'Undo' },
-      { keys: `${mod}+Shift+Z`, description: 'Redo' },
-    ]},
-    { category: 'Move', items: [
-      { keys: '← →', description: 'Nudge ¼ beat' },
-      { keys: 'Shift+← →', description: 'Nudge 1 beat' },
-      { keys: 'Drag chord', description: 'Reposition' },
-    ]},
-    { category: 'View', items: [
-      { keys: 'Scroll wheel', description: 'Zoom in/out' },
-      { keys: 'Click+Drag canvas', description: 'Pan' },
-      { keys: '?', description: 'Show this guide' },
-    ]},
+    {
+      category: 'Playback',
+      items: [
+        { keys: 'Space', description: 'Play / Pause' },
+        { keys: 'Shift + Space', description: 'Stop (return to start)' },
+      ]
+    },
+    {
+      category: 'Editing',
+      items: [
+        { keys: `${mod} + Z`, description: 'Undo' },
+        { keys: `${mod} + Shift + Z`, description: 'Redo' },
+        { keys: `${mod} + D`, description: 'Duplicate selected' },
+        { keys: 'Delete', description: 'Delete selected' },
+        { keys: `${mod} + A`, description: 'Select all' },
+        { keys: 'Escape', description: 'Clear selection' },
+      ]
+    },
+    {
+      category: 'Navigation',
+      items: [
+        { keys: '← →', description: 'Move selected 1px' },
+        { keys: 'Shift + ← →', description: 'Move selected 10px' },
+        { keys: 'Tab', description: 'Next chord' },
+        { keys: 'Shift + Tab', description: 'Previous chord' },
+      ]
+    },
+    {
+      category: 'Canvas',
+      items: [
+        { keys: `${mod} + +`, description: 'Zoom in' },
+        { keys: `${mod} + -`, description: 'Zoom out' },
+        { keys: `${mod} + 0`, description: 'Reset zoom' },
+        { keys: `${mod} + L`, description: 'Toggle connection lines' },
+      ]
+    },
+    {
+      category: 'File',
+      items: [
+        { keys: `${mod} + S`, description: 'Save progression' },
+        { keys: `${mod} + E`, description: 'Export MIDI' },
+        { keys: `${mod} + N`, description: 'New (clear canvas)' },
+      ]
+    },
+    {
+      category: 'Help',
+      items: [
+        { keys: '?', description: 'Show this guide' },
+        { keys: `${mod} + K`, description: 'Search commands' },
+      ]
+    },
   ];
 
   return (

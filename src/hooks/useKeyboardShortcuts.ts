@@ -7,6 +7,7 @@ interface UseKeyboardShortcutsProps {
   onDeleteSelected?: () => void;
   onDuplicateSelected?: () => void;
   onTogglePlay?: () => void;
+  onStop?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
   onMoveSelected?: (direction: 'left' | 'right', amount: number) => void;
@@ -21,6 +22,7 @@ export function useKeyboardShortcuts({
   onDeleteSelected,
   onDuplicateSelected,
   onTogglePlay,
+  onStop,
   onUndo,
   onRedo,
   onMoveSelected,
@@ -72,8 +74,15 @@ export function useKeyboardShortcuts({
       return;
     }
 
+    // Shift + Space: Stop
+    if (e.key === ' ' && e.shiftKey && onStop) {
+      e.preventDefault();
+      onStop();
+      return;
+    }
+
     // Space: Play/Pause
-    if (e.key === ' ' && onTogglePlay) {
+    if (e.key === ' ' && !e.shiftKey && onTogglePlay) {
       e.preventDefault();
       onTogglePlay();
       return;
@@ -123,7 +132,7 @@ export function useKeyboardShortcuts({
       onShowHelp();
       return;
     }
-  }, [enabled, onSelectAll, onClearSelection, onDeleteSelected, onDuplicateSelected, onTogglePlay, onUndo, onRedo, onMoveSelected, onTempoChange, onShowHelp]);
+  }, [enabled, onSelectAll, onClearSelection, onDeleteSelected, onDuplicateSelected, onTogglePlay, onStop, onUndo, onRedo, onMoveSelected, onTempoChange, onShowHelp]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
