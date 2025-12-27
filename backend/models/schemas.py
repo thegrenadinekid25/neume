@@ -152,3 +152,32 @@ class DeconstructResponse(BaseModel):
     success: bool
     steps: Optional[List[DeconstructStep]] = None
     error: Optional[str] = None
+
+
+# Suggestion models
+
+class SuggestRequest(BaseModel):
+    """Request body for /api/suggest endpoint"""
+    intent: str
+    chords: List[SimpleChord]
+    key: str
+    mode: str
+
+
+class SuggestionData(BaseModel):
+    """A single chord refinement suggestion"""
+    id: str
+    technique: str  # "add9", "sus4", "open_voicing", etc.
+    targetChordId: Optional[str] = None
+    fromChord: SimpleChord
+    toChord: SimpleChord
+    rationale: str
+    examples: List[str]  # ["Lauridsen", "Whitacre", "Pärt"]
+    relevanceScore: float
+
+
+class SuggestResponse(BaseModel):
+    """Response body for /api/suggest endpoint"""
+    success: bool
+    suggestions: Optional[List[SuggestionData]] = None
+    error: Optional[str] = None

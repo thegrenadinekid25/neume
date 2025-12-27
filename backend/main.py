@@ -11,6 +11,7 @@ import json
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import anthropic
+from typing import List
 
 from models.schemas import (
     AnalyzeRequest,
@@ -27,11 +28,15 @@ from models.schemas import (
     DeconstructRequest,
     DeconstructResponse,
     SimpleChord,
-    DeconstructStep
+    DeconstructStep,
+    SuggestRequest,
+    SuggestResponse,
+    SuggestionData
 )
 from services.youtube_downloader import YouTubeDownloader
 from services.chord_extractor import ChordExtractor, parse_chord_label
 from services.deconstructor import ProgressionDeconstructor
+from services.emotional_mapper import EmotionalMapper
 
 # Load environment variables
 load_dotenv()
@@ -65,6 +70,7 @@ app.add_middleware(
 youtube_downloader = YouTubeDownloader(output_dir="./temp")
 chord_extractor = ChordExtractor()
 progression_deconstructor = ProgressionDeconstructor()
+emotional_mapper = EmotionalMapper()
 
 # Ensure temp directory exists
 os.makedirs("./temp", exist_ok=True)
@@ -465,6 +471,257 @@ async def deconstruct_progression(request: DeconstructRequest):
         return DeconstructResponse(
             success=False,
             error=f"Deconstruction failed: {str(e)}"
+        )
+
+
+# Chord manipulation functions for suggestions
+
+def apply_technique(chord: SimpleChord, technique: str) -> SimpleChord:
+    """
+    Apply a harmonic technique to a chord.
+
+    Args:
+        chord: The original chord
+        technique: Technique name like "add9", "sus4", etc.
+
+    Returns:
+        Modified chord
+    """
+    new_extensions = chord.extensions.copy() if chord.extensions else {}
+
+    if technique == "add9":
+        new_extensions["add9"] = True
+    elif technique == "sus4":
+        new_extensions["sus4"] = True
+    elif technique == "sus2":
+        new_extensions["sus2"] = True
+    elif technique == "maj7":
+        new_extensions["maj7"] = True
+    elif technique == "min7":
+        new_extensions["min7"] = True
+    elif technique == "dom7":
+        new_extensions["dom7"] = True
+    elif technique == "open_voicing":
+        new_extensions["open_voicing"] = True
+    elif technique == "modal_mixture":
+        new_extensions["modal_mixture"] = True
+    elif technique == "chromatic":
+        new_extensions["chromatic"] = True
+    elif technique == "V-I":
+        # V-I is a progression, not an extension
+        new_extensions["V-I"] = True
+    elif technique == "ascending_bass":
+        new_extensions["ascending_bass"] = True
+    elif technique == "root_position":
+        new_extensions["root_position"] = True
+    elif technique == "parallel_motion":
+        new_extensions["parallel_motion"] = True
+    elif technique == "parallel_9ths":
+        new_extensions["parallel_9ths"] = True
+    elif technique == "extended_harmony":
+        new_extensions["extended_harmony"] = True
+    elif technique == "low_register":
+        new_extensions["low_register"] = True
+    elif technique == "dense_voicing":
+        new_extensions["dense_voicing"] = True
+
+    return SimpleChord(
+        root=chord.root,
+        quality=chord.quality,
+        extensions=new_extensions
+    )
+
+
+async def build_suggestion_explanation(
+    from_chord: SimpleChord,
+    to_chord: SimpleChord,
+    technique: str,
+    intent: str,
+    composers: List[str],
+    key: str,
+    mode: str
+) -> str:
+    """
+    Build an AI explanation for a chord suggestion.
+
+    Args:
+        from_chord: Original chord
+        to_chord: Modified chord
+        technique: Applied technique
+        intent: User's emotional intent
+        composers: Relevant composers
+        key: Musical key
+        mode: Major or minor
+
+    Returns:
+        AI-generated explanation
+    """
+    api_key = os.getenv("CLAUDE_API_KEY")
+
+    if not api_key:
+        return "The added extension creates a harmonic shift. Listen carefully to the sound difference."
+
+    prompt = f"""You are an expert music theorist explaining chord refinements.
+
+A composer wants their chord to sound: "{intent}"
+
+Original chord: {from_chord.root} {from_chord.quality}
+Modified chord: {to_chord.root} {to_chord.quality}
+Technique applied: {technique}
+Key: {key} {mode}
+Relevant composers: {', '.join(composers)}
+
+Provide a concise, educational explanation (1-2 sentences) of:
+1. What this technique does to the sound
+2. Why it matches the emotional intent
+3. Which composer(s) use this technique
+
+Keep it conversational and engaging. No markdown formatting."""
+
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        message = client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=256,
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+
+        return message.content[0].text if message.content else ""
+
+    except Exception as e:
+        print(f"Error generating explanation: {str(e)}")
+        return f"The {technique} creates a harmonic shift characteristic of modern composition techniques."
+
+
+def calculate_relevance_score(technique: str, intent: str, avoid_list: List[str]) -> float:
+    """
+    Calculate relevance score for a suggestion.
+
+    Args:
+        technique: The technique applied
+        intent: User's emotional intent
+        avoid_list: Techniques to avoid for this intent
+
+    Returns:
+        Relevance score from 0.0 to 1.0
+    """
+    base_score = 0.7
+
+    # Penalize avoided techniques
+    if technique in avoid_list:
+        return 0.3
+
+    # Boost score based on technique popularity
+    popular_techniques = ["add9", "sus4", "maj7", "minor_mode"]
+    if technique in popular_techniques:
+        base_score = 0.85
+
+    return min(1.0, base_score + 0.1)
+
+
+@app.post("/api/suggest", response_model=SuggestResponse)
+async def suggest_refinements(request: SuggestRequest):
+    """
+    Generate chord refinement suggestions based on emotional intent.
+
+    Takes a free-form emotional description and generates harmonic suggestions
+    that match the requested feeling or style.
+
+    Input:
+    {
+      "intent": "More ethereal and floating",
+      "chords": [
+        {"root": "C", "quality": "major", "extensions": {}},
+        ...
+      ],
+      "key": "C",
+      "mode": "major"
+    }
+
+    Output:
+    {
+      "success": true,
+      "suggestions": [
+        {
+          "id": "suggestion-1",
+          "technique": "add9",
+          "fromChord": {...},
+          "toChord": {...},
+          "rationale": "The added 9th creates shimmer...",
+          "examples": ["Lauridsen", "Whitacre"],
+          "relevanceScore": 0.85
+        },
+        ...
+      ]
+    }
+    """
+    try:
+        # Get techniques based on emotional intent
+        techniques = emotional_mapper.get_techniques(request.intent)
+        composers = emotional_mapper.get_composers(request.intent)
+        avoid = emotional_mapper.should_avoid(request.intent)
+
+        if not techniques:
+            return SuggestResponse(
+                success=True,
+                suggestions=[]
+            )
+
+        suggestions = []
+        suggestion_id = 0
+
+        # Generate suggestions for each chord and technique combination
+        for chord_idx, chord in enumerate(request.chords):
+            for technique in techniques[:3]:  # Limit to 3 techniques per chord
+                if suggestion_id >= 6:  # Overall limit to 6 suggestions
+                    break
+
+                # Apply technique to create modified chord
+                modified_chord = apply_technique(chord, technique)
+
+                # Calculate relevance
+                relevance = calculate_relevance_score(technique, request.intent, avoid)
+
+                # Generate AI explanation
+                explanation = await build_suggestion_explanation(
+                    from_chord=chord,
+                    to_chord=modified_chord,
+                    technique=technique,
+                    intent=request.intent,
+                    composers=composers,
+                    key=request.key,
+                    mode=request.mode
+                )
+
+                # Create suggestion
+                suggestion = SuggestionData(
+                    id=f"suggestion-{suggestion_id}",
+                    technique=technique,
+                    targetChordId=f"chord-{chord_idx}",
+                    fromChord=chord,
+                    toChord=modified_chord,
+                    rationale=explanation,
+                    examples=composers[:2] if composers else ["Various composers"],
+                    relevanceScore=relevance
+                )
+
+                suggestions.append(suggestion)
+                suggestion_id += 1
+
+        # Sort by relevance score (highest first)
+        suggestions.sort(key=lambda x: x.relevanceScore, reverse=True)
+
+        return SuggestResponse(
+            success=True,
+            suggestions=suggestions
+        )
+
+    except Exception as e:
+        return SuggestResponse(
+            success=False,
+            error=f"Suggestion generation failed: {str(e)}"
         )
 
 

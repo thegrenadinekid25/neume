@@ -1,0 +1,607 @@
+/**
+ * RefineModal Component Styles
+ * CSS Module for the Refine This Modal - AI-powered chord refinement suggestions
+ */
+
+/* Overlay backdrop */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: calc(var(--z-modal) - 1);
+  animation: fadeIn var(--duration-normal) var(--ease-smooth-out);
+}
+
+/* Modal container */
+.modal {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  background: var(--background-primary);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-modal);
+  width: 90%;
+  max-width: 600px;
+  height: fit-content;
+  max-height: calc(100vh - 80px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Modal header with title and close button */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-lg) var(--space-lg);
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Close button */
+.closeButton {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-radius: var(--border-radius-sm);
+  font-size: 20px;
+  transition: background-color var(--duration-fast) var(--ease-apple-smooth),
+              color var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.closeButton:hover {
+  background-color: var(--background-secondary);
+  color: var(--text-primary);
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+.closeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Modal content area */
+.content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* Input group */
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.inputLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Textarea for intent input */
+.textarea {
+  padding: var(--space-md);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  font-size: 14px;
+  font-family: var(--font-ui);
+  color: var(--text-primary);
+  background: var(--background-primary);
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color var(--duration-fast) var(--ease-apple-smooth),
+              box-shadow var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--primary-action);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.textarea:disabled {
+  background-color: var(--background-secondary);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Examples section */
+.examplesSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.examplesTitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.examplesList {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-xs);
+}
+
+.examplePrompt {
+  padding: var(--space-sm) var(--space-md);
+  background: var(--background-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.examplePrompt:hover:not(:disabled) {
+  background-color: rgba(74, 144, 226, 0.1);
+  border-color: var(--primary-action);
+  color: var(--primary-action);
+}
+
+.examplePrompt:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: -2px;
+}
+
+.examplePrompt:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Error box */
+.errorBox {
+  padding: var(--space-md);
+  background: rgba(196, 69, 54, 0.1);
+  border: 1px solid var(--error);
+  border-radius: var(--border-radius-sm);
+  color: var(--error);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Suggestions container */
+.suggestionsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.suggestionsTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Suggestions list */
+.suggestionsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* Suggestion card */
+.suggestionCard {
+  padding: var(--space-md);
+  background: var(--background-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.suggestionCard:hover {
+  border-color: var(--primary-action);
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.1);
+}
+
+/* Suggestion header with technique name and score */
+.suggestionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+.suggestionTechnique {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.relevanceScore {
+  padding: var(--space-xs) var(--space-sm);
+  background: rgba(74, 144, 226, 0.15);
+  color: var(--primary-action);
+  border-radius: var(--border-radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Suggestion rationale */
+.suggestionRationale {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* Suggestion examples/composers */
+.suggestionExamples {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Suggestion action buttons */
+.suggestionActions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+}
+
+.previewButton {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--background-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--primary-action);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+}
+
+.previewButton:hover:not(:disabled) {
+  background-color: rgba(74, 144, 226, 0.1);
+  border-color: var(--primary-action);
+}
+
+.previewButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: -2px;
+}
+
+.previewButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.playIcon {
+  font-size: 11px;
+  display: inline-block;
+}
+
+.applyButton {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--primary-action);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.applyButton:hover:not(:disabled) {
+  background-color: #3a7bc8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+}
+
+.applyButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.applyButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+.applyButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Action buttons (Try Again, Surprise Me) */
+.actionButtons {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-light);
+}
+
+.tryAgainButton {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--background-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.tryAgainButton:hover:not(:disabled) {
+  background: var(--background-primary);
+  border-color: var(--border-medium);
+}
+
+.tryAgainButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+.tryAgainButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.surpriseButton {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(74, 144, 226, 0.1);
+  border: 1px solid var(--primary-action);
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary-action);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.surpriseButton:hover:not(:disabled) {
+  background-color: rgba(74, 144, 226, 0.2);
+  transform: translateY(-1px);
+}
+
+.surpriseButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+.surpriseButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Loading container */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl) var(--space-lg);
+  gap: var(--space-lg);
+  min-height: 200px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(74, 144, 226, 0.2);
+  border-top-color: var(--primary-action);
+  border-radius: 50%;
+  animation: spin var(--duration-normal) linear infinite;
+}
+
+.miniSpinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin var(--duration-normal) linear infinite;
+}
+
+.loadingText {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Modal footer with buttons */
+.footer {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: flex-end;
+  padding: var(--space-lg);
+  border-top: 1px solid var(--border-light);
+  background: var(--background-primary);
+  flex-shrink: 0;
+}
+
+.cancelButton {
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--background-secondary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: var(--border-light);
+  border-color: var(--border-dark);
+}
+
+.cancelButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+.cancelButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.submitButton {
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--primary-action);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: #3a7bc8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+}
+
+.submitButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submitButton:disabled {
+  background-color: var(--text-tertiary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.submitButton:focus-visible:not(:disabled) {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .modal {
+    width: 95%;
+    max-width: 100%;
+    max-height: 90vh;
+  }
+
+  .header {
+    padding: var(--space-md);
+  }
+
+  .content {
+    padding: var(--space-md);
+  }
+
+  .footer {
+    flex-direction: column;
+    padding: var(--space-md);
+  }
+
+  .cancelButton,
+  .submitButton {
+    width: 100%;
+  }
+
+  .actionButtons {
+    flex-direction: column;
+  }
+
+  .tryAgainButton,
+  .surpriseButton {
+    width: 100%;
+  }
+
+  .examplesList {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal {
+    border-radius: var(--border-radius-md);
+  }
+
+  .suggestionCard {
+    padding: var(--space-sm);
+  }
+
+  .suggestionActions {
+    flex-direction: column;
+  }
+
+  .previewButton,
+  .applyButton {
+    width: 100%;
+  }
+}
