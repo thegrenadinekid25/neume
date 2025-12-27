@@ -4,30 +4,30 @@
 
 /**
  * Scale Degree Colors - Major Keys
- * Saturated, vibrant colors for maximum visual impact
+ * Warm Kinfolk palette - earthy, organic tones
  */
 export const SCALE_DEGREE_COLORS_MAJOR = {
-  I: '#E8A03E',    // Rich golden amber
-  ii: '#5BAF89',   // Vibrant sage
-  iii: '#D97298',  // Bold rose
-  IV: '#4E7AC7',   // Bright periwinkle
-  V: '#E85D3D',    // Vivid terracotta
-  vi: '#9D6DB0',   // Saturated purple
-  vii: '#4A4A4A',  // Charcoal
+  I: '#E8A03E',    // Golden amber (tonic - warm gold)
+  ii: '#7A9E87',   // Muted sage (warmer green)
+  iii: '#C4756E',  // Dusty rose/terracotta pink
+  IV: '#6B8FAD',   // Muted steel blue (warmed)
+  V: '#D4654A',    // Warm terracotta
+  vi: '#A67F8E',   // Dusty mauve (warmer purple)
+  vii: '#8B7355',  // Warm taupe
 } as const;
 
 /**
  * Scale Degree Colors - Minor Keys
- * Deep, rich colors for deep tonality
+ * Deep, warm earthy tones
  */
 export const SCALE_DEGREE_COLORS_MINOR = {
-  i: '#A73636',    // Deep burgundy
-  ii: '#6B7A8C',   // Slate blue
+  i: '#9E5A5A',    // Warm brick
+  ii: '#7A7062',   // Warm gray-brown
   III: '#D4924A',  // Rich amber
-  iv: '#2F4A6B',   // Deep navy
-  v: '#C43A2E',    // Vivid crimson
-  VI: '#6BA870',   // Rich sage
-  VII: '#D87028',  // Bright burnt orange
+  iv: '#5A7285',   // Warm slate
+  v: '#B84A3C',    // Warm crimson
+  VI: '#7A9E7A',   // Muted sage
+  VII: '#C77B3F',  // Warm burnt orange
 } as const;
 
 /**

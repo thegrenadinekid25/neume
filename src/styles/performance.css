@@ -1,0 +1,148 @@
+/**
+ * Performance optimizations for Neume
+ * GPU acceleration, CSS containment, and efficient animations
+ */
+
+/* ==================== GPU Acceleration ==================== */
+
+/* Enable GPU acceleration with translateZ hack */
+.gpu-accelerate {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* GPU acceleration for animated elements - will-change hint */
+.gpu-accelerate-animated {
+  transform: translateZ(0);
+  will-change: transform;
+  -webkit-will-change: transform;
+}
+
+/* GPU acceleration for opacity-only changes */
+.gpu-accelerate-opacity {
+  will-change: opacity;
+  -webkit-will-change: opacity;
+}
+
+/* GPU acceleration for specific properties */
+.gpu-accelerate-filter {
+  will-change: filter;
+  -webkit-will-change: filter;
+}
+
+/* ==================== CSS Containment ==================== */
+
+/* Containment for block elements (not full paint containment) */
+.contain-layout {
+  contain: layout;
+}
+
+/* Containment for paint scope isolation */
+.contain-paint {
+  contain: paint;
+}
+
+/* Full containment for isolated components */
+.contain-full {
+  contain: layout style paint;
+}
+
+/* Containment for card/block containers */
+.block-card {
+  contain: layout style paint;
+  will-change: auto;
+}
+
+/* Containment for canvas elements and interactive areas */
+.canvas-container {
+  contain: layout style paint;
+  will-change: auto;
+}
+
+/* ==================== Efficient Animation Properties ==================== */
+
+/* Use transform-based animations only (no layout thrashing) */
+.animate-transform-only {
+  will-change: transform;
+}
+
+/* Use opacity-based animations (GPU accelerated) */
+.animate-opacity-only {
+  will-change: opacity;
+}
+
+/* Optimize animations by using transform and opacity */
+.animate-performant {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+/* Reduce paint operations during animations */
+.reduce-paint {
+  contain: paint;
+  will-change: transform;
+}
+
+/* ==================== Scroll Performance ==================== */
+
+/* Optimize scrolling elements */
+.scroll-optimize {
+  contain: layout style paint;
+  will-change: scroll-position;
+}
+
+/* Momentum scrolling on mobile */
+.scroll-momentum {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==================== Text Rendering ==================== */
+
+/* Optimize text rendering for performance */
+.text-optimize {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'kern' 1;
+}
+
+/* ==================== Reduced Motion for Performance ==================== */
+
+/* Apply reduced animations and transitions when user prefers */
+@media (prefers-reduced-motion: reduce) {
+  .gpu-accelerate,
+  .gpu-accelerate-animated,
+  .gpu-accelerate-opacity,
+  .gpu-accelerate-filter,
+  .animate-transform-only,
+  .animate-opacity-only,
+  .animate-performant,
+  .reduce-paint {
+    will-change: auto;
+  }
+}
+
+/* ==================== Hardware Acceleration Utilities ==================== */
+
+/* For list items that need fast interactions */
+.list-item-optimized {
+  contain: content;
+  will-change: auto;
+  transform: translateZ(0);
+}
+
+/* For grid items */
+.grid-item-optimized {
+  contain: layout;
+  backface-visibility: hidden;
+}
+
+/* For modal/dialog overlays */
+.modal-optimized {
+  contain: paint;
+  will-change: opacity;
+}

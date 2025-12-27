@@ -3,7 +3,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  background-color: var(--background-secondary, #f5f5f5);
+  background-color: var(--warm-linen, #EDE8E0);
 }
 
 .rulerWrapper {
@@ -38,9 +38,9 @@
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    rgba(120, 120, 120, 0.15) 20%,
-    rgba(120, 120, 120, 0.25) 50%,
-    rgba(120, 120, 120, 0.15) 80%,
+    rgba(139, 115, 85, 0.15) 20%,
+    rgba(139, 115, 85, 0.25) 50%,
+    rgba(139, 115, 85, 0.15) 80%,
     transparent 100%
   );
   pointer-events: none;
@@ -52,8 +52,8 @@
   width: 1px;
   background: linear-gradient(
     to top,
-    rgba(120, 120, 120, 0.08) 0%,
-    rgba(120, 120, 120, 0.12) 50%,
+    rgba(139, 115, 85, 0.08) 0%,
+    rgba(139, 115, 85, 0.12) 50%,
     transparent 100%
   );
   pointer-events: none;
@@ -79,7 +79,7 @@
 .trackEnd {
   width: var(--space-xs);
   height: var(--space-md);
-  background: rgba(100, 100, 100, 0.4);
+  background: rgba(139, 115, 85, 0.4);
   border-radius: var(--border-radius-sm);
   flex-shrink: 0;
 }
@@ -87,7 +87,7 @@
 .trackRail {
   flex: 1;
   height: var(--space-xs);
-  background: rgba(100, 100, 100, 0.3);
+  background: rgba(139, 115, 85, 0.3);
   border-radius: var(--border-radius-sm);
 }
 

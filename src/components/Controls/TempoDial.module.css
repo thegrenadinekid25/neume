@@ -1,3 +1,14 @@
+/* Bauhaus-style Swinging Pendulum Metronome */
+
+@keyframes pendulumSwing {
+  0%, 100% {
+    transform: rotate(-25deg);
+  }
+  50% {
+    transform: rotate(25deg);
+  }
+}
+
 .container {
   position: fixed;
   bottom: var(--space-lg);
@@ -5,38 +16,64 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: white;
+  background: var(--bg-primary, white);
   border-radius: var(--border-radius-lg);
   padding: var(--space-md) var(--space-md) var(--space-sm);
   box-shadow: var(--shadow-lg);
   user-select: none;
   z-index: 100;
+  /* Subtle hand-drawn feel */
+  transform: rotate(1deg);
 }
 
-.dial {
-  cursor: pointer;
+.pendulum {
+  overflow: visible;
 }
 
-.arc {
-  cursor: pointer;
-  transition: stroke var(--duration-fast) var(--ease-breathe);
+/* Tick marks at swing limits */
+.tickMark {
+  stroke: var(--border-light, #e0e0e0);
+  stroke-width: 2;
+  stroke-linecap: round;
 }
 
-.arc:hover {
-  stroke: var(--text-tertiary);
+/* Pivot point at top */
+.pivot {
+  fill: var(--text-primary, #1a1a1a);
 }
 
-.needle {
+/* Pendulum arm group - animated swing */
+.pendulumArm {
+  animation: pendulumSwing var(--duration-slow, 500ms) var(--ease-breathe, cubic-bezier(0.45, 0.05, 0.55, 0.95)) infinite;
+}
+
+/* The arm line */
+.arm {
+  stroke: var(--text-primary, #1a1a1a);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+/* Weight bob - terracotta colored */
+.weightBob {
+  fill: var(--color-major-V, #E85D3D);
   cursor: grab;
-  filter: drop-shadow(0 2px 4px rgba(74, 144, 226, 0.3));
-  transform-origin: center bottom;
-  transition: none;
+  transition:
+    filter var(--duration-fast, 150ms) var(--ease-breathe, cubic-bezier(0.45, 0.05, 0.55, 0.95)),
+    transform var(--duration-fast, 150ms) var(--ease-breathe, cubic-bezier(0.45, 0.05, 0.55, 0.95));
 }
 
-.needle:active {
+.weightBob:hover,
+.weightBobHover {
+  filter: brightness(1.1) drop-shadow(0 2px 4px rgba(232, 93, 61, 0.4));
+}
+
+.weightBob:active {
   cursor: grabbing;
+  filter: brightness(0.95);
 }
 
+/* Tempo display below pendulum */
 .tempoDisplay {
   margin-top: var(--space-xs);
   text-align: center;
@@ -44,16 +81,18 @@
 
 .tempoValue {
   display: block;
-  font-size: var(--type-h2);
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 32px;
   font-weight: 600;
-  color: var(--text-primary);
-  font-family: var(--font-technical);
+  color: var(--text-primary, #1a1a1a);
+  line-height: 1;
 }
 
 .tempoLabel {
   display: block;
-  font-size: var(--type-body-xs);
-  color: var(--text-secondary);
+  font-family: var(--font-ui, 'Space Grotesk', sans-serif);
+  font-size: 12px;
+  color: var(--text-secondary, #666);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-top: var(--space-xs);
@@ -62,4 +101,8 @@
 .disabled {
   opacity: 0.5;
   pointer-events: none;
+}
+
+.disabled .pendulumArm {
+  animation-play-state: paused;
 }

@@ -23,23 +23,51 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ steps, currentStep, onSte
 
         return (
           <React.Fragment key={step.stepNumber}>
-            {/* Step dot */}
-            <button
-              className={`${styles.stepDot} ${isActive ? styles.active : ''} ${isCompleted ? styles.completed : ''}`}
-              onClick={() => onStepClick(index)}
-              title={`Go to Step ${index}: ${step.stepName}`}
-              aria-label={`Step ${index}: ${step.stepName}`}
-              aria-current={isActive ? 'step' : undefined}
-            >
-              {index + 1}
-            </button>
+            {/* Step dot with geometric frame */}
+            <div className={styles.stepContainer}>
+              <button
+                className={`${styles.stepDot} ${isActive ? styles.active : ''} ${isCompleted ? styles.completed : ''}`}
+                onClick={() => onStepClick(index)}
+                title={`Go to Step ${index + 1}: ${step.stepName}`}
+                aria-label={`Step ${index + 1}: ${step.stepName}`}
+                aria-current={isActive ? 'step' : undefined}
+              >
+                <span className={styles.stepNumber}>{index + 1}</span>
+                {isCompleted && (
+                  <span className={styles.checkmark} aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path
+                        d="M3 8.5L6.5 12L13 4"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
+                )}
+              </button>
+              <span className={styles.stepLabel}>{step.stepName}</span>
+            </div>
 
-            {/* Progress line between dots (skip after last step) */}
+            {/* Progress line between dots (skip after last step) - wobbly SVG path */}
             {index < steps.length - 1 && (
-              <div
-                className={`${styles.progressLine} ${isCompleted || isActive ? styles.filled : ''}`}
+              <svg
+                className={`${styles.progressLine} ${isCompleted ? styles.completed : ''}`}
+                width="32"
+                height="24"
+                viewBox="0 0 32 24"
+                fill="none"
                 aria-hidden="true"
-              />
+              >
+                <path
+                  className={styles.progressPath}
+                  d="M0 12 C8 8, 12 16, 16 12 C20 8, 24 16, 32 12"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
             )}
           </React.Fragment>
         );

@@ -42,7 +42,7 @@ export const KeyboardShortcutsGuide: React.FC<KeyboardShortcutsGuideProps> = ({
         { keys: `${mod} + Z`, description: 'Undo' },
         { keys: `${mod} + Shift + Z`, description: 'Redo' },
         { keys: `${mod} + D`, description: 'Duplicate selected' },
-        { keys: 'Delete', description: 'Delete selected' },
+        { keys: 'Delete / Backspace', description: 'Delete selected' },
         { keys: `${mod} + A`, description: 'Select all' },
         { keys: 'Escape', description: 'Clear selection' },
       ]
@@ -50,34 +50,22 @@ export const KeyboardShortcutsGuide: React.FC<KeyboardShortcutsGuideProps> = ({
     {
       category: 'Navigation',
       items: [
-        { keys: '← →', description: 'Move selected 1px' },
-        { keys: 'Shift + ← →', description: 'Move selected 10px' },
-        { keys: 'Tab', description: 'Next chord' },
-        { keys: 'Shift + Tab', description: 'Previous chord' },
+        { keys: '← →', description: 'Move selected 0.25 beats' },
+        { keys: 'Shift + ← →', description: 'Move selected 1 beat' },
+        { keys: '↑ ↓', description: 'Adjust tempo (±1 BPM)' },
+        { keys: 'Shift + ↑ ↓', description: 'Adjust tempo (±10 BPM)' },
       ]
     },
     {
-      category: 'Canvas',
+      category: 'Analysis',
       items: [
-        { keys: `${mod} + +`, description: 'Zoom in' },
-        { keys: `${mod} + -`, description: 'Zoom out' },
-        { keys: `${mod} + 0`, description: 'Reset zoom' },
-        { keys: `${mod} + L`, description: 'Toggle connection lines' },
-      ]
-    },
-    {
-      category: 'File',
-      items: [
-        { keys: `${mod} + S`, description: 'Save progression' },
-        { keys: `${mod} + E`, description: 'Export MIDI' },
-        { keys: `${mod} + N`, description: 'New (clear canvas)' },
+        { keys: `${mod} + Shift + A`, description: 'Open Analyze modal' },
       ]
     },
     {
       category: 'Help',
       items: [
-        { keys: '?', description: 'Show this guide' },
-        { keys: `${mod} + K`, description: 'Search commands' },
+        { keys: '? / Shift + /', description: 'Show this guide' },
       ]
     },
   ];

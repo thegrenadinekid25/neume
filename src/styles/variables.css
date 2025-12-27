@@ -75,4 +75,34 @@
   --header-height: 50px;
   --controls-height: 60px;
   --panel-width: 380px;
+
+  /* Button sizing */
+  --button-height-sm: 32px;
+  --button-height-md: 40px;
+  --button-height-lg: 48px;
+
+  /* Icon sizing */
+  --icon-size-sm: 16px;
+  --icon-size-md: 20px;
+  --icon-size-lg: 24px;
+
+  /* Organic wobble */
+  --wobble-rotation: 1.5deg;
+  --wobble-scale: 0.02;
+
+  /* Additional easing */
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Sidebar Layout */
+  --sidebar-width: 280px;
+
+  /* Warm Kinfolk Palette */
+  --warm-cream: #FAF8F5;
+  --warm-sand: #F5F1E8;
+  --warm-linen: #EDE8E0;
+  --warm-gold: #E8A03E;
+  --warm-terracotta: #E85D3D;
+  --warm-amber: #D4924A;
+  --warm-text-primary: #3D3530;
+  --warm-text-secondary: #7A7067;
 }

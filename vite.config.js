@@ -1,18 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
-
 export default defineConfig({
-    plugins: [
-        react(),
-        process.env.ANALYZE && visualizer({
-            open: true,
-            gzipSize: true,
-            brotliSize: true,
-            filename: 'dist/bundle-analysis.html',
-        }),
-    ].filter(Boolean),
+    plugins: [react()],
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
@@ -32,13 +22,22 @@ export default defineConfig({
     build: {
         outDir: 'dist',
         sourcemap: true,
+        target: 'es2020',
+        minify: 'terser',
+        terserOptions: {
+            compress: {
+                drop_console: true,
+                drop_debugger: true,
+            },
+            mangle: true,
+        },
         rollupOptions: {
             output: {
                 manualChunks: {
                     'vendor-react': ['react', 'react-dom'],
                     'vendor-audio': ['tone'],
                     'vendor-music': ['tonal'],
-                    'vendor-ui': ['framer-motion', '@dnd-kit/core'],
+                    'vendor-ui': ['framer-motion', '@dnd-kit/core', '@dnd-kit/sortable'],
                 },
             },
         },

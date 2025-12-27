@@ -1,0 +1,202 @@
+/**
+ * HelpTooltip Component Styles
+ */
+
+.triggerWrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 3000;
+  background: var(--text-primary);
+  color: var(--background-primary);
+  padding: 12px 14px;
+  border-radius: var(--border-radius-md, 8px);
+  font-size: 12px;
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  line-height: 1.5;
+  max-width: 280px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  white-space: normal;
+  word-wrap: break-word;
+  pointer-events: none;
+  min-width: 150px;
+}
+
+/* Tooltip arrow/pointer */
+.tooltip::before {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--text-primary);
+  border-radius: 1px;
+}
+
+/* Top position */
+.position-top {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+}
+
+.position-top::before {
+  bottom: -3px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/* Bottom position */
+.position-bottom {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+}
+
+.position-bottom::before {
+  top: -3px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/* Left position */
+.position-left {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 8px;
+}
+
+.position-left::before {
+  right: -3px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+/* Right position */
+.position-right {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 8px;
+}
+
+.position-right::before {
+  left: -3px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+/* Tooltip content sections */
+.title {
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+}
+
+.content {
+  margin-bottom: 0;
+  font-size: 12px;
+}
+
+.shortcut {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 11px;
+  font-weight: 500;
+  color: #D0D0D0;
+  opacity: 0.9;
+}
+
+.examples {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.examplesLabel {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.85;
+}
+
+.examplesList {
+  margin: 0;
+  padding-left: 16px;
+  list-style: disc;
+  font-size: 11px;
+}
+
+.examplesList li {
+  margin: 2px 0;
+}
+
+.examplesList li::marker {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 768px) {
+  .tooltip {
+    max-width: 200px;
+    font-size: 11px;
+    padding: 10px 12px;
+  }
+
+  .title {
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+
+  .content {
+    font-size: 11px;
+  }
+
+  .shortcut {
+    font-size: 10px;
+    margin-top: 6px;
+    padding-top: 6px;
+  }
+
+  .examples {
+    margin-top: 6px;
+    padding-top: 6px;
+  }
+
+  .examplesLabel {
+    font-size: 10px;
+  }
+
+  .examplesList {
+    font-size: 10px;
+  }
+}
+
+/* Accessibility: High contrast mode */
+@media (prefers-contrast: more) {
+  .tooltip {
+    background: var(--text-primary);
+    color: var(--background-primary);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+
+  .tooltip::before {
+    background: var(--text-primary);
+  }
+}
+
+/* Accessibility: Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .tooltip {
+    animation: none;
+  }
+}

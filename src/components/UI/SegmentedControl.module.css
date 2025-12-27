@@ -1,0 +1,140 @@
+/**
+ * SegmentedControl - Bauhaus-inspired connected pill control
+ * Uses organic animations with elastic easing for sliding indicator
+ */
+
+.container {
+  /* Layout */
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 120px;
+  height: 36px;
+
+  /* Connected pill shape */
+  border-radius: 18px;
+  background-color: var(--warm-linen);
+  border: 1px solid var(--warm-sand);
+
+  /* Organic wobble - hand-drawn Bauhaus feel */
+  transform: rotate(-1.5deg);
+
+  /* Transitions */
+  transition:
+    box-shadow var(--duration-normal) var(--ease-smooth),
+    border-color var(--duration-normal) var(--ease-smooth);
+}
+
+/* Focus outline on entire control */
+.container:focus-within {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+  border-color: var(--primary-action);
+}
+
+/* Sliding indicator */
+.indicator {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  height: calc(100% - 6px);
+  border-radius: 15px;
+  background-color: var(--warm-cream);
+  pointer-events: none;
+  z-index: 0;
+
+  /* Elastic animation for sliding */
+  transition: transform var(--duration-slow) var(--ease-elastic);
+
+  /* Subtle scale bounce effect is achieved via the elastic easing */
+}
+
+/* Individual segment */
+.segment {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+
+  /* Reset button styles */
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+
+  /* Typography */
+  font-family: var(--font-ui, 'Space Grotesk', system-ui, sans-serif);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--warm-text-secondary);
+
+  /* Transitions */
+  transition:
+    color var(--duration-fast) var(--ease-smooth),
+    background-color var(--duration-fast) var(--ease-smooth);
+}
+
+/* First segment - rounded left */
+.segment:first-child {
+  border-radius: 15px 0 0 15px;
+}
+
+/* Last segment - rounded right */
+.segment:last-child {
+  border-radius: 0 15px 15px 0;
+}
+
+/* Segment hover state */
+.segment:hover:not(.active) {
+  background-color: color-mix(in srgb, var(--warm-sand) 50%, transparent);
+}
+
+/* Active segment */
+.segment.active {
+  color: var(--warm-text-primary);
+  font-weight: 600;
+}
+
+/* Segment focus - hide outline since container handles it */
+.segment:focus {
+  outline: none;
+}
+
+.segment:focus-visible {
+  outline: none;
+}
+
+/* Label wrapper */
+.label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+/* Hairline divider between segments */
+.divider {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 16px;
+  background-color: var(--warm-sand);
+  pointer-events: none;
+}
+
+/* Hide divider when this segment or next is active */
+.segment.active .divider,
+.segment.active + .segment .divider {
+  opacity: 0;
+}
+
+/* Also hide divider after active segment */
+.segment:has(+ .segment.active) .divider {
+  opacity: 0;
+}

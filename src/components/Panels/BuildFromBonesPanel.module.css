@@ -80,20 +80,28 @@
 /* Step indicator - flex container for step dots and progress lines */
 .stepIndicator {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  gap: var(--space-md);
+  gap: 8px;
   padding: var(--space-lg) var(--space-lg) var(--space-md);
   flex-shrink: 0;
   flex-wrap: nowrap;
 }
 
-/* Individual step dot - 20px circles */
+/* Step container - holds dot and label */
+.stepContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+/* Individual step dot - 48px geometric circles with Fraunces numerals */
 .stepDot {
-  width: 20px;
-  height: 20px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: var(--background-secondary);
+  background: transparent;
   border: 2px solid var(--border-light);
   cursor: pointer;
   transition: all var(--duration-slow) var(--ease-breathe);
@@ -101,45 +109,132 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  position: relative;
+}
+
+/* Fraunces numeral styling */
+.stepNumber {
+  font-size: 24px;
   font-weight: 600;
-  font-family: var(--font-notation);
+  font-family: var(--font-display);
   color: var(--text-secondary);
+  line-height: 1;
+  transition: color var(--duration-slow) var(--ease-breathe);
+}
+
+/* Step name label below */
+.stepLabel {
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Checkmark overlay for completed steps */
+.checkmark {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  background: var(--success);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  border: 2px solid var(--background-primary);
+}
+
+.checkmark svg {
+  width: 10px;
+  height: 10px;
 }
 
 .stepDot:hover {
   border-color: var(--border-medium);
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
-/* Active step dot - current step */
+.stepDot:hover .stepNumber {
+  color: var(--text-primary);
+}
+
+.stepDot:focus-visible {
+  outline: 2px solid var(--color-major-I, #e8a03e);
+  outline-offset: 2px;
+}
+
+/* Active step dot - golden glow with Bauhaus styling */
 .stepDot.active {
-  background: var(--primary-action);
-  border-color: var(--primary-action);
-  color: white;
-  box-shadow: 0 0 8px rgba(74, 144, 226, 0.4);
+  background: rgba(232, 160, 62, 0.15);
+  border: 3px solid var(--color-major-I, #e8a03e);
+  animation: stepGlow 2s ease-in-out infinite;
 }
 
-/* Completed step dot */
+.stepDot.active .stepNumber {
+  color: var(--text-primary);
+}
+
+/* Completed step dot - filled with success color */
 .stepDot.completed {
   background: var(--success);
   border-color: var(--success);
+}
+
+.stepDot.completed .stepNumber {
   color: white;
 }
 
-/* Progress line connecting dots - 3px */
-.progressLine {
-  flex: 0 0 24px;
-  height: 3px;
-  background: var(--border-light);
-  border-radius: 2px;
-  transition: background-color var(--duration-slow) var(--ease-breathe);
-  flex-shrink: 0;
+/* Golden glow pulse animation for active step */
+@keyframes stepGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(232, 160, 62, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(232, 160, 62, 0);
+  }
 }
 
-/* Filled progress line (between completed steps) */
-.progressLine.filled {
-  background: var(--primary-action);
+/* Progress line connecting dots - wobbly SVG path */
+.progressLine {
+  flex-shrink: 0;
+  color: var(--border-light);
+  transition: color var(--duration-slow) var(--ease-breathe);
+  align-self: center;
+  margin-top: 12px; /* Align with center of step dots */
+}
+
+.progressPath {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.6s ease-out, stroke var(--duration-slow) var(--ease-breathe);
+}
+
+/* Completed progress line - success color with draw-in effect */
+.progressLine.completed {
+  color: var(--success);
+}
+
+.progressLine.completed .progressPath {
+  animation: drawLine 0.6s ease-out forwards;
+}
+
+/* Progress line draw-in animation */
+@keyframes drawLine {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 /* Scrollable step content area */
@@ -437,11 +532,36 @@
 
   .stepIndicator {
     padding: var(--space-md) var(--space-lg);
-    gap: var(--space-sm);
+    gap: 6px;
+  }
+
+  .stepDot {
+    width: 40px;
+    height: 40px;
+  }
+
+  .stepNumber {
+    font-size: 20px;
+  }
+
+  .stepLabel {
+    font-size: 10px;
+    max-width: 60px;
   }
 
   .progressLine {
-    flex: 0 0 16px;
+    width: 24px;
+    margin-top: 10px;
+  }
+
+  .checkmark {
+    width: 16px;
+    height: 16px;
+  }
+
+  .checkmark svg {
+    width: 8px;
+    height: 8px;
   }
 
   .stepContent {
@@ -480,17 +600,46 @@
 
   .stepIndicator {
     padding: var(--space-md);
-    gap: var(--space-xs);
+    gap: 4px;
+    overflow-x: auto;
+    justify-content: flex-start;
   }
 
   .stepDot {
-    width: 18px;
-    height: 18px;
+    width: 36px;
+    height: 36px;
+    border-width: 2px;
+  }
+
+  .stepDot.active {
+    border-width: 2px;
+  }
+
+  .stepNumber {
+    font-size: 16px;
+  }
+
+  .stepLabel {
     font-size: 9px;
+    max-width: 48px;
   }
 
   .progressLine {
-    flex: 0 0 12px;
+    width: 16px;
+    height: 16px;
+    margin-top: 10px;
+  }
+
+  .checkmark {
+    width: 14px;
+    height: 14px;
+    bottom: -1px;
+    right: -1px;
+  }
+
+  .checkmark svg {
+    width: 7px;
+    height: 7px;
   }
 
   .stepTitle {

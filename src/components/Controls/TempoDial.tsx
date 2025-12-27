@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useCallback, useEffect, useState } from 'react';
 import styles from './TempoDial.module.css';
 
 export interface TempoDialProps {
@@ -9,18 +9,18 @@ export interface TempoDialProps {
   disabled?: boolean;
 }
 
-// SVG dimensions for floating dial
+// SVG dimensions for pendulum metronome
 const WIDTH = 100;
-const HEIGHT = 56;
-const CX = WIDTH / 2;
-const CY = HEIGHT - 4; // Center near bottom for semicircle
-const RADIUS = 40;
+const HEIGHT = 120;
+const PIVOT_X = WIDTH / 2;
+const PIVOT_Y = 16; // Pivot at top
+const ARM_LENGTH = 60;
+const WEIGHT_RADIUS = 10;
+const PIVOT_RADIUS = 4;
+const SWING_ANGLE = 25; // degrees
 
-// Arc angles: -90° to 90° (upward-facing semicircle)
-// In our coordinate system: -90° = left, 0° = top, 90° = right
-const START_ANGLE = -90;
-const END_ANGLE = 90;
-const ANGLE_RANGE = END_ANGLE - START_ANGLE;
+// Default tempo for double-click reset
+const DEFAULT_TEMPO = 120;
 
 export function TempoDial({
   tempo,
@@ -29,126 +29,164 @@ export function TempoDial({
   maxTempo = 220,
   disabled = false,
 }: TempoDialProps) {
-  const dialRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
+  const dragStartY = useRef(0);
+  const dragStartTempo = useRef(tempo);
+  const [isHovering, setIsHovering] = useState(false);
 
-  // Calculate needle angle from tempo
-  const tempoToAngle = (t: number): number => {
+  // Calculate animation duration from tempo (one full swing = one beat)
+  const swingDuration = 60000 / tempo;
+
+  // Calculate weight position based on tempo (higher position = faster tempo)
+  // Map tempo range to arm length range (shorter arm = higher position = faster)
+  const tempoToArmLength = (t: number): number => {
+    // Invert: higher tempo = shorter arm (weight closer to pivot)
     const normalized = (t - minTempo) / (maxTempo - minTempo);
-    return START_ANGLE + normalized * ANGLE_RANGE;
+    // Arm length ranges from 55px (slow) to 25px (fast)
+    return 55 - normalized * 30;
   };
 
-  // Calculate tempo from angle
-  const angleToTempo = (angle: number): number => {
-    const normalized = (angle - START_ANGLE) / ANGLE_RANGE;
-    const clamped = Math.max(0, Math.min(1, normalized));
-    return Math.round(minTempo + clamped * (maxTempo - minTempo));
+  const currentArmLength = tempoToArmLength(tempo);
+
+  // Weight position (at rest, pointing straight down)
+  const weightX = PIVOT_X;
+  const weightY = PIVOT_Y + currentArmLength;
+
+  // Tick mark positions at swing limits
+  const leftTickAngle = -SWING_ANGLE * (Math.PI / 180);
+  const rightTickAngle = SWING_ANGLE * (Math.PI / 180);
+  const tickLength = 8;
+  const tickRadius = ARM_LENGTH + 5;
+
+  const leftTickStart = {
+    x: PIVOT_X + Math.sin(leftTickAngle) * (tickRadius - tickLength),
+    y: PIVOT_Y + Math.cos(leftTickAngle) * (tickRadius - tickLength),
+  };
+  const leftTickEnd = {
+    x: PIVOT_X + Math.sin(leftTickAngle) * tickRadius,
+    y: PIVOT_Y + Math.cos(leftTickAngle) * tickRadius,
+  };
+  const rightTickStart = {
+    x: PIVOT_X + Math.sin(rightTickAngle) * (tickRadius - tickLength),
+    y: PIVOT_Y + Math.cos(rightTickAngle) * (tickRadius - tickLength),
+  };
+  const rightTickEnd = {
+    x: PIVOT_X + Math.sin(rightTickAngle) * tickRadius,
+    y: PIVOT_Y + Math.cos(rightTickAngle) * tickRadius,
   };
 
-  // Convert angle to SVG coordinates
-  const polarToCartesian = (angle: number, r: number) => {
-    const rad = (angle - 90) * (Math.PI / 180);
-    return {
-      x: CX + r * Math.cos(rad),
-      y: CY + r * Math.sin(rad),
-    };
-  };
-
-  // Get angle from mouse/touch position
-  const getAngleFromEvent = (clientX: number, clientY: number): number => {
-    if (!dialRef.current) return tempoToAngle(tempo);
-    const rect = dialRef.current.getBoundingClientRect();
-    const x = clientX - rect.left - CX;
-    const y = clientY - rect.top - CY;
-    // atan2 gives: right=0°, down=90°, left=±180°, up=-90°
-    // Adding 90° shifts to: up=0°, right=90°, left=270°/-90°
-    let angle = Math.atan2(y, x) * (180 / Math.PI) + 90;
-    // Convert angles > 180° to negative equivalent (270° → -90°)
-    if (angle > 180) angle -= 360;
-    // Clamp to dial range
-    return Math.max(START_ANGLE, Math.min(END_ANGLE, angle));
-  };
-
-  // Create arc path
-  const arcStart = polarToCartesian(START_ANGLE, RADIUS);
-  const arcEnd = polarToCartesian(END_ANGLE, RADIUS);
-  const arcPathD = `M ${arcStart.x} ${arcStart.y} A ${RADIUS} ${RADIUS} 0 0 1 ${arcEnd.x} ${arcEnd.y}`;
-
-  // Needle position
-  const needleAngle = tempoToAngle(tempo);
-  const needleEnd = polarToCartesian(needleAngle, RADIUS - 4);
-
-  const handlePointerDown = (e: React.PointerEvent) => {
+  // Handle vertical dragging on the weight bob
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (disabled) return;
     e.preventDefault();
+    e.stopPropagation();
     isDragging.current = true;
+    dragStartY.current = e.clientY;
+    dragStartTempo.current = tempo;
     (e.target as Element).setPointerCapture(e.pointerId);
-    const angle = getAngleFromEvent(e.clientX, e.clientY);
-    onTempoChange(angleToTempo(angle));
-  };
+  }, [disabled, tempo]);
 
-  const handlePointerMove = (e: React.PointerEvent) => {
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!isDragging.current || disabled) return;
-    const angle = getAngleFromEvent(e.clientX, e.clientY);
-    onTempoChange(angleToTempo(angle));
-  };
 
-  const handlePointerUp = () => {
+    // Calculate vertical delta (up = negative Y = faster tempo)
+    const deltaY = dragStartY.current - e.clientY;
+
+    // Scale: ~2px per BPM
+    const tempoDelta = Math.round(deltaY / 2);
+    const newTempo = Math.max(minTempo, Math.min(maxTempo, dragStartTempo.current + tempoDelta));
+
+    if (newTempo !== tempo) {
+      onTempoChange(newTempo);
+    }
+  }, [disabled, minTempo, maxTempo, tempo, onTempoChange]);
+
+  const handlePointerUp = useCallback(() => {
     isDragging.current = false;
-  };
+  }, []);
 
-  const handleClick = (e: React.MouseEvent) => {
+  // Double-click to reset to default tempo
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     if (disabled) return;
-    const angle = getAngleFromEvent(e.clientX, e.clientY);
-    onTempoChange(angleToTempo(angle));
-  };
+    e.preventDefault();
+    onTempoChange(DEFAULT_TEMPO);
+  }, [disabled, onTempoChange]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isDragging.current = false;
+    };
+  }, []);
 
   return (
-    <div className={`${styles.container} ${disabled ? styles.disabled : ''}`}>
+    <div
+      ref={containerRef}
+      className={`${styles.container} ${disabled ? styles.disabled : ''}`}
+      onDoubleClick={handleDoubleClick}
+    >
       <svg
-        ref={dialRef}
         width={WIDTH}
-        height={HEIGHT}
-        className={styles.dial}
-        onClick={handleClick}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
+        height={HEIGHT - 30} // Leave space for tempo display
+        className={styles.pendulum}
+        viewBox={`0 0 ${WIDTH} ${HEIGHT - 30}`}
       >
-        {/* Background arc */}
-        <path
-          d={arcPathD}
-          fill="none"
-          stroke="#ddd"
-          strokeWidth={4}
-          strokeLinecap="round"
-          className={styles.arc}
-        />
-
-        {/* Active arc (filled portion) */}
-        <path
-          d={`M ${arcStart.x} ${arcStart.y} A ${RADIUS} ${RADIUS} 0 0 1 ${needleEnd.x} ${needleEnd.y}`}
-          fill="none"
-          stroke="#4A90E2"
-          strokeWidth={4}
-          strokeLinecap="round"
-        />
-
-        {/* Needle */}
+        {/* Tick marks at swing limits */}
         <line
-          x1={CX}
-          y1={CY}
-          x2={needleEnd.x}
-          y2={needleEnd.y}
-          stroke="#333"
-          strokeWidth={2}
-          strokeLinecap="round"
-          className={styles.needle}
+          x1={leftTickStart.x}
+          y1={leftTickStart.y}
+          x2={leftTickEnd.x}
+          y2={leftTickEnd.y}
+          className={styles.tickMark}
+        />
+        <line
+          x1={rightTickStart.x}
+          y1={rightTickStart.y}
+          x2={rightTickEnd.x}
+          y2={rightTickEnd.y}
+          className={styles.tickMark}
         />
 
-        {/* Center dot */}
-        <circle cx={CX} cy={CY} r={3} fill="#333" />
+        {/* Pendulum group (arm + weight) - animated */}
+        <g
+          className={styles.pendulumArm}
+          style={{
+            transformOrigin: `${PIVOT_X}px ${PIVOT_Y}px`,
+            animationDuration: `${swingDuration}ms`,
+          }}
+        >
+          {/* Pendulum arm */}
+          <line
+            x1={PIVOT_X}
+            y1={PIVOT_Y}
+            x2={weightX}
+            y2={weightY}
+            className={styles.arm}
+          />
+
+          {/* Weight bob (draggable) */}
+          <circle
+            cx={weightX}
+            cy={weightY}
+            r={WEIGHT_RADIUS}
+            className={`${styles.weightBob} ${isHovering ? styles.weightBobHover : ''}`}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
+          />
+        </g>
+
+        {/* Pivot point circle at top (drawn last to be on top) */}
+        <circle
+          cx={PIVOT_X}
+          cy={PIVOT_Y}
+          r={PIVOT_RADIUS}
+          className={styles.pivot}
+        />
       </svg>
 
       <div className={styles.tempoDisplay}>

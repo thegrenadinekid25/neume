@@ -1,0 +1,106 @@
+.container {
+  position: relative;
+  width: 120px;
+  height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: ns-resize;
+  user-select: none;
+}
+
+.container.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ringSvg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 120px;
+  height: 120px;
+  pointer-events: none;
+}
+
+.ring {
+  stroke: var(--warm-gold, #E8A03E);
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+
+.ringPlaying {
+  animation: gentlePulse var(--beat-duration, 500ms) var(--ease-breathe, ease-in-out) infinite;
+}
+
+@keyframes gentlePulse {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+    transform-origin: center;
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.02);
+    transform-origin: center;
+  }
+}
+
+.tempoDisplay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  z-index: 1;
+}
+
+.tempoValue {
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 48px;
+  font-weight: 500;
+  color: var(--warm-text-primary, #3D3530);
+  line-height: 1;
+  cursor: text;
+}
+
+.tempoValue:hover {
+  color: var(--warm-gold, #E8A03E);
+}
+
+.tempoInput {
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 48px;
+  font-weight: 500;
+  color: var(--warm-text-primary, #3D3530);
+  line-height: 1;
+  width: 80px;
+  text-align: center;
+  border: none;
+  background: transparent;
+  outline: 2px solid var(--warm-gold, #E8A03E);
+  border-radius: 4px;
+}
+
+.tempoInput::-webkit-inner-spin-button,
+.tempoInput::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.tempoLabel {
+  font-family: var(--font-ui, 'Space Grotesk', sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--warm-text-secondary, #7A7067);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .ring {
+    animation: none;
+    opacity: 0.3;
+  }
+}

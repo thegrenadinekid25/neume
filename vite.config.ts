@@ -23,5 +23,25 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    target: 'es2020',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+      mangle: true,
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-audio': ['tone'],
+          'vendor-music': ['tonal'],
+          'vendor-ui': ['framer-motion', '@dnd-kit/core', '@dnd-kit/sortable'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 500,
   },
 })

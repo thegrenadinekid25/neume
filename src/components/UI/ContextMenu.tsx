@@ -13,7 +13,7 @@ export interface ContextMenuItem {
   submenu?: ContextMenuItem[];
 }
 
-interface ContextMenuProps {
+export interface ContextMenuProps {
   isOpen: boolean;
   position: { x: number; y: number };
   items: ContextMenuItem[];

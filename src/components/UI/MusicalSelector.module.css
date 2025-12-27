@@ -1,0 +1,332 @@
+/**
+ * MusicalSelector - Custom selectors for Key, Mode, and Beats
+ * Bauhaus-inspired design with organic animations
+ */
+
+/* ==================== Shared Styles ==================== */
+
+.selectorLabel {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* ==================== Key Selector ==================== */
+
+.keySelectorContainer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.keyTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--warm-sand);
+  border: 1.5px solid rgba(212, 146, 74, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  min-width: 72px;
+  transition:
+    transform var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-normal) var(--ease-breathe),
+    background-color var(--duration-normal) var(--ease-breathe),
+    box-shadow var(--duration-normal) var(--ease-breathe);
+}
+
+.keyTrigger:hover {
+  background: var(--warm-linen);
+  border-color: rgba(212, 146, 74, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.keyTrigger:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+.keyValue {
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.chevron {
+  color: var(--warm-text-secondary);
+  transition: transform var(--duration-fast) var(--ease-smooth);
+  display: flex;
+  align-items: center;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.keyDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 4000; /* Above HelpTooltip (z-index: 3000) */
+  background: var(--warm-cream);
+  border: 1px solid rgba(212, 146, 74, 0.3);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+  animation: keyDropdownIn var(--duration-slow) var(--ease-elastic) forwards;
+  transform-origin: top center;
+}
+
+@keyframes keyDropdownIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.keyGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  width: 216px;
+}
+
+.keyTile {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--warm-sand);
+  border: 1.5px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    transform var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    background-color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth);
+}
+
+.keyTile:hover {
+  transform: scale(1.1);
+  background: var(--warm-linen);
+  border-color: var(--warm-amber);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.keyTileActive {
+  background: var(--warm-cream);
+  border-color: var(--warm-gold);
+  box-shadow: 0 0 0 2px rgba(232, 160, 62, 0.2);
+}
+
+.keyTileFocused {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 1px;
+}
+
+.keyTileLabel {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--warm-text-primary);
+}
+
+/* ==================== Mode Toggle ==================== */
+
+.modeToggleContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.modeToggle {
+  position: relative;
+  display: flex;
+  background: var(--warm-linen);
+  border-radius: 20px;
+  padding: 3px;
+  overflow: hidden;
+}
+
+.modeOption {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  padding: 6px 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--warm-text-secondary);
+  border-radius: 17px;
+  transition:
+    color var(--duration-normal) var(--ease-breathe);
+}
+
+.modeOption:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+.modeMajor.modeActive {
+  color: #6B5210; /* Darker warm gold for contrast */
+}
+
+.modeMinor.modeActive {
+  color: #8B5A2B; /* Warm brown instead of burgundy */
+}
+
+.modeIndicator {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  height: calc(100% - 6px);
+  border-radius: 17px;
+  transition: transform var(--duration-normal) var(--ease-breathe);
+  pointer-events: none;
+}
+
+/* Major indicator styling */
+.modeToggle:has(.modeMajor.modeActive) .modeIndicator {
+  background: linear-gradient(135deg, rgba(232, 160, 62, 0.25), rgba(232, 160, 62, 0.15));
+  border: 1px solid rgba(232, 160, 62, 0.4);
+}
+
+/* Minor indicator styling - warm amber instead of burgundy */
+.modeToggle:has(.modeMinor.modeActive) .modeIndicator {
+  background: linear-gradient(135deg, rgba(212, 146, 74, 0.25), rgba(212, 146, 74, 0.15));
+  border: 1px solid rgba(212, 146, 74, 0.4);
+}
+
+/* ==================== Beats Selector ==================== */
+
+.beatsSelectorContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.beatsTileGrid {
+  display: flex;
+  gap: 6px;
+}
+
+.beatsTile {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--warm-sand);
+  border: 1.5px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    transform var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-normal) var(--ease-breathe),
+    background-color var(--duration-normal) var(--ease-breathe);
+}
+
+.beatsTile:hover {
+  background: var(--warm-cream);
+  border-color: var(--warm-amber);
+}
+
+.beatsTile:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+.beatsTileActive {
+  background: var(--warm-cream);
+  border-color: var(--warm-gold);
+  box-shadow: 0 0 0 2px rgba(232, 160, 62, 0.2);
+}
+
+/* Dot styling */
+.dot {
+  width: 5px;
+  height: 5px;
+  background: var(--warm-text-secondary);
+  border-radius: 50%;
+  display: block;
+}
+
+.beatsTileActive .dot {
+  background: var(--warm-gold);
+}
+
+/* Dot patterns */
+.dotPattern2 {
+  display: flex;
+  gap: 6px;
+}
+
+.dotPattern3 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.dotPattern3 .dotRow {
+  display: flex;
+  gap: 4px;
+}
+
+.dotPattern4 {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dotPattern4 .dotRow {
+  display: flex;
+  gap: 4px;
+}
+
+.dotPattern6 {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dotPattern6 .dotRow {
+  display: flex;
+  gap: 3px;
+}
+
+/* ==================== Accessibility ==================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .keyDropdown {
+    animation: none;
+  }
+
+  .keyTrigger,
+  .keyTile,
+  .modeOption,
+  .modeIndicator,
+  .beatsTile,
+  .chevron {
+    transition: none;
+  }
+}

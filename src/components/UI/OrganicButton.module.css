@@ -1,0 +1,151 @@
+/**
+ * OrganicButton - Bauhaus-inspired button with organic wobble transform
+ * Uses organic animations with ease-breathe and ease-elastic curves
+ */
+
+.organicButton {
+  /* Base layout */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-weight: 500;
+  white-space: nowrap;
+
+  /* Organic wobble - each button gets subtle rotation based on content hash */
+  transform: rotate(var(--wobble-rotation-value, 0deg));
+
+  /* Slow, deliberate transitions */
+  transition:
+    transform var(--duration-slow) var(--ease-elastic),
+    background-color var(--duration-normal) var(--ease-breathe),
+    box-shadow var(--duration-normal) var(--ease-breathe),
+    border-color var(--duration-normal) var(--ease-breathe),
+    opacity var(--duration-fast) var(--ease-smooth);
+}
+
+/* Size variants */
+.sm {
+  height: var(--button-height-sm);
+  padding: 0 16px;
+  font-size: 13px;
+}
+
+.md {
+  height: var(--button-height-md);
+  padding: 0 20px;
+  font-size: 14px;
+}
+
+.lg {
+  height: var(--button-height-lg);
+  padding: 0 24px;
+  font-size: 15px;
+}
+
+/* Shape variants */
+.rectangle {
+  border-radius: 6px;
+}
+
+.pill {
+  border-radius: 9999px;
+}
+
+.circle {
+  border-radius: 50%;
+  padding: 0;
+  aspect-ratio: 1;
+}
+
+.circle.sm {
+  width: var(--button-height-sm);
+}
+
+.circle.md {
+  width: var(--button-height-md);
+}
+
+.circle.lg {
+  width: var(--button-height-lg);
+}
+
+/* Primary variant */
+.primary {
+  background-color: var(--button-accent-color, var(--primary-action));
+  color: white;
+}
+
+.primary:hover:not(:disabled) {
+  background-color: var(--button-accent-color, var(--primary-action));
+  filter: brightness(1.1);
+}
+
+/* Secondary variant */
+.secondary {
+  background-color: transparent;
+  color: var(--button-accent-color, var(--text-primary));
+  border: 1.5px solid var(--button-accent-color, var(--border-medium));
+}
+
+.secondary:hover:not(:disabled) {
+  background-color: var(--background-secondary);
+  border-color: var(--button-accent-color, var(--text-primary));
+}
+
+/* Ghost variant */
+.ghost {
+  background-color: transparent;
+  color: var(--button-accent-color, var(--text-secondary));
+}
+
+.ghost:hover:not(:disabled) {
+  background-color: var(--background-secondary);
+  color: var(--button-accent-color, var(--text-primary));
+}
+
+/* Hover state - organic lift and rotation */
+.organicButton:hover:not(:disabled) {
+  transform: translateY(-2px) rotate(0.5deg) scale(1.02);
+}
+
+/* Active/pressed state */
+.organicButton:active:not(:disabled) {
+  transform: scale(0.98);
+  transition-duration: var(--duration-fast);
+}
+
+/* Focus state - accessibility */
+.organicButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+/* Disabled state */
+.organicButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: rotate(var(--wobble-rotation-value, 0deg));
+}
+
+/* Icon styling */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Content wrapper */
+.content {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Icon-only button (no content) */
+.organicButton:has(.icon):not(:has(.content)) {
+  padding: 0;
+}

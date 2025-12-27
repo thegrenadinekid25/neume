@@ -2,9 +2,15 @@ import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react
 import { DroppableCanvas } from '@/components/Canvas';
 import { MetadataBanner } from '@/components/Canvas/MetadataBanner';
 import { DeleteConfirmation } from '@/components/UI/DeleteConfirmation';
+import { HelpTooltip } from '@/components/UI/HelpTooltip';
+import { KeySelector, ModeToggle, BeatsSelector } from '@/components/UI/MusicalSelector';
+import { SegmentedControl } from '@/components/UI/SegmentedControl';
+import { HELP_CONTENT } from '@/data/help-content';
 import { WhyThisPanel, BuildFromBonesPanel } from '@/components/Panels';
-import { TempoDial } from '@/components/Controls';
+import { PulseRingTempo } from '@/components/Controls';
 import { WelcomeTutorial } from '@/components/Tutorial/WelcomeTutorial';
+import { Sidebar, SidebarSection, SidebarDivider, SidebarSpacer } from '@/components/Sidebar';
+import { AuthModal, UserMenu } from '@/components/Auth';
 
 // Lazy load modals for code splitting
 const KeyboardShortcutsGuide = lazy(() => import('@/components/UI/KeyboardShortcutsGuide').then(m => ({ default: m.KeyboardShortcutsGuide })));
@@ -15,6 +21,7 @@ import { useHistory } from '@/hooks/useHistory';
 import { usePlayback } from '@/hooks/usePlayback';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useAnalysisStore } from '@/store/analysis-store';
+import { useAuthStore } from '@/store/auth-store';
 import { useBuildFromBonesStore } from '@/store/build-from-bones-store';
 import { useProgressionsStore } from '@/store/progressions-store';
 import { useRefineStore } from '@/store/refine-store';
@@ -104,6 +111,28 @@ function App() {
       startTutorial();
     }
   }, [startTutorial, checkCompletion]);
+
+  // Auth state
+  const { user, initialize: initializeAuth } = useAuthStore();
+  const { migrateLocalData, loadProgressions } = useProgressionsStore();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Initialize auth on mount
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
+
+  // Migrate local data when user signs in
+  useEffect(() => {
+    if (user) {
+      migrateLocalData(user.id).then(({ migrated }) => {
+        if (migrated > 0) {
+          console.log(`Migrated ${migrated} progressions to cloud`);
+        }
+        loadProgressions();
+      });
+    }
+  }, [user, migrateLocalData, loadProgressions]);
 
   const openAnalyzeModal = useAnalysisStore(state => state.openModal);
   const metadata = useAnalysisStore(state => state.metadata);
@@ -239,7 +268,6 @@ function App() {
 
   // Delete state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   const performDelete = useCallback(() => {
@@ -361,86 +389,198 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Neume</h1>
-        <p>Right-click to add chords, drag to reorder</p>
+        <div className="header-brand">
+          <span className="header-accent" aria-hidden="true" />
+          <h1>Neume</h1>
+        </div>
+        <p className="header-hint">Right-click to add chords</p>
+        <div className="header-right">
+          <UserMenu onSignInClick={() => setShowAuthModal(true)} />
+        </div>
       </header>
 
-      <div className="demo-controls">
-        <div className="control-group">
-          <label>Key:</label>
-          <select value={currentKey} onChange={(e) => setCurrentKey(e.target.value as MusicalKey)}>
-            <option value="C">C</option>
-            <option value="Db">Db</option>
-            <option value="D">D</option>
-            <option value="Eb">Eb</option>
-            <option value="E">E</option>
-            <option value="F">F</option>
-            <option value="Gb">Gb</option>
-            <option value="G">G</option>
-            <option value="Ab">Ab</option>
-            <option value="A">A</option>
-            <option value="Bb">Bb</option>
-            <option value="B">B</option>
-          </select>
+      <Sidebar>
+        {/* Musical Settings */}
+        <SidebarSection>
+          <HelpTooltip
+            content={HELP_CONTENT['key-selector'].content}
+            title={HELP_CONTENT['key-selector'].title}
+            examples={HELP_CONTENT['key-selector'].examples}
+            position="right"
+          >
+            <KeySelector
+              value={currentKey}
+              onChange={setCurrentKey}
+              mode={currentMode}
+            />
+          </HelpTooltip>
 
-          <label>Mode:</label>
-          <select value={currentMode} onChange={(e) => setCurrentMode(e.target.value as Mode)}>
-            <option value="major">Major</option>
-            <option value="minor">Minor</option>
-          </select>
+          <HelpTooltip
+            content={HELP_CONTENT['mode-selector'].content}
+            title={HELP_CONTENT['mode-selector'].title}
+            examples={HELP_CONTENT['mode-selector'].examples}
+            position="right"
+          >
+            <ModeToggle
+              value={currentMode}
+              onChange={setCurrentMode}
+            />
+          </HelpTooltip>
 
-          <label>Beats:</label>
-          <select value={beatsPerMeasure} onChange={(e) => setBeatsPerMeasure(Number(e.target.value))}>
-            <option value={2}>2</option>
-            <option value={3}>3</option>
-            <option value={4}>4</option>
-            <option value={6}>6</option>
-          </select>
-        </div>
+          <BeatsSelector
+            value={beatsPerMeasure}
+            onChange={setBeatsPerMeasure}
+          />
+        </SidebarSection>
 
-        <div className="control-group">
-          <label>Zoom:</label>
-          <button onClick={() => setZoom(0.5)} className={zoom === 0.5 ? 'active' : ''}>0.5x</button>
-          <button onClick={() => setZoom(1.0)} className={zoom === 1.0 ? 'active' : ''}>1x</button>
-          <button onClick={() => setZoom(2.0)} className={zoom === 2.0 ? 'active' : ''}>2x</button>
-        </div>
+        <SidebarDivider />
 
-        <div className="control-group">
-          <button onClick={togglePlay} disabled={chords.length === 0} className="play-button">
-            {isPlaying ? 'Stop' : 'Play'}
+        {/* Zoom */}
+        <SidebarSection>
+          <SegmentedControl
+            options={[
+              { value: 0.5, label: '\u2212' },
+              { value: 1.0, label: '1:1' },
+              { value: 2.0, label: '+' },
+            ]}
+            value={zoom}
+            onChange={(v) => setZoom(v as number)}
+          />
+        </SidebarSection>
+
+        <SidebarDivider />
+
+        {/* Tempo */}
+        <SidebarSection className="tempo-section">
+          <HelpTooltip
+            content={HELP_CONTENT['tempo-dial'].content}
+            title={HELP_CONTENT['tempo-dial'].title}
+            shortcut={HELP_CONTENT['tempo-dial'].shortcut}
+            position="right"
+          >
+            <PulseRingTempo
+              tempo={tempo}
+              onTempoChange={setTempo}
+              minTempo={60}
+              maxTempo={220}
+              isPlaying={isPlaying}
+            />
+          </HelpTooltip>
+        </SidebarSection>
+
+        <SidebarDivider />
+
+        {/* Action Buttons */}
+        <SidebarSection className="actions-section">
+          <HelpTooltip
+            content={HELP_CONTENT['play-button'].content}
+            title={HELP_CONTENT['play-button'].title}
+            shortcut={HELP_CONTENT['play-button'].shortcut}
+            position="right"
+          >
+            <button
+              onClick={togglePlay}
+              disabled={chords.length === 0}
+              className={`action-button play-button ${isPlaying ? 'is-playing' : ''}`}
+              aria-label={isPlaying ? 'Stop playback' : 'Play progression'}
+            >
+              {isPlaying ? (
+                <>
+                  <svg className="stop-icon" viewBox="0 0 16 16" fill="currentColor" stroke="none">
+                    <rect x="3" y="3" width="10" height="10" rx="1" />
+                  </svg>
+                  <span>Stop</span>
+                </>
+              ) : (
+                <>
+                  <svg className="play-icon" viewBox="0 0 16 16" fill="currentColor" stroke="none">
+                    <path d="M4 2.5v11l9-5.5-9-5.5z" />
+                  </svg>
+                  <span>Play</span>
+                </>
+              )}
+            </button>
+          </HelpTooltip>
+          <HelpTooltip
+            content={HELP_CONTENT['analyze-button'].content}
+            title={HELP_CONTENT['analyze-button'].title}
+            shortcut={HELP_CONTENT['analyze-button'].shortcut}
+            position="right"
+          >
+            <button
+              onClick={openAnalyzeModal}
+              disabled={chords.length === 0}
+              className="action-button analyze-button"
+            >
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="6.5" cy="6.5" r="4.5" />
+                <line x1="10" y1="10" x2="14" y2="14" />
+              </svg>
+              <span>Analyze</span>
+            </button>
+          </HelpTooltip>
+          <button
+            onClick={openProgressionsModal}
+            className="action-button progressions-button"
+          >
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path className="folder-top" d="M2 4h4l2 2h6v1H2V4z" />
+              <path d="M2 7h12v6H2z" />
+            </svg>
+            <span>My Progressions</span>
           </button>
-          <button onClick={openAnalyzeModal} disabled={chords.length === 0} className="analyze-button">
-            Analyze
-          </button>
-          <button onClick={openProgressionsModal} className="progressions-button">
-            My Progressions
-          </button>
-          <button onClick={() => {
-            // Open refine modal with currently selected chords
-            if (selectedChordIds.length > 0) {
-              openRefineModal(selectedChordIds);
-            }
-          }} disabled={selectedChordIds.length === 0} className="refine-button">
-            Refine
-          </button>
-        </div>
-      </div>
+          <HelpTooltip
+            content={HELP_CONTENT['refine-button'].content}
+            title={HELP_CONTENT['refine-button'].title}
+            shortcut={HELP_CONTENT['refine-button'].shortcut}
+            position="right"
+          >
+            <button
+              onClick={() => {
+                if (selectedChordIds.length > 0) {
+                  openRefineModal(selectedChordIds);
+                }
+              }}
+              disabled={selectedChordIds.length === 0}
+              className="action-button refine-button"
+            >
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 2v2M8 12v2M2 8h2M12 8h2" />
+                <path d="M4.5 4.5l1 1M10.5 10.5l1 1M4.5 11.5l1-1M10.5 5.5l1-1" />
+                <circle cx="8" cy="8" r="1.5" fill="currentColor" />
+              </svg>
+              <span>Refine</span>
+            </button>
+          </HelpTooltip>
+        </SidebarSection>
 
-      {metadata && (
-        <MetadataBanner
-          title={metadata.title}
-          composer={metadata.composer}
-          sourceUrl={metadata.sourceUrl}
-          onClear={() => {
-            clearAnalyzedProgression();
-            setChords([]); // Clear the canvas
-          }}
-          showBuildFromBones={!!analysisResult}
-          onBuildFromBones={handleBuildFromBones}
-        />
-      )}
+        <SidebarSpacer />
 
-      <DroppableCanvas
+        {/* Help at bottom */}
+        <Suspense fallback={null}>
+          <KeyboardShortcutsGuide
+            isOpen={showShortcuts}
+            onClose={() => setShowShortcuts(false)}
+          />
+        </Suspense>
+      </Sidebar>
+
+      <div className="canvas-area">
+        {metadata && (
+          <MetadataBanner
+            title={metadata.title}
+            composer={metadata.composer}
+            sourceUrl={metadata.sourceUrl}
+            onClear={() => {
+              clearAnalyzedProgression();
+              setChords([]); // Clear the canvas
+            }}
+            showBuildFromBones={!!analysisResult}
+            onBuildFromBones={handleBuildFromBones}
+          />
+        )}
+
+        <DroppableCanvas
         chords={chordsWithPlayState}
         phrases={phraseBoundaries || []}
         songContext={metadata ? { title: metadata.title, composer: metadata.composer, sourceUrl: metadata.sourceUrl } : undefined}
@@ -470,59 +610,13 @@ function App() {
         onStop={stop}
         onTempoChange={(delta) => setTempo(Math.max(60, Math.min(220, tempo + delta)))}
       />
-
-      <button className="help-button" onClick={() => setShowShortcuts(!showShortcuts)} title="Keyboard Shortcuts (?)">
-        ?
-      </button>
-
-      {showHelp && (
-        <div className="help-panel">
-          <div className="help-panel-header">
-            <h3>Help</h3>
-            <button onClick={() => setShowHelp(false)} className="help-close">×</button>
-          </div>
-
-          <h4>Chord Shapes</h4>
-          <div className="legend-grid">
-            <div className="legend-item"><div className="legend-shape circle gold" /><span>I - Tonic</span></div>
-            <div className="legend-item"><div className="legend-shape rounded-square sage" /><span>ii - Supertonic</span></div>
-            <div className="legend-item"><div className="legend-shape triangle rose" /><span>iii - Mediant</span></div>
-            <div className="legend-item"><div className="legend-shape square blue" /><span>IV - Subdominant</span></div>
-            <div className="legend-item"><div className="legend-shape pentagon terracotta" /><span>V - Dominant</span></div>
-            <div className="legend-item"><div className="legend-shape circle purple" /><span>vi - Submediant</span></div>
-            <div className="legend-item"><div className="legend-shape pentagon gray" /><span>vii° - Leading</span></div>
-          </div>
-
-          <h4>Shortcuts</h4>
-          <div className="shortcuts-grid">
-            <div><kbd>Click</kbd> Select</div>
-            <div><kbd>⌘+Click</kbd> Multi-select</div>
-            <div><kbd>⌘+A</kbd> Select all</div>
-            <div><kbd>Delete</kbd> Delete</div>
-            <div><kbd>⌘+D</kbd> Duplicate</div>
-            <div><kbd>⌘+Z</kbd> Undo</div>
-            <div><kbd>Escape</kbd> Deselect</div>
-          </div>
-        </div>
-      )}
+      </div>
 
       <DeleteConfirmation
         isOpen={showDeleteConfirm}
         chordCount={selectedChordIds.length}
         onConfirm={performDelete}
         onCancel={() => setShowDeleteConfirm(false)}
-      />
-
-      <Suspense fallback={null}>
-        <KeyboardShortcutsGuide
-          isOpen={showShortcuts}
-          onClose={() => setShowShortcuts(false)}
-        />
-      </Suspense>
-
-      <TempoDial
-        tempo={tempo}
-        onTempoChange={setTempo}
       />
 
       <Suspense fallback={null}>
@@ -535,6 +629,11 @@ function App() {
       <BuildFromBonesPanel />
 
       <WelcomeTutorial />
+
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+      />
     </div>
   );
 }

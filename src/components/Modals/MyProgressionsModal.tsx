@@ -34,7 +34,7 @@ export const MyProgressionsModal: React.FC = () => {
   const filteredProgressions = getFilteredProgressions();
 
   // Get storage usage
-  const storageUsage = progressionStorage.getStorageUsage();
+  const storageUsage = progressionStorage.getLocalStorageUsage();
   const showStorageWarning = storageUsage.percentage > 80;
 
   // Handle keyboard shortcuts
