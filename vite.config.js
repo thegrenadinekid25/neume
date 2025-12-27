@@ -1,8 +1,18 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
+
 export default defineConfig({
-    plugins: [react()],
+    plugins: [
+        react(),
+        process.env.ANALYZE && visualizer({
+            open: true,
+            gzipSize: true,
+            brotliSize: true,
+            filename: 'dist/bundle-analysis.html',
+        }),
+    ].filter(Boolean),
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
@@ -22,5 +32,16 @@ export default defineConfig({
     build: {
         outDir: 'dist',
         sourcemap: true,
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'vendor-react': ['react', 'react-dom'],
+                    'vendor-audio': ['tone'],
+                    'vendor-music': ['tonal'],
+                    'vendor-ui': ['framer-motion', '@dnd-kit/core'],
+                },
+            },
+        },
+        chunkSizeWarningLimit: 500,
     },
 });

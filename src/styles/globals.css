@@ -138,3 +138,14 @@ a:hover {
   white-space: nowrap;
   border: 0;
 }
+
+/* GPU acceleration utility class for animated elements */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* CSS containment for isolated layout scopes */
+.layout-container {
+  contain: layout style paint;
+}

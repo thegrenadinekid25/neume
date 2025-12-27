@@ -2,6 +2,9 @@
   position: relative;
   cursor: pointer;
   user-select: none;
+  /* GPU acceleration for better animation performance */
+  transform: translateZ(0);
+  will-change: transform, opacity;
 }
 
 .chordShapeContainer:focus-visible {
@@ -12,6 +15,8 @@
 
 .chordShape {
   transition: stroke var(--duration-slow) var(--ease-breathe);
+  /* Use transform-based animations for better performance */
+  transform: translateZ(0);
 }
 
 .chordShape:hover {
