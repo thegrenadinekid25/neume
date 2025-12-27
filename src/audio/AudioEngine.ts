@@ -3,17 +3,59 @@ import { AUDIO_DEFAULTS } from '@/utils/constants';
 import { reverbLoader } from './ReverbLoader';
 
 /**
+ * Salamander Grand Piano sample mappings
+ * Uses samples every major 3rd - Tone.js will repitch for intermediate notes
+ * This matches the available samples on the Tone.js CDN
+ */
+const SALAMANDER_SAMPLES: Record<string, string> = {
+  A0: 'A0.mp3',
+  C1: 'C1.mp3',
+  'D#1': 'Ds1.mp3',
+  'F#1': 'Fs1.mp3',
+  A1: 'A1.mp3',
+  C2: 'C2.mp3',
+  'D#2': 'Ds2.mp3',
+  'F#2': 'Fs2.mp3',
+  A2: 'A2.mp3',
+  C3: 'C3.mp3',
+  'D#3': 'Ds3.mp3',
+  'F#3': 'Fs3.mp3',
+  A3: 'A3.mp3',
+  C4: 'C4.mp3',
+  'D#4': 'Ds4.mp3',
+  'F#4': 'Fs4.mp3',
+  A4: 'A4.mp3',
+  C5: 'C5.mp3',
+  'D#5': 'Ds5.mp3',
+  'F#5': 'Fs5.mp3',
+  A5: 'A5.mp3',
+  C6: 'C6.mp3',
+  'D#6': 'Ds6.mp3',
+  'F#6': 'Fs6.mp3',
+  A6: 'A6.mp3',
+  C7: 'C7.mp3',
+  'D#7': 'Ds7.mp3',
+  'F#7': 'Fs7.mp3',
+  A7: 'A7.mp3',
+  C8: 'C8.mp3',
+};
+
+const SALAMANDER_BASE_URL = 'https://tonejs.github.io/audio/salamander/';
+
+/**
  * AudioEngine - Core audio synthesis class using Tone.js
  * Manages polyphonic synthesis with SATB voicing capabilities
+ * Uses Salamander Grand Piano samples for high-quality audio output
  */
 export class AudioEngine {
-  private synth: Tone.PolySynth<Tone.Synth>;
+  private sampler: Tone.Sampler | null = null;
   private highpass: Tone.Filter;
   private lowpass: Tone.Filter;
   private reverb: Tone.Reverb;
   private compressor: Tone.Compressor;
   private masterGain: Tone.Gain;
   private isInitialized: boolean = false;
+  private isSamplesLoaded: boolean = false;
   private convolver: ConvolverNode | null = null;
   private dryGain: GainNode | null = null;
   private wetGain: GainNode | null = null;
@@ -22,20 +64,8 @@ export class AudioEngine {
   private reverbWetAmount: number = 0.35;
 
   constructor() {
-    // Create synth with fatsawtooth, 3 detuned voices, 10 cents spread
-    this.synth = new Tone.PolySynth(Tone.Synth, {
-      oscillator: {
-        type: 'fatsawtooth',
-        count: 3,
-        spread: 10,
-      },
-      envelope: {
-        attack: 0.05,
-        decay: 0.1,
-        sustain: 0.7,
-        release: 0.4,
-      },
-    });
+    // Sampler will be created asynchronously in loadSampler()
+    // NOTE: Sampler creation is deferred to initialize() to ensure audio context is active
 
     // Create signal chain filters
     this.highpass = new Tone.Filter({
@@ -72,6 +102,41 @@ export class AudioEngine {
   }
 
   /**
+   * Load the Salamander Grand Piano sampler
+   * Creates a Tone.Sampler with the piano samples
+   */
+  private async loadSampler(): Promise<void> {
+    if (this.sampler) {
+      return; // Already loaded
+    }
+
+    try {
+      // Create sampler with Salamander piano samples
+      // Use baseUrl for the CDN and just filenames in urls
+      await new Promise<void>((resolve, reject) => {
+        this.sampler = new Tone.Sampler({
+          urls: SALAMANDER_SAMPLES,
+          baseUrl: SALAMANDER_BASE_URL,
+          onload: () => {
+            console.log('Salamander Piano samples loaded');
+            this.isSamplesLoaded = true;
+            resolve();
+          },
+          onerror: (error: Error) => {
+            console.error('Failed to load Salamander samples:', error);
+            this.isSamplesLoaded = false;
+            reject(error);
+          },
+        });
+      });
+    } catch (error) {
+      console.error('Error loading Salamander sampler:', error);
+      this.isSamplesLoaded = false;
+      throw error;
+    }
+  }
+
+  /**
    * Initialize the audio context
    * Must be called in response to user interaction
    */
@@ -80,6 +145,9 @@ export class AudioEngine {
 
     try {
       await Tone.start();
+
+      // Load Salamander Piano samples
+      await this.loadSampler();
 
       // Attempt to setup convolution reverb
       await this.setupConvolutionReverb();
@@ -132,13 +200,18 @@ export class AudioEngine {
    * Uses convolution reverb if available, otherwise uses Tone.Reverb
    */
   private connectSignalChain(): void {
-    // Basic path: synth -> highpass -> lowpass -> compressor -> masterGain -> destination
-    this.synth.connect(this.highpass);
+    if (!this.sampler) {
+      console.warn('Sampler not initialized');
+      return;
+    }
+
+    // Basic path: sampler -> highpass -> lowpass -> compressor -> masterGain -> destination
+    this.sampler.connect(this.highpass);
     this.highpass.connect(this.lowpass);
 
     if (this.useConvolutionReverb && this.convolver && this.dryGain && this.wetGain && this.reverbMix) {
       // Convolution reverb path:
-      // synth -> hp -> lp -> [dry + wet convolution] -> compressor -> masterGain -> destination
+      // sampler -> hp -> lp -> [dry + wet convolution] -> compressor -> masterGain -> destination
       // For now, skip convolution (keep it simple) and use reverb
       // TODO: Properly bridge Web Audio API convolver with Tone.js signal chain
       this.lowpass.connect(this.reverb);
@@ -147,7 +220,7 @@ export class AudioEngine {
       this.masterGain.toDestination();
     } else {
       // Algorithmic reverb path (default):
-      // synth -> hp -> lp -> reverb -> compressor -> masterGain -> destination
+      // sampler -> hp -> lp -> reverb -> compressor -> masterGain -> destination
       this.lowpass.connect(this.reverb);
       this.reverb.connect(this.compressor);
       this.compressor.connect(this.masterGain);
@@ -166,10 +239,15 @@ export class AudioEngine {
       return;
     }
 
+    if (!this.isSamplesLoaded || !this.sampler) {
+      console.warn('Salamander samples not loaded yet.');
+      return;
+    }
+
     try {
       const now = Tone.now();
       notes.forEach((note) => {
-        this.synth.triggerAttackRelease(note, duration, now);
+        this.sampler!.triggerAttackRelease(note, duration, now);
       });
     } catch (error) {
       console.error('Error playing chord:', error);
@@ -187,8 +265,13 @@ export class AudioEngine {
       return;
     }
 
+    if (!this.isSamplesLoaded || !this.sampler) {
+      console.warn('Salamander samples not loaded yet.');
+      return;
+    }
+
     try {
-      this.synth.triggerAttackRelease(note, duration);
+      this.sampler.triggerAttackRelease(note, duration);
     } catch (error) {
       console.error('Error playing note:', error);
     }
@@ -214,9 +297,9 @@ export class AudioEngine {
    * Stop all currently playing notes
    */
   stopAll(): void {
-    if (this.isInitialized) {
-      // Release all voices in the PolySynth
-      this.synth.releaseAll();
+    if (this.isInitialized && this.sampler) {
+      // Release all notes in the sampler
+      this.sampler.releaseAll();
     }
   }
 
@@ -249,7 +332,9 @@ export class AudioEngine {
    * Cleanup resources
    */
   dispose(): void {
-    this.synth.dispose();
+    if (this.sampler) {
+      this.sampler.dispose();
+    }
     this.highpass.dispose();
     this.lowpass.dispose();
     this.reverb.dispose();
@@ -281,10 +366,25 @@ export class AudioEngine {
   }
 
   /**
-   * Get the synth for direct Transport scheduling
+   * Get the sampler for direct Transport scheduling
    */
-  getSynth(): Tone.PolySynth<Tone.Synth> {
-    return this.synth;
+  getSampler(): Tone.Sampler | null {
+    return this.sampler;
+  }
+
+  /**
+   * Check if Salamander samples are loaded
+   */
+  getIsSamplesLoaded(): boolean {
+    return this.isSamplesLoaded;
+  }
+
+  /**
+   * Get the synth for backwards compatibility
+   * Note: Returns null as we now use sampler instead of synth
+   */
+  getSynth(): Tone.PolySynth<Tone.Synth> | null {
+    return null;
   }
 }
 

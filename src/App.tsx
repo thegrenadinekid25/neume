@@ -13,6 +13,7 @@ import { PulseRingTempo } from '@/components/Controls';
 import { WelcomeTutorial } from '@/components/Tutorial/WelcomeTutorial';
 import { Sidebar, SidebarSection, SidebarDivider, SidebarSpacer } from '@/components/Sidebar';
 import { AuthModal, UserMenu } from '@/components/Auth';
+import { AudioLoadingIndicator } from '@/components/Audio';
 
 // Lazy load modals for code splitting
 const KeyboardShortcutsGuide = lazy(() => import('@/components/UI/KeyboardShortcutsGuide').then(m => ({ default: m.KeyboardShortcutsGuide })));
@@ -798,6 +799,8 @@ function App() {
       <ChordPalette mode={currentMode} onAddChord={handleAddChordFromPalette} />
 
       <FloatingActionButton actions={fabActions} />
+
+      <AudioLoadingIndicator />
 
       <Suspense fallback={null}>
         <SaveProgressionDialog

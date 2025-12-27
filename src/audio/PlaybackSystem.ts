@@ -35,7 +35,12 @@ export class PlaybackSystem {
     if (chords.length === 0) return;
 
     const sortedChords = [...chords].sort((a, b) => a.startBeat - b.startBeat);
-    const synth = audioEngine.getSynth();
+    const sampler = audioEngine.getSampler();
+
+    if (!sampler) {
+      console.warn('Sampler not available for playback scheduling');
+      return;
+    }
 
     sortedChords.forEach((chord, index) => {
       // Convert startBeat to Tone.js transport time
@@ -61,7 +66,7 @@ export class PlaybackSystem {
           const durationSeconds = (durationBeats / Tone.Transport.bpm.value) * 60;
 
           // Use triggerAttackRelease for clean attack and release
-          synth.triggerAttackRelease(notes, durationSeconds, time);
+          sampler.triggerAttackRelease(notes, durationSeconds, time);
         }
 
         // Notify visual system

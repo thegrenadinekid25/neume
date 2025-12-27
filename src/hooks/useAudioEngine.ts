@@ -3,6 +3,7 @@ import { audioEngine } from '@/audio/AudioEngine';
 
 export interface UseAudioEngineReturn {
   isReady: boolean;
+  isSamplesLoaded: boolean;
   error: string | null;
   initialize: () => Promise<void>;
   playChord: (notes: string[], duration?: number) => void;
@@ -30,6 +31,24 @@ function notifyListeners() {
   listeners.forEach(listener => listener());
 }
 
+// Subscribers for samples loaded state changes
+const samplesLoadedListeners = new Set<() => void>();
+let cachedIsSamplesLoaded = audioEngine.getIsSamplesLoaded();
+
+function subscribeSamplesLoaded(callback: () => void) {
+  samplesLoadedListeners.add(callback);
+  return () => samplesLoadedListeners.delete(callback);
+}
+
+function getSamplesLoadedSnapshot() {
+  return cachedIsSamplesLoaded;
+}
+
+function notifySamplesLoadedListeners() {
+  cachedIsSamplesLoaded = audioEngine.getIsSamplesLoaded();
+  samplesLoadedListeners.forEach(listener => listener());
+}
+
 /**
  * React hook for managing audio engine lifecycle
  * Provides audio playback controls with error handling
@@ -37,6 +56,7 @@ function notifyListeners() {
  */
 export function useAudioEngine(): UseAudioEngineReturn {
   const isReady = useSyncExternalStore(subscribe, getSnapshot);
+  const isSamplesLoaded = useSyncExternalStore(subscribeSamplesLoaded, getSamplesLoadedSnapshot);
   const [error, setError] = useState<string | null>(null);
 
   // Initialize audio engine on first call (user interaction)
@@ -45,6 +65,7 @@ export function useAudioEngine(): UseAudioEngineReturn {
       setError(null);
       await audioEngine.initialize();
       notifyListeners(); // Notify all components that audio is ready
+      notifySamplesLoadedListeners(); // Notify all components that samples are loaded
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to initialize audio';
       setError(errorMessage);
@@ -126,6 +147,7 @@ export function useAudioEngine(): UseAudioEngineReturn {
 
   return {
     isReady,
+    isSamplesLoaded,
     error,
     initialize,
     playChord,
