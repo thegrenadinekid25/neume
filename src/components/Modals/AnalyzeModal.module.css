@@ -10,7 +10,7 @@
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   z-index: calc(var(--z-modal) - 1);
-  animation: fadeIn var(--duration-normal) var(--ease-smooth-out);
+  animation: fadeIn var(--duration-slow) var(--ease-breathe);
 }
 
 /* Modal container */
@@ -62,8 +62,8 @@
   color: var(--text-secondary);
   border-radius: var(--border-radius-sm);
   font-size: 20px;
-  transition: background-color var(--duration-fast) var(--ease-apple-smooth),
-              color var(--duration-fast) var(--ease-apple-smooth);
+  transition: background-color var(--duration-slow) var(--ease-breathe),
+              color var(--duration-slow) var(--ease-breathe);
 }
 
 .closeButton:hover {
@@ -107,8 +107,8 @@
   font-weight: 500;
   color: var(--text-secondary);
   border-bottom: 2px solid transparent;
-  transition: color var(--duration-fast) var(--ease-apple-smooth),
-              border-color var(--duration-fast) var(--ease-apple-smooth);
+  transition: color var(--duration-slow) var(--ease-breathe),
+              border-color var(--duration-slow) var(--ease-breathe);
   margin-bottom: -1px;
 }
 
@@ -148,8 +148,8 @@
   font-family: var(--font-ui);
   color: var(--text-primary);
   background: var(--background-primary);
-  transition: border-color var(--duration-fast) var(--ease-apple-smooth),
-              box-shadow var(--duration-fast) var(--ease-apple-smooth);
+  transition: border-color var(--duration-slow) var(--ease-breathe),
+              box-shadow var(--duration-slow) var(--ease-breathe);
 }
 
 .urlInput:focus {
@@ -190,7 +190,7 @@
   border-radius: var(--border-radius-lg);
   background: var(--background-secondary);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  transition: all var(--duration-slow) var(--ease-breathe);
   text-align: center;
 }
 
@@ -235,8 +235,8 @@
   font-weight: 500;
   cursor: pointer;
   margin-top: var(--space-md);
-  transition: background-color var(--duration-fast) var(--ease-apple-smooth),
-              transform var(--duration-fast) var(--ease-apple-smooth);
+  transition: background-color var(--duration-slow) var(--ease-smooth),
+              transform var(--duration-slow) var(--ease-smooth);
 }
 
 .filePickerButton:hover {
@@ -285,8 +285,8 @@
   border-radius: var(--border-radius-sm);
   font-size: 16px;
   margin-left: var(--space-sm);
-  transition: background-color var(--duration-fast) var(--ease-apple-smooth),
-              color var(--duration-fast) var(--ease-apple-smooth);
+  transition: background-color var(--duration-slow) var(--ease-breathe),
+              color var(--duration-slow) var(--ease-breathe);
 }
 
 .removeFile:hover {
@@ -308,7 +308,7 @@
   color: var(--primary-action);
   border-radius: var(--border-radius-sm);
   margin: -var(--space-md) 0;
-  transition: background-color var(--duration-fast) var(--ease-apple-smooth);
+  transition: background-color var(--duration-slow) var(--ease-breathe);
 }
 
 .advancedToggle:hover {
@@ -353,8 +353,8 @@
   font-family: var(--font-notation);
   color: var(--text-primary);
   background: var(--background-primary);
-  transition: border-color var(--duration-fast) var(--ease-apple-smooth),
-              box-shadow var(--duration-fast) var(--ease-apple-smooth);
+  transition: border-color var(--duration-slow) var(--ease-breathe),
+              box-shadow var(--duration-slow) var(--ease-breathe);
 }
 
 .timeInputField:focus {
@@ -373,8 +373,8 @@
   color: var(--text-primary);
   background: var(--background-primary);
   cursor: pointer;
-  transition: border-color var(--duration-fast) var(--ease-apple-smooth),
-              box-shadow var(--duration-fast) var(--ease-apple-smooth);
+  transition: border-color var(--duration-slow) var(--ease-breathe),
+              box-shadow var(--duration-slow) var(--ease-breathe);
 }
 
 .select:focus {
@@ -409,8 +409,8 @@
   height: 100%;
   background: linear-gradient(90deg, var(--primary-action), #2678d4);
   border-radius: 3px;
-  transition: width var(--duration-normal) var(--ease-smooth-out);
-  animation: shimmer 2s infinite;
+  transition: width var(--duration-deliberate) var(--ease-smooth);
+  animation: shimmer 2s var(--ease-breathe) infinite;
 }
 
 .progressMessage {
@@ -439,7 +439,7 @@
   font-weight: 500;
   color: var(--text-primary);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  transition: all var(--duration-slow) var(--ease-breathe);
 }
 
 .cancelButton:hover {
@@ -461,7 +461,7 @@
   font-weight: 500;
   color: white;
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  transition: all var(--duration-deliberate) var(--ease-smooth);
   display: flex;
   align-items: center;
   gap: var(--space-sm);
@@ -496,7 +496,7 @@
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
-  animation: spin var(--duration-normal) linear infinite;
+  animation: spin var(--duration-slow) linear infinite;
 }
 
 /* Example links section */
@@ -524,7 +524,7 @@
   text-decoration: none;
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--border-radius-sm);
-  transition: background-color var(--duration-fast) var(--ease-apple-smooth);
+  transition: background-color var(--duration-slow) var(--ease-breathe);
   cursor: pointer;
   word-break: break-all;
 }

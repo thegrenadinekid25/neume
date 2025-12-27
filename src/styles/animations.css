@@ -1,0 +1,204 @@
+/**
+ * Animation System for Neume
+ * Organic easing curves and duration scales for 600-800ms animations
+ * Bauhaus-inspired deliberation with musical sensibility
+ */
+
+:root {
+  /* Duration Scale - Complete spectrum */
+  --duration-instant: 0ms;
+  --duration-fast: 200ms;
+  --duration-normal: 400ms;
+  --duration-slow: 600ms;
+  --duration-deliberate: 800ms;
+  --duration-glacial: 1200ms;
+
+  /* Organic Easing Curves - Musical, not mechanical */
+  --ease-breathe: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  --ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-smooth: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --ease-anticipate: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* ==================== Transition Utilities ==================== */
+
+/* Slow transition with breathing easing */
+.transition-slow {
+  transition: all var(--duration-slow) var(--ease-breathe);
+}
+
+/* Deliberate transition with smooth easing */
+.transition-deliberate {
+  transition: all var(--duration-deliberate) var(--ease-smooth);
+}
+
+/* Fast transition for micro-interactions */
+.transition-fast {
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+/* Normal transition for standard interactions */
+.transition-normal {
+  transition: all var(--duration-normal) var(--ease-breathe);
+}
+
+/* ==================== Hover Effects ==================== */
+
+/* Lift and subtle rotation on hover */
+.hover-lift:hover {
+  transform: scale(1.05) rotate(1.5deg);
+  transition: transform var(--duration-slow) var(--ease-smooth);
+}
+
+/* Subtle scale up on hover */
+.hover-scale:hover {
+  transform: scale(1.05);
+  transition: transform var(--duration-slow) var(--ease-breathe);
+}
+
+/* Subtle lift (no rotation) */
+.hover-lift-subtle:hover {
+  transform: translateY(-2px);
+  transition: transform var(--duration-slow) var(--ease-smooth);
+}
+
+/* ==================== Animation Keyframes ==================== */
+
+/* Breathing pulse animation */
+@keyframes breathePulse {
+  0%, 100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+/* Gentle fade in */
+@keyframes fadeInGentle {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Fade in with slight upward movement */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade out with slight downward movement */
+@keyframes fadeOutDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+/* Smooth scale up entrance */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Smooth scale down exit */
+@keyframes scaleOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* Elastic bounce entrance */
+@keyframes bounceIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Shimmer effect for loading */
+@keyframes shimmer {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Spin animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==================== Animation Classes ==================== */
+
+/* Breathing pulse - for playing chords */
+.animate-breathe-pulse {
+  animation: breathePulse var(--duration-deliberate) var(--ease-breathe) infinite;
+}
+
+/* Fade in animation */
+.animate-fade-in {
+  animation: fadeInGentle var(--duration-slow) var(--ease-breathe) forwards;
+}
+
+/* Fade in with movement */
+.animate-fade-in-up {
+  animation: fadeInUp var(--duration-slow) var(--ease-breathe) forwards;
+}
+
+/* Scale in animation */
+.animate-scale-in {
+  animation: scaleIn var(--duration-slow) var(--ease-smooth) forwards;
+}
+
+/* Bounce entrance */
+.animate-bounce-in {
+  animation: bounceIn var(--duration-slow) var(--ease-elastic) forwards;
+}
+
+/* Loading spinner */
+.animate-spin {
+  animation: spin var(--duration-normal) linear infinite;
+}
+
+/* Shimmer effect */
+.animate-shimmer {
+  animation: shimmer 2s var(--ease-breathe) infinite;
+}

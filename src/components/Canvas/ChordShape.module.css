@@ -11,7 +11,11 @@
 }
 
 .chordShape {
-  transition: stroke var(--duration-fast) var(--ease-apple-smooth);
+  transition: stroke var(--duration-slow) var(--ease-breathe);
+}
+
+.chordShape:hover {
+  transition: stroke var(--duration-slow) var(--ease-smooth);
 }
 
 .chromaticShimmer {

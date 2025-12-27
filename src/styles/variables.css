@@ -58,10 +58,18 @@
   --ease-smooth-in: cubic-bezier(0.0, 0.0, 0.2, 1);
   --ease-smooth-out: cubic-bezier(0.4, 0.0, 1, 1);
 
-  /* Timing */
-  --duration-fast: 150ms;
-  --duration-normal: 300ms;
-  --duration-slow: 400ms;
+  /* Organic Easing Curves - Musical, not mechanical */
+  --ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-smooth: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --ease-anticipate: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Duration Scale - Bauhaus deliberation */
+  --duration-instant: 0ms;
+  --duration-fast: 200ms;
+  --duration-normal: 400ms;
+  --duration-slow: 600ms;
+  --duration-deliberate: 800ms;
+  --duration-glacial: 1200ms;
 
   /* Layout dimensions */
   --header-height: 50px;

@@ -23,7 +23,7 @@
   font-family: var(--font-ui);
   color: var(--text-primary);
   border-radius: var(--border-radius-sm);
-  transition: background-color var(--duration-fast) var(--ease-apple-smooth);
+  transition: background-color var(--duration-normal) var(--ease-breathe);
 }
 
 .menuItem:hover:not(:disabled),
@@ -85,7 +85,7 @@
   margin-left: auto;
   font-size: 10px;
   opacity: 0.6;
-  transition: opacity var(--duration-fast) var(--ease-apple-smooth);
+  transition: opacity var(--duration-normal) var(--ease-breathe);
 }
 
 .menuItem.hasSubmenu {
