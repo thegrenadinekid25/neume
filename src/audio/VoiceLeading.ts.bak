@@ -14,36 +14,14 @@ const VOICE_RANGES = {
 type VoiceType = 'soprano' | 'alto' | 'tenor' | 'bass';
 
 /**
- * Interface for voice leading validation results
+ * Voice leading validation result type
  */
 interface VoiceLeadingValidation {
   valid: boolean;
-  parallelFifths: Array<{ voice1: VoiceType; voice2: VoiceType }>;
-  parallelOctaves: Array<{ voice1: VoiceType; voice2: VoiceType }>;
-  voiceCrossings: VoiceType[];
-  voiceOverlaps: Array<{ voice1: VoiceType; voice2: VoiceType }>;
-  commonTonesRetained: number;
-  tendencyToneIssues: string[];
-}
-
-/**
- * Represents a pair of voices for checking intervals
- */
-export interface VoicePair {
-  voice1: VoiceType;
-  voice2: VoiceType;
-  midi1: number;
-  midi2: number;
-}
-
-/**
- * Interface for tendency tones (scale degrees that want to resolve)
- */
-interface TendencyTone {
-  noteName: string;
-  voice: VoiceType;
-  resolutionNote: string;
-  tendency: 'up' | 'down';
+  errors: string[];
+  parallelFifths: boolean;
+  parallelOctaves: boolean;
+  voiceCrossing: boolean;
 }
 
 /**
@@ -146,44 +124,60 @@ function getVoiceLeadingDistance(previousMidi: number, currentMidi: number): num
 }
 
 // ============================================================================
-// PHASE 2: INTERVAL HELPERS
+// PHASES 1-8: HELPER FUNCTIONS FOR VOICE LEADING VALIDATION
 // ============================================================================
 
 /**
- * Determine the direction of motion between two MIDI notes
+ * Get pitch class from note name (removes octave)
  */
-function getMotionDirection(
-  previousMidi: number,
-  currentMidi: number
-): 'up' | 'down' | 'static' {
-  if (currentMidi > previousMidi) return 'up';
-  if (currentMidi < previousMidi) return 'down';
-  return 'static';
+function getPitchClass(noteName: string): string {
+  return noteName.replace(/\d+$/, '');
 }
 
 /**
- * Check if two MIDI notes form a perfect fifth (7 semitones)
+ * Find common tones between chord note sets (Phase 1)
+ */
+function findCommonTones(currentNotes: string[], previousNotes: string[]): string[] {
+  const currentPitchClasses = new Set(currentNotes.map(getPitchClass));
+  const commonTones: string[] = [];
+
+  for (const note of previousNotes) {
+    const pitchClass = getPitchClass(note);
+    if (currentPitchClasses.has(pitchClass) && !commonTones.some(t => getPitchClass(t) === pitchClass)) {
+      commonTones.push(pitchClass);
+    }
+  }
+
+  return commonTones;
+}
+
+/**
+ * Check if two MIDI notes form a perfect fifth (7 semitones) (Phase 2)
  */
 function isPerfectFifth(midiA: number, midiB: number): boolean {
   const interval = Math.abs(midiB - midiA);
-  // Perfect fifth is 7 semitones, or its inversion (5 semitones when inverted)
   return interval % 12 === 7 || interval % 12 === 5;
 }
 
 /**
- * Check if two MIDI notes form a perfect octave or unison (0 or 12 semitones apart)
+ * Check if two MIDI notes form a perfect octave (0 or 12 semitones) (Phase 2)
  */
-function isPerfectOctaveOrUnison(midiA: number, midiB: number): boolean {
+function isPerfectOctave(midiA: number, midiB: number): boolean {
   const interval = Math.abs(midiB - midiA);
   return interval % 12 === 0;
 }
 
-// ============================================================================
-// PHASE 3: PARALLEL MOTION DETECTION
-// ============================================================================
+/**
+ * Get motion direction between notes (Phase 3)
+ */
+function getMotionDirection(prevMidi: number, currMidi: number): 'up' | 'down' | 'static' {
+  if (currMidi > prevMidi) return 'up';
+  if (currMidi < prevMidi) return 'down';
+  return 'static';
+}
 
 /**
- * Check for parallel fifths between two voices
+ * Check for parallel fifths between two voices (Phase 3)
  */
 function hasParallelFifths(
   prevVoicing: Voices,
@@ -202,16 +196,15 @@ function hasParallelFifths(
 
   if (!prevIsFifth || !currIsFifth) return false;
 
-  // Check if motion is parallel (both up or both down)
+  // Check if motion is parallel (same direction in both voices)
   const voice1Motion = getMotionDirection(prevMidi1, currMidi1);
   const voice2Motion = getMotionDirection(prevMidi2, currMidi2);
 
-  // Parallel motion = same direction in both voices
   return voice1Motion === voice2Motion && voice1Motion !== 'static';
 }
 
 /**
- * Check for parallel octaves between two voices
+ * Check for parallel octaves between two voices (Phase 3)
  */
 function hasParallelOctaves(
   prevVoicing: Voices,
@@ -224,165 +217,23 @@ function hasParallelOctaves(
   const currMidi1 = noteToMidi(currVoicing[voice1]);
   const currMidi2 = noteToMidi(currVoicing[voice2]);
 
-  // Check if both intervals are perfect octaves/unison
-  const prevIsOctave = isPerfectOctaveOrUnison(prevMidi1, prevMidi2);
-  const currIsOctave = isPerfectOctaveOrUnison(currMidi1, currMidi2);
+  // Check if both intervals are octaves
+  const prevIsOctave = isPerfectOctave(prevMidi1, prevMidi2);
+  const currIsOctave = isPerfectOctave(currMidi1, currMidi2);
 
   if (!prevIsOctave || !currIsOctave) return false;
 
-  // Check if motion is parallel (both up or both down)
+  // Check if motion is parallel
   const voice1Motion = getMotionDirection(prevMidi1, currMidi1);
   const voice2Motion = getMotionDirection(prevMidi2, currMidi2);
 
-  // Parallel motion = same direction in both voices
   return voice1Motion === voice2Motion && voice1Motion !== 'static';
 }
 
 /**
- * Detect all parallel motion (fifths and octaves) across all voice pairs
+ * Check if adding a note would cause voice crossing (Phase 4)
  */
-function detectParallelMotion(
-  prevVoicing: Voices,
-  currVoicing: Voices
-): VoiceLeadingValidation['parallelFifths'] {
-  const violations: Array<{ voice1: VoiceType; voice2: VoiceType }> = [];
-  const voiceTypes: VoiceType[] = ['soprano', 'alto', 'tenor', 'bass'];
-
-  for (let i = 0; i < voiceTypes.length; i++) {
-    for (let j = i + 1; j < voiceTypes.length; j++) {
-      const voice1 = voiceTypes[i];
-      const voice2 = voiceTypes[j];
-
-      if (hasParallelFifths(prevVoicing, currVoicing, voice1, voice2)) {
-        violations.push({ voice1, voice2 });
-      }
-      // Note: Parallel octaves are checked separately in hasParallelOctaves
-    }
-  }
-
-  return violations;
-}
-
-// ============================================================================
-// PHASE 5: COMMON TONE DETECTION
-// ============================================================================
-
-/**
- * Get the pitch class (C, C#, D, etc.) from a note name
- */
-function getPitchClass(noteName: string): string {
-  // Remove octave number from note name
-  return noteName.replace(/\d+$/, '');
-}
-
-/**
- * Find common tones (same pitch class) between two sets of notes
- */
-function findCommonTones(notesA: string[], notesB: string[]): string[] {
-  const pitchClassesA = new Set(notesA.map(getPitchClass));
-  const commonTones: string[] = [];
-
-  for (const noteB of notesB) {
-    const pitchClassB = getPitchClass(noteB);
-    if (pitchClassesA.has(pitchClassB) && !commonTones.includes(pitchClassB)) {
-      commonTones.push(pitchClassB);
-    }
-  }
-
-  return commonTones;
-}
-
-/**
- * Count how many common tones are retained in the same voice
- */
-function countRetainedCommonTones(
-  prevVoicing: Voices,
-  currVoicing: Voices,
-  commonTones: string[]
-): number {
-  let retainedCount = 0;
-  const voiceTypes: VoiceType[] = ['soprano', 'alto', 'tenor', 'bass'];
-
-  for (const voice of voiceTypes) {
-    const prevPitchClass = getPitchClass(prevVoicing[voice]);
-    const currPitchClass = getPitchClass(currVoicing[voice]);
-
-    // If the same pitch class is in the same voice, it's retained
-    if (prevPitchClass === currPitchClass && commonTones.includes(prevPitchClass)) {
-      retainedCount++;
-    }
-  }
-
-  return retainedCount;
-}
-
-// ============================================================================
-// PHASE 6: VOICE CROSSING DETECTION
-// ============================================================================
-
-/**
- * Detect if any voice crosses above/below its typical range
- */
-function detectVoiceCrossing(voicing: Voices): VoiceType[] {
-  const crossings: VoiceType[] = [];
-  const midiValues = {
-    soprano: noteToMidi(voicing.soprano),
-    alto: noteToMidi(voicing.alto),
-    tenor: noteToMidi(voicing.tenor),
-    bass: noteToMidi(voicing.bass),
-  };
-
-  // Check voice ranges: soprano > alto > tenor > bass
-  if (midiValues.soprano < midiValues.alto) {
-    crossings.push('soprano');
-  }
-  if (midiValues.alto < midiValues.tenor) {
-    crossings.push('alto');
-  }
-  if (midiValues.tenor < midiValues.bass) {
-    crossings.push('tenor');
-  }
-
-  return crossings;
-}
-
-/**
- * Detect if voices overlap (more than an octave between adjacent voices)
- */
-function detectVoiceOverlap(
-  _prevVoicing: Voices,
-  currVoicing: Voices
-): Array<{ voice1: VoiceType; voice2: VoiceType }> {
-  const overlaps: Array<{ voice1: VoiceType; voice2: VoiceType }> = [];
-  const maxSpacing = 12; // More than octave is overlap
-
-  const sopranoMidi = noteToMidi(currVoicing.soprano);
-  const altoMidi = noteToMidi(currVoicing.alto);
-  const tenorMidi = noteToMidi(currVoicing.tenor);
-  const bassMidi = noteToMidi(currVoicing.bass);
-
-  // Check spacing between adjacent voices
-  if (sopranoMidi - altoMidi > maxSpacing) {
-    overlaps.push({ voice1: 'soprano', voice2: 'alto' });
-  }
-  if (altoMidi - tenorMidi > maxSpacing) {
-    overlaps.push({ voice1: 'alto', voice2: 'tenor' });
-  }
-  if (tenorMidi - bassMidi > maxSpacing) {
-    overlaps.push({ voice1: 'tenor', voice2: 'bass' });
-  }
-
-  return overlaps;
-}
-
-/**
- * Check if adding a note to a voice would cause voice crossing
- */
-export function wouldCauseVoiceCrossing(
-  partialVoicing: Partial<Voices>,
-  voice: VoiceType,
-  note: string
-): boolean {
+function wouldCauseVoiceCrossing(partialVoicing: Partial<Voices>, voice: VoiceType, note: string): boolean {
   const midi = noteToMidi(note);
   const voiceOrder: VoiceType[] = ['soprano', 'alto', 'tenor', 'bass'];
   const voiceIndex = voiceOrder.indexOf(voice);
@@ -393,7 +244,7 @@ export function wouldCauseVoiceCrossing(
     if (partialVoicing[higherVoice]) {
       const higherMidi = noteToMidi(partialVoicing[higherVoice]);
       if (midi > higherMidi) {
-        return true; // Would cross above higher voice
+        return true;
       }
     }
   }
@@ -404,7 +255,7 @@ export function wouldCauseVoiceCrossing(
     if (partialVoicing[lowerVoice]) {
       const lowerMidi = noteToMidi(partialVoicing[lowerVoice]);
       if (midi < lowerMidi) {
-        return true; // Would cross below lower voice
+        return true;
       }
     }
   }
@@ -412,176 +263,93 @@ export function wouldCauseVoiceCrossing(
   return false;
 }
 
-// ============================================================================
-// PHASE 7: RESOLUTION RULES
-// ============================================================================
-
 /**
- * Identify tendency tones that need resolution
+ * Validate voice leading between two voicings (Phase 5)
  */
-function identifyTendencyTones(
-  voicing: Voices,
-  chordNotes: string[],
-  key: MusicalKey,
-  _hasSuspension: boolean
-): TendencyTone[] {
-  const tendencies: TendencyTone[] = [];
-  const voiceTypes: VoiceType[] = ['soprano', 'alto', 'tenor', 'bass'];
-  const leadingTone = getLeadingTone(key);
+function validateVoiceLeadingInternal(
+  prevVoicing: Voices | undefined,
+  currVoicing: Voices
+): { valid: boolean; errors: string[]; parallelFifths: boolean; parallelOctaves: boolean; voiceCrossing: boolean } {
+  const errors: string[] = [];
+  let parallelFifths = false;
+  let parallelOctaves = false;
+  let voiceCrossing = false;
 
-  for (const voice of voiceTypes) {
-    const noteName = voicing[voice];
-    const pitchClass = getPitchClass(noteName);
-
-    // Check for leading tone (wants to resolve up to tonic)
-    if (pitchClass === leadingTone) {
-      const tonicNote = key + '4'; // Default octave
-      tendencies.push({
-        noteName,
-        voice,
-        resolutionNote: tonicNote,
-        tendency: 'up',
-      });
-    }
-
-    // Check for seventh (wants to resolve down)
-    if (chordNotes.length >= 4) {
-      const seventhNote = chordNotes[chordNotes.length - 1];
-      if (pitchClass === getPitchClass(seventhNote)) {
-        const downNote = Note.transpose(pitchClass, '-m2');
-        if (downNote) {
-          tendencies.push({
-            noteName,
-            voice,
-            resolutionNote: downNote + '4',
-            tendency: 'down',
-          });
-        }
-      }
-    }
-
-    // Check for suspension (wants to resolve to consonant tone)
-    // sus4 resolves to 3rd (down)
-    // sus2 resolves to root (up)
-    // This is handled case-by-case in context
-  }
-
-  return tendencies;
-}
-
-/**
- * Get the leading tone for a key
- */
-function getLeadingTone(key: MusicalKey): string {
-  // Leading tone is the 7th degree of the major scale
-  const scale = Scale.get(`${key} major`);
-  if (!scale.notes || scale.notes.length < 7) {
-    return 'B'; // Fallback
-  }
-  return getPitchClass(scale.notes[6]); // 7th degree (0-indexed)
-}
-
-/**
- * Check if tendency tones are properly resolved
- */
-function checkResolutions(
-  _prevVoicing: Voices,
-  currVoicing: Voices,
-  tendencies: TendencyTone[]
-): string[] {
-  const issues: string[] = [];
-
-  for (const tendency of tendencies) {
-    const currentNote = currVoicing[tendency.voice];
-
-    if (tendency.tendency === 'up') {
-      // Should resolve up (or stay)
-      const prevMidi = noteToMidi(tendency.noteName);
-      const currMidi = noteToMidi(currentNote);
-
-      if (currMidi < prevMidi) {
-        issues.push(`${tendency.voice} leading tone resolved down instead of up`);
-      }
-    } else if (tendency.tendency === 'down') {
-      // Should resolve down (or stay)
-      const prevMidi = noteToMidi(tendency.noteName);
-      const currMidi = noteToMidi(currentNote);
-
-      if (currMidi > prevMidi) {
-        issues.push(`${tendency.voice} seventh resolved up instead of down`);
-      }
+  // Check range violations
+  const rangeOrder: VoiceType[] = ['soprano', 'alto', 'tenor', 'bass'];
+  for (const voice of rangeOrder) {
+    const midi = noteToMidi(currVoicing[voice]);
+    const range = VOICE_RANGES[voice];
+    if (midi < range.low || midi > range.high) {
+      errors.push(`${voice} out of range`);
     }
   }
 
-  return issues;
-}
+  // Check voice crossing
+  const voiceMidis = {
+    soprano: noteToMidi(currVoicing.soprano),
+    alto: noteToMidi(currVoicing.alto),
+    tenor: noteToMidi(currVoicing.tenor),
+    bass: noteToMidi(currVoicing.bass)
+  };
 
-// ============================================================================
-// PHASE 8: VALIDATION FUNCTION
-// ============================================================================
+  if (voiceMidis.soprano < voiceMidis.alto) {
+    errors.push('soprano below alto');
+    voiceCrossing = true;
+  }
+  if (voiceMidis.alto < voiceMidis.tenor) {
+    errors.push('alto below tenor');
+    voiceCrossing = true;
+  }
+  if (voiceMidis.tenor < voiceMidis.bass) {
+    errors.push('tenor below bass');
+    voiceCrossing = true;
+  }
 
-/**
- * Comprehensive voice leading validation
- */
-export function validateVoiceLeading(
-  prevVoicing: Voices,
-  currVoicing: Voices,
-  currChordNotes: string[],
-  key: MusicalKey,
-  hasSuspension: boolean = false
-): VoiceLeadingValidation {
-  // Get chord notes for common tone analysis
-  const prevChordNotes = Object.values(prevVoicing) as string[];
-  const commonTones = findCommonTones(prevChordNotes, currChordNotes);
+  // Check parallel motion if previous voicing exists
+  if (prevVoicing) {
+    const voicePairs: Array<[VoiceType, VoiceType]> = [
+      ['soprano', 'alto'],
+      ['soprano', 'tenor'],
+      ['soprano', 'bass'],
+      ['alto', 'tenor'],
+      ['alto', 'bass'],
+      ['tenor', 'bass']
+    ];
 
-  // Identify tendency tones
-  const tendencies = identifyTendencyTones(currVoicing, currChordNotes, key, hasSuspension);
-
-  // Check all validations
-  const parallelFifths = detectParallelMotion(prevVoicing, currVoicing);
-  const voiceCrossings = detectVoiceCrossing(currVoicing);
-  const voiceOverlaps = detectVoiceOverlap(prevVoicing, currVoicing);
-  const commonTonesRetained = countRetainedCommonTones(prevVoicing, currVoicing, commonTones);
-  const tendencyToneIssues = checkResolutions(prevVoicing, currVoicing, tendencies);
-
-  // Check parallel octaves separately
-  const parallelOctaves: Array<{ voice1: VoiceType; voice2: VoiceType }> = [];
-  const voiceTypes: VoiceType[] = ['soprano', 'alto', 'tenor', 'bass'];
-  for (let i = 0; i < voiceTypes.length; i++) {
-    for (let j = i + 1; j < voiceTypes.length; j++) {
-      if (hasParallelOctaves(prevVoicing, currVoicing, voiceTypes[i], voiceTypes[j])) {
-        parallelOctaves.push({ voice1: voiceTypes[i], voice2: voiceTypes[j] });
+    for (const [v1, v2] of voicePairs) {
+      if (hasParallelFifths(prevVoicing, currVoicing, v1, v2)) {
+        errors.push(`parallel fifths: ${v1}-${v2}`);
+        parallelFifths = true;
+      }
+      if (hasParallelOctaves(prevVoicing, currVoicing, v1, v2)) {
+        errors.push(`parallel octaves: ${v1}-${v2}`);
+        parallelOctaves = true;
       }
     }
   }
-
-  const valid =
-    parallelFifths.length === 0 &&
-    parallelOctaves.length === 0 &&
-    voiceCrossings.length === 0 &&
-    voiceOverlaps.length === 0 &&
-    tendencyToneIssues.length === 0;
 
   return {
-    valid,
+    valid: errors.length === 0,
+    errors,
     parallelFifths,
     parallelOctaves,
-    voiceCrossings,
-    voiceOverlaps,
-    commonTonesRetained,
-    tendencyToneIssues,
+    voiceCrossing
   };
 }
 
 /**
- * Find the best note from the chord to assign to a voice
- * considering voice range and distance from previous voicing
+ * Phase 9: Enhanced findBestVoiceNote with parallel motion and voice crossing checks
+ * Considers common tones, parallel motion penalties, and voice crossing prevention
  */
 function findBestVoiceNote(
   chordNotes: string[],
   voiceRange: { low: number; high: number },
   previousMidi?: number,
-  preferredVoices?: number[]
+  preferredVoices?: number[],
+  voice?: VoiceType,
+  partialVoicing?: Partial<Voices>,
+  previousVoicing?: Voices
 ): string {
   if (chordNotes.length === 0) {
     return 'C4'; // Fallback
@@ -590,13 +358,17 @@ function findBestVoiceNote(
   // Generate candidates for this voice within the range
   const candidates = chordNotes.flatMap((note) => {
     const rootMidi = noteToMidi(note);
-    const candidates: { note: string; midi: number }[] = [];
+    const candidates: { note: string; midi: number; pitchClass: string }[] = [];
 
     // Try the note in multiple octaves
     for (let octave = -2; octave <= 2; octave++) {
       const midi = rootMidi + octave * 12;
       if (midi >= voiceRange.low && midi <= voiceRange.high) {
-        candidates.push({ note: midiToNote(midi), midi });
+        candidates.push({
+          note: midiToNote(midi),
+          midi,
+          pitchClass: note.replace(/\d+$/, '')
+        });
       }
     }
 
@@ -608,14 +380,77 @@ function findBestVoiceNote(
     return fitToRange(chordNotes[0], voiceRange);
   }
 
-  // Score candidates: prefer closer voice leading, then avoid extreme ranges
+  // Score candidates: prefer common tones, then closer voice leading, then avoid extreme ranges
   const scored = candidates.map((candidate) => {
     let score = 0;
 
-    // Prefer notes close to previous position
+    // Phase 9a: Bonus for common tones (if candidate matches previous voice's pitch class)
+    if (previousVoicing && voice) {
+      const previousNote = previousVoicing[voice];
+      const previousPitchClass = getPitchClass(previousNote);
+      if (candidate.pitchClass === previousPitchClass) {
+        score += 15; // Strong bonus for retaining common tone in same voice
+      }
+    }
+
+    // Phase 9b: Prefer notes close to previous position
     if (previousMidi !== undefined) {
       const distance = getVoiceLeadingDistance(previousMidi, candidate.midi);
       score -= distance * 0.1; // Lower distance = higher score
+
+      // Phase 9b(i): Extra bonus if distance is 0 (exact same note)
+      if (distance === 0) {
+        score += 8;
+      }
+    }
+
+    // Phase 9c: Check for parallel fifths with already-assigned voices
+    if (voice && partialVoicing && previousVoicing) {
+      const voiceOrder: VoiceType[] = ['soprano', 'alto', 'tenor', 'bass'];
+      const currentVoiceIndex = voiceOrder.indexOf(voice);
+
+      for (let i = 0; i < currentVoiceIndex; i++) {
+        const otherVoice = voiceOrder[i];
+        if (partialVoicing[otherVoice]) {
+          const otherMidi = noteToMidi(partialVoicing[otherVoice]);
+          const prevOtherMidi = noteToMidi(previousVoicing[otherVoice]);
+          const prevCurrentMidi = previousMidi || 60;
+
+          // Create test voicings for parallel motion check
+          const tempPrevVoicing: Voices = {
+            soprano: previousVoicing.soprano,
+            alto: previousVoicing.alto,
+            tenor: previousVoicing.tenor,
+            bass: previousVoicing.bass
+          };
+          const tempCurrVoicing: Voices = {
+            soprano: previousVoicing.soprano,
+            alto: previousVoicing.alto,
+            tenor: previousVoicing.tenor,
+            bass: previousVoicing.bass
+          };
+          tempCurrVoicing[voice] = candidate.note;
+          tempCurrVoicing[otherVoice] = partialVoicing[otherVoice];
+
+          // Check for parallel fifths
+          if (hasParallelFifths(tempPrevVoicing, tempCurrVoicing, otherVoice, voice)) {
+            score -= 40; // Penalty for parallel fifths
+          }
+
+          // Check for parallel octaves
+          if (hasParallelOctaves(tempPrevVoicing, tempCurrVoicing, otherVoice, voice)) {
+            score -= 40; // Penalty for parallel octaves
+          }
+        }
+      }
+    }
+
+    // Phase 9d: Check for voice crossing with already-assigned voices
+    if (voice && partialVoicing) {
+      // Check if this note would cause voice crossing
+      if (wouldCauseVoiceCrossing(partialVoicing, voice, candidate.note)) {
+        score -= 30; // Penalty for voice crossing
+      }
     }
 
     // Prefer middle of range
@@ -692,9 +527,9 @@ function generateDefaultVoicing(chordNotes: string[]): Voices {
 }
 
 /**
- * Generate SATB voicing using voice leading from previous voicing
- * Always puts the root in the bass for clear chord identity
- * For 7th chords (4+ notes), prioritizes root, 3rd, 5th, 7th
+ * Phase 10: Enhanced voiceLeadFromPrevious
+ * Builds partial voicing incrementally, uses findCommonTones, checks for voice crossing
+ * before assigning notes to voices
  */
 function voiceLeadFromPrevious(
   chordNotes: string[],
@@ -712,12 +547,18 @@ function voiceLeadFromPrevious(
   };
 
   const voicing: Voices = { soprano: 'C4', alto: 'G3', tenor: 'E3', bass: 'C3' };
+  const partialVoicing: Partial<Voices> = {}; // Phase 10: Track partial voicing
   const usedNotes = new Set<string>();
 
   // Always put the root (first chord note) in the bass for clear chord identity
   const root = chordNotes[0];
   voicing.bass = fitToRange(root, VOICE_RANGES.bass);
+  partialVoicing.bass = voicing.bass; // Phase 10: Update partial voicing
   usedNotes.add(root.replace(/\d+$/, ''));
+
+  // Phase 10: Find common tones for better voice leading
+  const previousChordNotes = Object.values(previousVoicing) as string[];
+  const commonTones = findCommonTones(chordNotes, previousChordNotes);
 
   // For 7th chords or extended chords (4+ notes), use specific voice priorities
   if (chordNotes.length >= 4) {
@@ -758,7 +599,19 @@ function voiceLeadFromPrevious(
     ];
 
     for (const assignment of voiceAssignments) {
-      const availableNotes = assignment.notes.filter((n) => !usedNotes.has(n.replace(/\d+$/, '')));
+      // Phase 10: Try to keep common tones first
+      let availableNotes = assignment.notes.filter((n) => !usedNotes.has(n.replace(/\d+$/, '')));
+
+      // Phase 10: Prioritize common tones for this voice
+      const commonNotesForVoice = availableNotes.filter(n => {
+        const pitchClass = getPitchClass(n);
+        const prevNote = previousVoicing[assignment.voice];
+        return getPitchClass(prevNote) === pitchClass;
+      });
+
+      if (commonNotesForVoice.length > 0) {
+        availableNotes = commonNotesForVoice;
+      }
 
       // Fallback to any unused notes if preferred notes exhausted
       if (availableNotes.length === 0) {
@@ -774,13 +627,19 @@ function voiceLeadFromPrevious(
       }
 
       const previousMidi = previousMidis[assignment.voice];
+      // Phase 9 & 10: Pass voice-specific parameters to check parallel motion
       const selectedNote = findBestVoiceNote(
         availableNotes,
         VOICE_RANGES[assignment.voice],
-        previousMidi
+        previousMidi,
+        undefined,
+        assignment.voice,
+        partialVoicing,
+        previousVoicing
       );
 
       voicing[assignment.voice] = selectedNote;
+      partialVoicing[assignment.voice] = selectedNote; // Phase 10: Update partial voicing
       usedNotes.add(selectedNote.replace(/\d+$/, ''));
     }
   } else {
@@ -795,13 +654,19 @@ function voiceLeadFromPrevious(
       }
 
       const previousMidi = previousMidis[voice];
+      // Phase 9 & 10: Pass voice-specific parameters to check parallel motion
       const selectedNote = findBestVoiceNote(
         availableNotes,
         VOICE_RANGES[voice],
-        previousMidi
+        previousMidi,
+        undefined,
+        voice,
+        partialVoicing,
+        previousVoicing
       );
 
       voicing[voice] = selectedNote;
+      partialVoicing[voice] = selectedNote; // Phase 10: Update partial voicing
       usedNotes.add(selectedNote.replace(/\d+$/, '')); // Mark pitch class as used
     }
   }
@@ -920,3 +785,29 @@ export function generateSATBVoicing(
 
   return voiceLeadFromPrevious(chordNotes, previousVoicing);
 }
+
+// ============================================================================
+// PHASE 12: EXPORTS
+// ============================================================================
+
+/**
+ * Export validateVoiceLeading function for external use
+ */
+export function validateVoiceLeading(
+  previousVoicing: Voices | undefined,
+  currentVoicing: Voices
+): VoiceLeadingValidation {
+  const result = validateVoiceLeadingInternal(previousVoicing, currentVoicing);
+  return {
+    valid: result.valid,
+    errors: result.errors,
+    parallelFifths: result.parallelFifths,
+    parallelOctaves: result.parallelOctaves,
+    voiceCrossing: result.voiceCrossing
+  };
+}
+
+/**
+ * Export VoiceLeadingValidation type for external use
+ */
+export type { VoiceLeadingValidation };
