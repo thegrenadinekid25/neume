@@ -121,3 +121,34 @@ class ExplainResponse(BaseModel):
     historical: Optional[str] = None
     evolutionSteps: Optional[List[EvolutionStep]] = None
     error: Optional[str] = None
+
+
+# Deconstruction models
+
+class SimpleChord(BaseModel):
+    """Simple chord representation for deconstruction"""
+    root: str
+    quality: str
+    extensions: Optional[Dict[str, bool]] = None
+
+
+class DeconstructRequest(BaseModel):
+    """Request body for /api/deconstruct endpoint"""
+    chords: List[SimpleChord]
+    key: str
+    mode: str
+
+
+class DeconstructStep(BaseModel):
+    """A single step in the deconstruction process"""
+    stepNumber: int
+    stepName: str
+    description: str
+    chords: List[SimpleChord]
+
+
+class DeconstructResponse(BaseModel):
+    """Response body for /api/deconstruct endpoint"""
+    success: bool
+    steps: Optional[List[DeconstructStep]] = None
+    error: Optional[str] = None

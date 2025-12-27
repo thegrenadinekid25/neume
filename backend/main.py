@@ -23,10 +23,15 @@ from models.schemas import (
     ExplainRequest,
     ExplainResponse,
     ExplainChordData,
-    EvolutionStep
+    EvolutionStep,
+    DeconstructRequest,
+    DeconstructResponse,
+    SimpleChord,
+    DeconstructStep
 )
 from services.youtube_downloader import YouTubeDownloader
 from services.chord_extractor import ChordExtractor, parse_chord_label
+from services.deconstructor import ProgressionDeconstructor
 
 # Load environment variables
 load_dotenv()
@@ -59,6 +64,7 @@ app.add_middleware(
 # Initialize services
 youtube_downloader = YouTubeDownloader(output_dir="./temp")
 chord_extractor = ChordExtractor()
+progression_deconstructor = ProgressionDeconstructor()
 
 # Ensure temp directory exists
 os.makedirs("./temp", exist_ok=True)
@@ -379,6 +385,86 @@ async def explain_chord(request: ExplainRequest):
         return ExplainResponse(
             success=False,
             error=f"Explanation failed: {str(e)}"
+        )
+
+
+@app.post("/api/deconstruct", response_model=DeconstructResponse)
+async def deconstruct_progression(request: DeconstructRequest):
+    """
+    Analyze a chord progression and return its step-by-step evolution.
+
+    Takes a complex progression and breaks it down into simpler components,
+    showing how it evolves from basic triads through various extensions.
+
+    Input:
+    {
+      "chords": [
+        {"root": "C", "quality": "major", "extensions": {}},
+        ...
+      ],
+      "key": "C",
+      "mode": "major"
+    }
+
+    Output:
+    {
+      "success": true,
+      "steps": [
+        {
+          "stepNumber": 0,
+          "stepName": "Skeleton",
+          "description": "...",
+          "chords": [...]
+        },
+        ...
+      ]
+    }
+    """
+    try:
+        # Convert SimpleChord objects to dictionaries for the deconstructor
+        chord_dicts = [
+            {
+                "root": chord.root,
+                "quality": chord.quality,
+                "extensions": chord.extensions or {}
+            }
+            for chord in request.chords
+        ]
+
+        # Perform deconstruction
+        steps_data = await progression_deconstructor.deconstruct(
+            chord_dicts,
+            request.key,
+            request.mode
+        )
+
+        # Convert to DeconstructStep objects
+        steps = [
+            DeconstructStep(
+                stepNumber=step["stepNumber"],
+                stepName=step["stepName"],
+                description=step["description"],
+                chords=[
+                    SimpleChord(
+                        root=c["root"],
+                        quality=c["quality"],
+                        extensions=c.get("extensions")
+                    )
+                    for c in step["chords"]
+                ]
+            )
+            for step in steps_data
+        ]
+
+        return DeconstructResponse(
+            success=True,
+            steps=steps
+        )
+
+    except Exception as e:
+        return DeconstructResponse(
+            success=False,
+            error=f"Deconstruction failed: {str(e)}"
         )
 
 
