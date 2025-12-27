@@ -61,6 +61,34 @@
   margin-left: auto;
 }
 
+.settings-button {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  color: var(--warm-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.settings-button:hover {
+  background: var(--warm-sand);
+  color: var(--warm-terracotta);
+  border-color: var(--warm-terracotta);
+}
+
+.settings-button svg {
+  transition: transform 0.3s ease;
+}
+
+.settings-button:hover svg {
+  transform: rotate(45deg);
+}
+
 .app-sidebar {
   grid-area: sidebar;
   background: var(--warm-cream);

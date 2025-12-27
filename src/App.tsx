@@ -14,7 +14,6 @@ import { WelcomeTutorial } from '@/components/Tutorial/WelcomeTutorial';
 import { Sidebar, SidebarSection, SidebarDivider, SidebarSpacer } from '@/components/Sidebar';
 import { AuthModal, UserMenu } from '@/components/Auth';
 import { AudioLoadingIndicator } from '@/components/Audio';
-import { NecklaceToggle, ExpertModeProgress, ExpertModeToggle } from '@/components/UI';
 
 // Lazy load modals for code splitting
 const KeyboardShortcutsGuide = lazy(() => import('@/components/UI/KeyboardShortcutsGuide').then(m => ({ default: m.KeyboardShortcutsGuide })));
@@ -23,6 +22,7 @@ const MyProgressionsModal = lazy(() => import('@/components/Modals/MyProgression
 const RefineModal = lazy(() => import('@/components/Modals/RefineModal').then(m => ({ default: m.RefineModal })));
 const SaveProgressionDialog = lazy(() => import('@/components/Modals/SaveProgressionDialog').then(m => ({ default: m.SaveProgressionDialog })));
 const NarrativeComposerModal = lazy(() => import('@/components/Modals/NarrativeComposerModal').then(m => ({ default: m.NarrativeComposerModal })));
+const SettingsModal = lazy(() => import('@/components/Modals/SettingsModal').then(m => ({ default: m.SettingsModal })));
 import { useHistory } from '@/hooks/useHistory';
 import { usePlayback } from '@/hooks/usePlayback';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
@@ -125,6 +125,7 @@ function App() {
   const { migrateLocalData, loadProgressions, saveProgression } = useProgressionsStore();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Initialize auth on mount
   useEffect(() => {
@@ -566,6 +567,16 @@ function App() {
         </div>
         {/* Hint removed - using chord palette instead */}
         <div className="header-right">
+          <button
+            className="settings-button"
+            onClick={() => setShowSettingsModal(true)}
+            aria-label="Settings"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
           <UserMenu onSignInClick={() => setShowAuthModal(true)} />
         </div>
       </header>
@@ -617,21 +628,6 @@ function App() {
             value={zoom}
             onChange={(v) => setZoom(v as number)}
           />
-        </SidebarSection>
-
-        <SidebarDivider />
-
-        {/* View Settings */}
-        <SidebarSection>
-          <NecklaceToggle />
-        </SidebarSection>
-
-        <SidebarDivider />
-
-        {/* Expert Mode */}
-        <SidebarSection>
-          <ExpertModeProgress />
-          <ExpertModeToggle />
         </SidebarSection>
 
         <SidebarDivider />
@@ -810,6 +806,7 @@ function App() {
         <MyProgressionsModal />
         <RefineModal />
         <NarrativeComposerModal />
+        <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
       </Suspense>
 
       <WhyThisPanel />
