@@ -253,16 +253,18 @@ export const BeatsSelector: React.FC<BeatsSelectorProps> = ({ value, onChange })
     const currentIndex = BEAT_OPTIONS.indexOf(value as typeof BEAT_OPTIONS[number]);
 
     switch (event.key) {
-      case 'ArrowRight':
+      case 'ArrowRight': {
         event.preventDefault();
         const nextIndex = (currentIndex + 1) % BEAT_OPTIONS.length;
         onChange(BEAT_OPTIONS[nextIndex]);
         break;
-      case 'ArrowLeft':
+      }
+      case 'ArrowLeft': {
         event.preventDefault();
         const prevIndex = (currentIndex - 1 + BEAT_OPTIONS.length) % BEAT_OPTIONS.length;
         onChange(BEAT_OPTIONS[prevIndex]);
         break;
+      }
     }
   };
 

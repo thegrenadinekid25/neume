@@ -133,7 +133,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 
     // Calculate position relative to viewport
     let x = parentRect.right + 4; // 4px gap to the right
-    let y = parentRect.top;
+    const y = parentRect.top;
 
     // Flip to left if too close to right edge
     if (x + submenuWidth > viewportWidth - 20) {

@@ -57,7 +57,7 @@ export const CHORD_TYPE_CATEGORIES = {
  * Check if a chord quality is a seventh chord
  */
 export function isSeventhChord(quality: ChordQuality): boolean {
-  return CHORD_TYPE_CATEGORIES.sevenths.includes(quality as any);
+  return (CHORD_TYPE_CATEGORIES.sevenths as readonly string[]).includes(quality);
 }
 
 /**

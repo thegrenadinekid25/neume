@@ -30,7 +30,7 @@ interface NarrativeComposerState {
   setStyleReference: (style: StyleReference) => void;
   setBarCount: (count: number) => void;
   setBeatsPerBar: (beats: number) => void;
-  useExample: (index: number) => void;
+  selectExample: (index: number) => void;
   generate: () => Promise<void>;
   reset: () => void;
 }
@@ -108,7 +108,7 @@ export const useNarrativeComposerStore = create<NarrativeComposerState>((set, ge
 
   setBeatsPerBar: (beatsPerBar) => set({ beatsPerBar }),
 
-  useExample: (index) => {
+  selectExample: (index) => {
     if (index >= 0 && index < EXAMPLE_NARRATIVES.length) {
       set({ narrative: EXAMPLE_NARRATIVES[index], error: null });
     }

@@ -44,7 +44,7 @@ export function NarrativeComposerModal() {
     setNarrative,
     setStyleReference,
     setBarCount,
-    useExample,
+    selectExample,
     generate,
     reset,
   } = useNarrativeComposerStore();
@@ -158,7 +158,7 @@ export function NarrativeComposerModal() {
                       <button
                         key={i}
                         className={styles.exampleButton}
-                        onClick={() => useExample(i)}
+                        onClick={() => selectExample(i)}
                       >
                         "{example}"
                       </button>

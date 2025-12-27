@@ -82,6 +82,7 @@ export function useAudioEngine(): UseAudioEngineReturn {
         try {
           await audioEngine.initialize();
           notifyListeners();
+          notifySamplesLoadedListeners(); // Notify that samples are loaded
         } catch (err) {
           console.error('Auto-init failed:', err);
         }

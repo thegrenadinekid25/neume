@@ -1,5 +1,5 @@
 import { Note, Chord as TonalChord, Scale } from 'tonal';
-import type { Chord, Voices, ScaleDegree, MusicalKey, Mode } from '@/types';
+import type { Chord, Voices, ScaleDegree, MusicalKey, Mode, ChordExtensions } from '@/types';
 
 /**
  * Voice ranges in MIDI numbers for SATB
@@ -82,7 +82,7 @@ function getChordNotes(chordSymbol: string): string[] {
 /**
  * Get extension intervals in semitones from the root
  */
-function getExtensionIntervals(extensions: any): number[] {
+function getExtensionIntervals(extensions: ChordExtensions | undefined): number[] {
   const intervals: number[] = [];
 
   if (extensions?.add9) intervals.push(14); // 9th = octave + 2
@@ -422,8 +422,7 @@ export function wouldCauseVoiceCrossing(
 function identifyTendencyTones(
   voicing: Voices,
   chordNotes: string[],
-  key: MusicalKey,
-  _hasSuspension: boolean
+  key: MusicalKey
 ): TendencyTone[] {
   const tendencies: TendencyTone[] = [];
   const voiceTypes: VoiceType[] = ['soprano', 'alto', 'tenor', 'bass'];
@@ -528,14 +527,14 @@ export function validateVoiceLeading(
   currVoicing: Voices,
   currChordNotes: string[],
   key: MusicalKey,
-  hasSuspension: boolean = false
+  _hasSuspension: boolean = false
 ): VoiceLeadingValidation {
   // Get chord notes for common tone analysis
   const prevChordNotes = Object.values(prevVoicing) as string[];
   const commonTones = findCommonTones(prevChordNotes, currChordNotes);
 
   // Identify tendency tones
-  const tendencies = identifyTendencyTones(currVoicing, currChordNotes, key, hasSuspension);
+  const tendencies = identifyTendencyTones(currVoicing, currChordNotes, key);
 
   // Check all validations
   const parallelFifths = detectParallelMotion(prevVoicing, currVoicing);
@@ -868,7 +867,7 @@ export function generateSATBVoicing(
     const rootMidi = noteToMidi(rootWithOctave);
 
     // Build base triad intervals
-    let intervals = [0, 7]; // root and perfect fifth
+    const intervals = [0, 7]; // root and perfect fifth
 
     if (chord.quality === 'major') {
       intervals.splice(1, 0, 4); // Major third at position 1

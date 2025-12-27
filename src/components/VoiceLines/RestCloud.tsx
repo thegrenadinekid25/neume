@@ -47,7 +47,7 @@ export const RestCloud = React.memo(function RestCloud({
       height={24}
       viewBox={`0 0 ${width} 24`}
       className={`${styles.cloud} ${isSelected ? styles.selected : ''}`}
-      onClick={(e) => onClick(note.id, e as any)}
+      onClick={(e) => onClick(note.id, e as React.MouseEvent)}
       initial={{ opacity: 0 }}
       animate={{ opacity: isSelected ? 0.35 : 0.15 }}
       transition={{ duration: 0.2 }}

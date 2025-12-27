@@ -165,7 +165,7 @@ function getShapePath(degree: ScaleDegree): string {
     case 6:
       // Circle
       return `M ${center} ${center - radius} A ${radius} ${radius} 0 1 1 ${center - 0.01} ${center - radius} Z`;
-    case 2:
+    case 2: {
       // Rounded square
       const half = radius * 0.85;
       const cr = 4;
@@ -181,16 +181,19 @@ function getShapePath(degree: ScaleDegree): string {
         Q ${center - half} ${center - half} ${center - half + cr} ${center - half}
         Z
       `;
-    case 3:
+    }
+    case 3: {
       // Triangle
       const h = radius * 1.4;
       return `M ${center} ${center - h * 0.55} L ${center + radius * 0.9} ${center + h * 0.45} L ${center - radius * 0.9} ${center + h * 0.45} Z`;
-    case 4:
+    }
+    case 4: {
       // Square
       const s = radius * 0.8;
       return `M ${center - s} ${center - s} L ${center + s} ${center - s} L ${center + s} ${center + s} L ${center - s} ${center + s} Z`;
+    }
     case 5:
-    case 7:
+    case 7: {
       // Pentagon
       const points = [];
       for (let i = 0; i < 5; i++) {
@@ -200,6 +203,7 @@ function getShapePath(degree: ScaleDegree): string {
         points.push([x, y]);
       }
       return `M ${points[0][0]} ${points[0][1]} ${points.slice(1).map(p => `L ${p[0]} ${p[1]}`).join(' ')} Z`;
+    }
     default:
       return `M ${center} ${center - radius} A ${radius} ${radius} 0 1 1 ${center - 0.01} ${center - radius} Z`;
   }

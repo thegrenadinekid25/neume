@@ -4,6 +4,13 @@
  */
 
 /**
+ * Extended AbortController with observer reference for cleanup
+ */
+interface PerformanceAbortController extends AbortController {
+  observer?: PerformanceObserver;
+}
+
+/**
  * Web Vitals metrics interface
  */
 interface WebVitalsMetric {
@@ -211,8 +218,8 @@ export function measureSyncOperation<T>(operationName: string, operation: () => 
 export function observePerformance(
   entryTypes: string[],
   callback: (entries: PerformanceEntryList) => void
-): AbortController {
-  const controller = new AbortController();
+): PerformanceAbortController {
+  const controller: PerformanceAbortController = new AbortController();
 
   if (typeof PerformanceObserver === 'undefined') {
     console.warn('PerformanceObserver not available');
@@ -227,7 +234,7 @@ export function observePerformance(
     observer.observe({ entryTypes, buffered: true });
 
     // Store the observer reference for cleanup
-    (controller as any).observer = observer;
+    controller.observer = observer;
   } catch (error) {
     console.warn('Failed to create PerformanceObserver:', error);
   }
