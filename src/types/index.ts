@@ -86,3 +86,19 @@ export type {
   NarrativeComposerError,
   NarrativeConversionResult,
 } from './narrative';
+
+export type {
+  Accidental,
+  NonChordToneType,
+  MelodicNoteVisualState,
+  MelodicNoteAnalysis,
+  MelodicNote,
+  VoiceLine,
+  CompositionModeType,
+  CompositionMode,
+} from './voice-line';
+
+export {
+  DEFAULT_MELODIC_NOTE_VISUAL_STATE,
+  DEFAULT_COMPOSITION_MODE,
+} from './voice-line';
