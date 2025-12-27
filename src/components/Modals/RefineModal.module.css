@@ -10,7 +10,7 @@
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   z-index: calc(var(--z-modal) - 1);
-  animation: fadeIn var(--duration-normal) var(--ease-smooth-out);
+  animation: fadeIn var(--duration-deliberate) var(--ease-breathe);
 }
 
 /* Modal container */
@@ -29,6 +29,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  animation: slideUp var(--duration-deliberate) var(--ease-breathe);
 }
 
 /* Modal header with title and close button */
@@ -44,8 +45,10 @@
 .header h2 {
   margin: 0;
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
+  font-family: var(--font-display);
   color: var(--text-primary);
+  letter-spacing: -0.3px;
 }
 
 /* Close button */
@@ -61,8 +64,8 @@
   color: var(--text-secondary);
   border-radius: var(--border-radius-sm);
   font-size: 20px;
-  transition: background-color var(--duration-fast) var(--ease-apple-smooth),
-              color var(--duration-fast) var(--ease-apple-smooth);
+  transition: background-color var(--duration-slow) var(--ease-breathe),
+              color var(--duration-slow) var(--ease-breathe);
 }
 
 .closeButton:hover {
@@ -101,6 +104,7 @@
 .inputLabel {
   font-size: 13px;
   font-weight: 600;
+  font-family: var(--font-ui);
   color: var(--text-primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -110,15 +114,15 @@
 .textarea {
   padding: var(--space-md);
   border: 1px solid var(--border-light);
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius-md);
   font-size: 14px;
   font-family: var(--font-ui);
   color: var(--text-primary);
   background: var(--background-primary);
   resize: vertical;
   min-height: 100px;
-  transition: border-color var(--duration-fast) var(--ease-apple-smooth),
-              box-shadow var(--duration-fast) var(--ease-apple-smooth);
+  transition: border-color var(--duration-slow) var(--ease-breathe),
+              box-shadow var(--duration-slow) var(--ease-breathe);
 }
 
 .textarea::placeholder {
@@ -163,12 +167,13 @@
   padding: var(--space-sm) var(--space-md);
   background: var(--background-secondary);
   border: 1px solid var(--border-light);
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius-md);
   font-size: 12px;
+  font-family: var(--font-ui);
   color: var(--text-secondary);
   cursor: pointer;
   text-align: left;
-  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  transition: all var(--duration-slow) var(--ease-breathe);
 }
 
 .examplePrompt:hover:not(:disabled) {
@@ -224,11 +229,11 @@
   padding: var(--space-md);
   background: var(--background-secondary);
   border: 1px solid var(--border-light);
-  border-radius: var(--border-radius-md);
+  border-radius: var(--border-radius-lg);
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  transition: all var(--duration-slow) var(--ease-breathe);
 }
 
 .suggestionCard:hover {
@@ -247,18 +252,21 @@
 .suggestionTechnique {
   margin: 0;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
+  font-family: var(--font-display);
   color: var(--text-primary);
   flex: 1;
+  letter-spacing: -0.2px;
 }
 
 .relevanceScore {
   padding: var(--space-xs) var(--space-sm);
   background: rgba(74, 144, 226, 0.15);
   color: var(--primary-action);
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius-md);
   font-size: 11px;
   font-weight: 600;
+  font-family: var(--font-ui);
   white-space: nowrap;
 }
 
@@ -266,6 +274,7 @@
 .suggestionRationale {
   margin: 0;
   font-size: 13px;
+  font-family: var(--font-ui);
   color: var(--text-primary);
   line-height: 1.5;
 }
@@ -274,6 +283,7 @@
 .suggestionExamples {
   margin: 0;
   font-size: 12px;
+  font-family: var(--font-ui);
   color: var(--text-secondary);
   font-style: italic;
 }
@@ -290,12 +300,13 @@
   padding: var(--space-sm) var(--space-md);
   background: var(--background-primary);
   border: 1px solid var(--border-light);
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius-md);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
+  font-family: var(--font-ui);
   color: var(--primary-action);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  transition: all var(--duration-slow) var(--ease-breathe);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -305,6 +316,7 @@
 .previewButton:hover:not(:disabled) {
   background-color: rgba(74, 144, 226, 0.1);
   border-color: var(--primary-action);
+  transform: translateY(-1px);
 }
 
 .previewButton:focus-visible {
@@ -327,12 +339,13 @@
   padding: var(--space-sm) var(--space-md);
   background: var(--primary-action);
   border: none;
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius-md);
   font-size: 12px;
   font-weight: 600;
+  font-family: var(--font-ui);
   color: white;
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  transition: all var(--duration-slow) var(--ease-breathe);
 }
 
 .applyButton:hover:not(:disabled) {
@@ -369,17 +382,19 @@
   padding: var(--space-sm) var(--space-md);
   background: var(--background-secondary);
   border: 1px solid var(--border-light);
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius-md);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
+  font-family: var(--font-ui);
   color: var(--text-primary);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  transition: all var(--duration-slow) var(--ease-breathe);
 }
 
 .tryAgainButton:hover:not(:disabled) {
   background: var(--background-primary);
   border-color: var(--border-medium);
+  transform: translateY(-1px);
 }
 
 .tryAgainButton:focus-visible {
@@ -397,12 +412,13 @@
   padding: var(--space-sm) var(--space-md);
   background: rgba(74, 144, 226, 0.1);
   border: 1px solid var(--primary-action);
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius-md);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
+  font-family: var(--font-ui);
   color: var(--primary-action);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  transition: all var(--duration-slow) var(--ease-breathe);
 }
 
 .surpriseButton:hover:not(:disabled) {
@@ -472,17 +488,19 @@
   padding: var(--space-sm) var(--space-lg);
   background: var(--background-secondary);
   border: 1px solid var(--border-medium);
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius-md);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
+  font-family: var(--font-ui);
   color: var(--text-primary);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  transition: all var(--duration-slow) var(--ease-breathe);
 }
 
 .cancelButton:hover:not(:disabled) {
   background: var(--border-light);
   border-color: var(--border-dark);
+  transform: translateY(-1px);
 }
 
 .cancelButton:focus-visible {
@@ -499,12 +517,13 @@
   padding: var(--space-sm) var(--space-lg);
   background: var(--primary-action);
   border: none;
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius-md);
   font-size: 13px;
   font-weight: 600;
+  font-family: var(--font-ui);
   color: white;
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  transition: all var(--duration-slow) var(--ease-breathe);
   display: flex;
   align-items: center;
   gap: var(--space-sm);

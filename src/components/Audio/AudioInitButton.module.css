@@ -1,7 +1,7 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-sm);
   align-items: flex-start;
 }
 
@@ -9,23 +9,24 @@
 .buttonLoading,
 .buttonReady,
 .buttonError {
-  padding: 0.5rem 1rem;
+  padding: var(--space-sm) var(--space-lg);
   border: none;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  border-radius: var(--border-radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-ui);
   cursor: pointer;
-  transition: all 200ms ease-out;
+  transition: all var(--duration-slow) var(--ease-breathe);
   min-width: 120px;
 }
 
 .buttonDefault {
-  background-color: #6b7280;
+  background-color: var(--secondary-action);
   color: white;
 }
 
 .buttonDefault:hover:not(:disabled) {
-  background-color: #4b5563;
+  background-color: #6b7a8c;
   transform: translateY(-1px);
 }
 
@@ -34,34 +35,35 @@
 }
 
 .buttonLoading {
-  background-color: #3b82f6;
+  background-color: var(--primary-action);
   color: white;
   opacity: 0.8;
   cursor: not-allowed;
-  animation: pulse 1.5s ease-in-out infinite;
+  animation: pulse var(--duration-glacial) var(--ease-breathe) infinite;
 }
 
 .buttonReady {
-  background-color: #10b981;
+  background-color: var(--success);
   color: white;
   cursor: not-allowed;
 }
 
 .buttonError {
-  background-color: #ef4444;
+  background-color: var(--error);
   color: white;
 }
 
 .buttonError:hover:not(:disabled) {
-  background-color: #dc2626;
+  background-color: #a63629;
   transform: translateY(-1px);
 }
 
 .errorMessage {
-  font-size: 0.75rem;
-  color: #ef4444;
+  font-size: 12px;
+  color: var(--error);
   max-width: 200px;
   word-break: break-word;
+  font-family: var(--font-ui);
 }
 
 @keyframes pulse {

@@ -10,7 +10,7 @@
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   z-index: calc(var(--z-modal) - 1);
-  animation: fadeIn var(--duration-normal) var(--ease-smooth-out);
+  animation: fadeIn var(--duration-deliberate) var(--ease-breathe);
 }
 
 /* Modal container */
@@ -29,6 +29,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  animation: slideUp var(--duration-deliberate) var(--ease-breathe);
 }
 
 /* Modal header */
@@ -44,8 +45,10 @@
 .header h2 {
   margin: 0;
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
+  font-family: var(--font-display);
   color: var(--text-primary);
+  letter-spacing: -0.3px;
 }
 
 /* Close button */
@@ -61,8 +64,8 @@
   color: var(--text-secondary);
   border-radius: var(--border-radius-sm);
   font-size: 20px;
-  transition: background-color var(--duration-fast) var(--ease-apple-smooth),
-              color var(--duration-fast) var(--ease-apple-smooth);
+  transition: background-color var(--duration-slow) var(--ease-breathe),
+              color var(--duration-slow) var(--ease-breathe);
 }
 
 .closeButton:hover {
@@ -99,13 +102,13 @@
   padding: var(--space-md);
   padding-right: var(--space-lg);
   border: 1px solid var(--border-light);
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius-md);
   font-size: 13px;
   font-family: var(--font-ui);
   color: var(--text-primary);
   background: var(--background-primary);
-  transition: border-color var(--duration-fast) var(--ease-apple-smooth),
-              box-shadow var(--duration-fast) var(--ease-apple-smooth);
+  transition: border-color var(--duration-slow) var(--ease-breathe),
+              box-shadow var(--duration-slow) var(--ease-breathe);
 }
 
 .searchInput:focus {
@@ -148,12 +151,13 @@
   padding: var(--space-sm) var(--space-md);
   background: var(--background-primary);
   border: 1px solid var(--border-light);
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius-md);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
+  font-family: var(--font-ui);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  transition: all var(--duration-slow) var(--ease-breathe);
 }
 
 .filterTab:hover {
@@ -197,13 +201,14 @@
   padding: var(--space-lg);
   background: var(--background-secondary);
   border: 1px solid var(--border-light);
-  border-radius: var(--border-radius-md);
-  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  border-radius: var(--border-radius-lg);
+  transition: all var(--duration-slow) var(--ease-breathe);
 }
 
 .progressionCard:hover {
   border-color: var(--border-medium);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
 }
 
 /* Card header with title and favorite */
@@ -218,10 +223,12 @@
 .progressionTitle {
   margin: 0;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
+  font-family: var(--font-display);
   color: var(--text-primary);
   flex: 1;
   word-break: break-word;
+  letter-spacing: -0.2px;
 }
 
 /* Favorite button */
@@ -238,7 +245,7 @@
   color: var(--text-tertiary);
   font-size: 18px;
   border-radius: var(--border-radius-sm);
-  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  transition: all var(--duration-slow) var(--ease-breathe);
   padding: 0;
 }
 
@@ -311,11 +318,12 @@
   min-width: 80px;
   padding: var(--space-xs) var(--space-md);
   border: 1px solid var(--border-light);
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius-md);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
+  font-family: var(--font-ui);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  transition: all var(--duration-slow) var(--ease-breathe);
 }
 
 .actionButton:focus-visible {
@@ -339,6 +347,7 @@
   background-color: #3a7bc8;
   border-color: #3a7bc8;
   transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
 }
 
 .loadButton:active:not(:disabled) {
@@ -459,12 +468,13 @@
   padding: var(--space-sm) var(--space-lg);
   background: var(--background-secondary);
   border: 1px solid var(--border-medium);
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius-md);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
+  font-family: var(--font-ui);
   color: var(--text-primary);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  transition: all var(--duration-slow) var(--ease-breathe);
 }
 
 .closeFooterButton:hover {
