@@ -1,0 +1,37 @@
+.badge {
+  position: absolute;
+  bottom: -2px;
+  left: -2px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border: none;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  z-index: 10;
+  /* GPU acceleration for better animation performance */
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.badge:hover {
+  transform: scale(1.15) translateZ(0);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+.badge:active {
+  transform: scale(1.05) translateZ(0);
+}
+
+.badge:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}

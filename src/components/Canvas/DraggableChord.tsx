@@ -4,7 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { ChordShape } from './ChordShape';
 import { ChordAnnotationPopover } from './ChordAnnotationPopover';
 import { CANVAS_CONFIG } from '@/utils/constants';
-import type { Chord, ChordQuality, ChordExtensions } from '@/types';
+import type { Chord, ChordQuality, ChordExtensions, ChordAnnotation, ChordAnnotationType } from '@/types';
 import styles from './DraggableChord.module.css';
 import { useWhyThisStore, type SongContext } from '@/store/why-this-store';
 import { useCanvasStore } from '@/store/canvas-store';
@@ -115,14 +115,30 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
     setAnnotationPopoverOpen(true);
   }, []);
 
-  const handleSaveAnnotation = useCallback((note: string) => {
-    if (note) {
-      setAnnotation(chord.id, note);
-    } else {
-      removeAnnotation(chord.id);
-    }
-    setAnnotationPopoverOpen(false);
-  }, [chord.id, setAnnotation, removeAnnotation]);
+  // Convert stored string annotation to ChordAnnotation objects for compatibility
+  const annotationsForPopover: ChordAnnotation[] = useMemo(() => {
+    if (!currentAnnotation) return [];
+    return [{
+      id: `${chord.id}-legacy`,
+      chordId: chord.id,
+      text: currentAnnotation,
+      type: 'note' as ChordAnnotationType,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }];
+  }, [currentAnnotation, chord.id]);
+
+  const handleAddAnnotation = useCallback((text: string) => {
+    setAnnotation(chord.id, text);
+  }, [chord.id, setAnnotation]);
+
+  const handleUpdateAnnotation = useCallback((text: string) => {
+    setAnnotation(chord.id, text);
+  }, [chord.id, setAnnotation]);
+
+  const handleDeleteAnnotation = useCallback(() => {
+    removeAnnotation(chord.id);
+  }, [chord.id, removeAnnotation]);
 
   // Voice editing handlers
   const isEditingThisChord = isVoiceEditingMode && activeChordId === chord.id;
@@ -334,9 +350,11 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
       <ChordAnnotationPopover
         isOpen={annotationPopoverOpen}
         position={annotationPopoverPosition}
-        initialNote={currentAnnotation}
-        onSave={handleSaveAnnotation}
-        onCancel={() => setAnnotationPopoverOpen(false)}
+        annotations={annotationsForPopover}
+        onAddAnnotation={handleAddAnnotation}
+        onUpdateAnnotation={handleUpdateAnnotation}
+        onDeleteAnnotation={handleDeleteAnnotation}
+        onClose={() => setAnnotationPopoverOpen(false)}
       />
     </>
   );

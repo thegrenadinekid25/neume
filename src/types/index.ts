@@ -14,6 +14,8 @@ export type {
   Voices,
   Position,
   ChordSource,
+  ChordAnnotationType,
+  ChordAnnotation,
 } from './chord';
 
 export type {
@@ -25,6 +27,8 @@ export type {
   BuildUpStep,
   BuildUp,
   SavedProgression,
+  ProgressionAnnotationType,
+  ProgressionAnnotation,
 } from './progression';
 
 export type {

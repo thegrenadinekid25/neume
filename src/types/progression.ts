@@ -1,4 +1,4 @@
-import { Chord, MusicalKey, Mode } from './chord';
+import { Chord, MusicalKey, Mode, ChordAnnotation } from './chord';
 
 /**
  * Phrase boundary for visual grouping of chord patterns
@@ -50,12 +50,20 @@ export interface BuildUpStep {
 }
 
 /**
- * Per-chord annotation from user
+ * Progression annotation type - categorizes progression-level notes
  */
-export interface ChordAnnotation {
-  chordId: string;
-  note: string;
+export type ProgressionAnnotationType = 'intent' | 'context' | 'history' | 'general';
+
+/**
+ * Progression-level annotation
+ */
+export interface ProgressionAnnotation {
+  id: string;
+  text: string;
+  type: ProgressionAnnotationType;
+  position?: number; // Optional beat position for positional notes
   createdAt: string;
+  updatedAt: string;
 }
 
 /**
@@ -86,6 +94,12 @@ export interface SavedProgression {
 
   // Per-chord annotations
   annotations?: ChordAnnotation[];
+
+  // Enhanced chord-level annotations
+  chordAnnotations?: ChordAnnotation[];
+
+  // Enhanced progression-level annotations
+  progressionAnnotations?: ProgressionAnnotation[];
 
   // Optional metadata from analysis
   analyzedFrom?: {

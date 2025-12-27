@@ -4,36 +4,215 @@
   border: 1px solid var(--border-medium);
   border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-lg);
-  width: 280px;
+  width: 400px;
+  max-height: 600px;
+  overflow-y: auto;
   z-index: 1000;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
   display: flex;
   align-items: center;
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--space-md) var(--space-md);
   border-bottom: 1px solid var(--border-light);
   background: var(--background-secondary);
+  flex-shrink: 0;
 }
 
 .title {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
   font-family: var(--font-ui);
   color: var(--text-primary);
 }
 
-.textarea {
+/* Annotations List */
+.annotationsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  flex-shrink: 0;
+}
+
+.annotationItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--background-secondary);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-light);
+}
+
+.annotationContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.typeBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: var(--border-radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  color: white;
+  width: fit-content;
+  text-transform: capitalize;
+}
+
+.annotationText {
+  margin: 0;
+  font-size: 13px;
+  font-family: var(--font-ui);
+  color: var(--text-primary);
+  line-height: 1.4;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.annotationActions {
+  display: flex;
+  gap: var(--space-xs);
+  justify-content: flex-end;
+}
+
+.editButton,
+.deleteButton {
+  padding: 6px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: all var(--duration-normal) var(--ease-breathe);
+}
+
+.editButton:hover {
+  background: var(--background-tertiary);
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+}
+
+.deleteButton:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.editButton:focus-visible,
+.deleteButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 1px;
+}
+
+/* Edit Mode */
+.editMode {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.editTextarea {
   width: 100%;
-  padding: var(--space-sm) var(--space-md);
-  border: none;
+  padding: var(--space-sm);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--border-radius-sm);
   resize: none;
   font-size: 13px;
   font-family: var(--font-ui);
   color: var(--text-primary);
-  background: transparent;
-  min-height: 72px;
+  background: white;
+  box-sizing: border-box;
+}
+
+.editTextarea:focus {
+  outline: none;
+  border-color: var(--primary-action);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.editButtons {
+  display: flex;
+  gap: var(--space-xs);
+  justify-content: flex-end;
+}
+
+/* Type Selector Pills */
+.typeSelector {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.typePill {
+  padding: 6px 12px;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--border-radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  background: white;
+  color: var(--text-secondary);
+  transition: all var(--duration-normal) var(--ease-breathe);
+  white-space: nowrap;
+}
+
+.typePill:hover {
+  border-color: var(--primary-action);
+  background: var(--background-tertiary);
+}
+
+.typePillActive {
+  color: white;
+  border-color: transparent;
+}
+
+.typePill:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 1px;
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: var(--border-light);
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* Add Annotation Section */
+.addAnnotationSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: white;
+  flex-shrink: 0;
+}
+
+.textarea {
+  width: 100%;
+  padding: var(--space-sm);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--border-radius-sm);
+  resize: none;
+  font-size: 13px;
+  font-family: var(--font-ui);
+  color: var(--text-primary);
+  background: white;
+  box-sizing: border-box;
+  min-height: 80px;
 }
 
 .textarea::placeholder {
@@ -42,15 +221,15 @@
 
 .textarea:focus {
   outline: none;
+  border-color: var(--primary-action);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
 .footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-sm) var(--space-md);
-  border-top: 1px solid var(--border-light);
-  background: var(--background-secondary);
+  padding: var(--space-sm) 0;
 }
 
 .hint {
@@ -66,32 +245,41 @@
 
 .cancelButton,
 .saveButton {
-  padding: var(--space-xs) var(--space-sm);
+  padding: 6px 16px;
   border: none;
   border-radius: var(--border-radius-sm);
   font-size: 12px;
   font-weight: 500;
   font-family: var(--font-ui);
   cursor: pointer;
-  transition: background-color var(--duration-normal) var(--ease-breathe);
+  transition: all var(--duration-normal) var(--ease-breathe);
 }
 
 .cancelButton {
   background: transparent;
   color: var(--text-secondary);
+  border: 1px solid transparent;
 }
 
 .cancelButton:hover {
   background: var(--background-tertiary);
+  color: var(--text-primary);
 }
 
 .saveButton {
   background: var(--primary-action);
   color: white;
+  border: 1px solid transparent;
 }
 
-.saveButton:hover {
+.saveButton:hover:not(:disabled) {
   background: var(--primary-action-hover, #3a80d2);
+}
+
+.saveButton:disabled {
+  background: var(--border-medium);
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .cancelButton:focus-visible,

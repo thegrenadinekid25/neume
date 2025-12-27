@@ -97,6 +97,23 @@ export interface Position {
 export type ChordSource = 'user' | 'analyzed' | 'library';
 
 /**
+ * Chord annotation type - categorizes the purpose of the note
+ */
+export type ChordAnnotationType = 'note' | 'performance' | 'theory' | 'reference';
+
+/**
+ * Enhanced chord annotation with type and timestamps
+ */
+export interface ChordAnnotation {
+  id: string;
+  chordId: string;
+  text: string;
+  type: ChordAnnotationType;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
  * Complete chord object
  */
 export interface Chord {

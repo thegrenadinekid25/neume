@@ -1,0 +1,527 @@
+/**
+ * ProgressionNotesPanel Component Styles
+ * CSS Module for the Progression Notes Panel
+ */
+
+/* Overlay backdrop */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+  z-index: calc(var(--z-panel) - 1);
+}
+
+/* Panel container */
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 380px;
+  height: 100vh;
+  background: var(--background-primary);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.12);
+  z-index: var(--z-panel);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Panel header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+  gap: var(--space-md);
+}
+
+.headerContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  font-family: var(--font-display);
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Close button */
+.closeButton {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-radius: var(--border-radius-sm);
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: background-color var(--duration-fast) var(--ease-apple-smooth),
+              color var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.closeButton:hover {
+  background-color: var(--background-secondary);
+  color: var(--text-primary);
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+/* Content area */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  padding-right: calc(var(--space-lg) - 4px); /* Account for scrollbar */
+}
+
+/* Scrollbar styling */
+.content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 3px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: var(--border-dark);
+}
+
+/* Filter tabs */
+.filterTabs {
+  display: flex;
+  gap: var(--space-xs);
+  border-bottom: 1px solid var(--border-light);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin: 0 calc(var(--space-lg) * -1);
+  padding: 0 var(--space-lg) var(--space-md);
+}
+
+.filterTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.filterTab {
+  flex-shrink: 0;
+  padding: var(--space-md) var(--space-sm);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: color var(--duration-fast) var(--ease-apple-smooth);
+  white-space: nowrap;
+  position: relative;
+}
+
+.filterTab:hover:not(.active) {
+  color: var(--text-primary);
+}
+
+.filterTab.active {
+  color: var(--primary-action);
+  border-bottom-color: var(--primary-action);
+}
+
+/* Annotations list */
+.annotationsList {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.annotationsList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.annotationsList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.annotationsList::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 3px;
+}
+
+.annotationsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.annotationItem {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--background-secondary);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-light);
+  align-items: flex-start;
+}
+
+.typeBadge {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.annotationContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.annotationText {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  margin: 0;
+  cursor: pointer;
+  padding: var(--space-xs);
+  border-radius: var(--border-radius-sm);
+  transition: background-color var(--duration-fast) var(--ease-apple-smooth);
+  word-break: break-word;
+  outline: none;
+}
+
+.annotationText:hover,
+.annotationText:focus-visible {
+  background-color: var(--border-light);
+}
+
+.positionLabel {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin: 0;
+  font-style: italic;
+}
+
+/* Edit form */
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.editInput {
+  font-size: 13px;
+  padding: var(--space-sm);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--border-radius-sm);
+  background: var(--background-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+  resize: none;
+  transition: border-color var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.editInput:focus {
+  outline: none;
+  border-color: var(--primary-action);
+}
+
+.editActions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.editButton {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.editButton.save {
+  background: var(--primary-action);
+  color: white;
+}
+
+.editButton.save:hover {
+  background-color: #3a7bc8;
+  transform: translateY(-1px);
+}
+
+.editButton.save:active {
+  transform: translateY(0);
+}
+
+.editButton.cancel {
+  background: var(--background-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+}
+
+.editButton.cancel:hover {
+  background: var(--border-light);
+  border-color: var(--border-medium);
+}
+
+.editButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+/* Delete button */
+.deleteButton {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  border-radius: var(--border-radius-sm);
+  font-size: 14px;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  margin-top: 2px;
+}
+
+.deleteButton:hover {
+  background-color: rgba(196, 69, 54, 0.1);
+  color: #c44536;
+}
+
+.deleteButton:focus-visible {
+  outline: 2px solid #c44536;
+  outline-offset: 2px;
+}
+
+/* Add form */
+.addForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background: var(--background-secondary);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-light);
+  flex-shrink: 0;
+  margin: 0 calc(var(--space-lg) * -1) calc(var(--space-lg) * -1);
+  margin-top: auto;
+}
+
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.typeSelect {
+  padding: var(--space-md);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  background: var(--background-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.typeSelect:hover {
+  border-color: var(--border-medium);
+}
+
+.typeSelect:focus {
+  outline: none;
+  border-color: var(--primary-action);
+}
+
+.textInput {
+  padding: var(--space-md);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  background: var(--background-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+  transition: border-color var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.textInput:focus {
+  outline: none;
+  border-color: var(--primary-action);
+}
+
+.addButton {
+  padding: var(--space-md) var(--space-lg);
+  background: var(--primary-action);
+  border: none;
+  border-radius: var(--border-radius-md);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.addButton:hover:not(:disabled) {
+  background-color: #3a7bc8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+}
+
+.addButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.addButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.addButton:focus-visible:not(:disabled) {
+  outline: 2px solid #2b5aa5;
+  outline-offset: 2px;
+}
+
+/* Empty state */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl) var(--space-lg);
+  gap: var(--space-lg);
+  min-height: 120px;
+  text-align: center;
+}
+
+.emptyState p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .panel {
+    width: 100%;
+    border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+    top: auto;
+    bottom: 0;
+    max-height: 80vh;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
+  }
+
+  .header {
+    padding: var(--space-md);
+  }
+
+  .content {
+    padding: var(--space-md);
+  }
+
+  .addForm {
+    margin: 0 calc(var(--space-md) * -1) calc(var(--space-md) * -1);
+    padding: var(--space-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .panel {
+    width: 100%;
+    max-height: 90vh;
+  }
+
+  .title {
+    font-size: 14px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+  }
+
+  .filterTabs {
+    margin: 0 calc(var(--space-md) * -1);
+    padding: 0 var(--space-md) var(--space-sm);
+  }
+
+  .annotationItem {
+    padding: var(--space-sm);
+  }
+
+  .typeBadge {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+
+  .deleteButton {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+
+  .addButton {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 12px;
+  }
+}
