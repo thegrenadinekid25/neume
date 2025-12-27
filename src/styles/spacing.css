@@ -1,0 +1,195 @@
+/**
+ * Spacing System - 10:1 Scale
+ *
+ * Based on Bauhaus asymmetric design principles.
+ * All spacing values follow a 10:1 ratio for visual harmony.
+ *
+ * xs: 4px
+ * sm: 8px (2x)
+ * md: 16px (4x)
+ * lg: 32px (8x)
+ * xl: 64px (16x)
+ * xxl: 128px (32x)
+ */
+
+:root {
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 32px;
+  --spacing-xl: 64px;
+  --spacing-xxl: 128px;
+}
+
+/* Gap utilities - for flexbox and grid */
+.gap-xs {
+  gap: var(--spacing-xs);
+}
+
+.gap-sm {
+  gap: var(--spacing-sm);
+}
+
+.gap-md {
+  gap: var(--spacing-md);
+}
+
+.gap-lg {
+  gap: var(--spacing-lg);
+}
+
+.gap-xl {
+  gap: var(--spacing-xl);
+}
+
+.gap-xxl {
+  gap: var(--spacing-xxl);
+}
+
+/* Padding utilities - all sides */
+.p-xs {
+  padding: var(--spacing-xs);
+}
+
+.p-sm {
+  padding: var(--spacing-sm);
+}
+
+.p-md {
+  padding: var(--spacing-md);
+}
+
+.p-lg {
+  padding: var(--spacing-lg);
+}
+
+.p-xl {
+  padding: var(--spacing-xl);
+}
+
+.p-xxl {
+  padding: var(--spacing-xxl);
+}
+
+/* Horizontal padding utilities */
+.px-xs {
+  padding-left: var(--spacing-xs);
+  padding-right: var(--spacing-xs);
+}
+
+.px-sm {
+  padding-left: var(--spacing-sm);
+  padding-right: var(--spacing-sm);
+}
+
+.px-md {
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
+}
+
+.px-lg {
+  padding-left: var(--spacing-lg);
+  padding-right: var(--spacing-lg);
+}
+
+/* Vertical padding utilities */
+.py-xs {
+  padding-top: var(--spacing-xs);
+  padding-bottom: var(--spacing-xs);
+}
+
+.py-sm {
+  padding-top: var(--spacing-sm);
+  padding-bottom: var(--spacing-sm);
+}
+
+.py-md {
+  padding-top: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+}
+
+.py-lg {
+  padding-top: var(--spacing-lg);
+  padding-bottom: var(--spacing-lg);
+}
+
+/* Margin utilities - all sides */
+.m-xs {
+  margin: var(--spacing-xs);
+}
+
+.m-sm {
+  margin: var(--spacing-sm);
+}
+
+.m-md {
+  margin: var(--spacing-md);
+}
+
+.m-lg {
+  margin: var(--spacing-lg);
+}
+
+.m-xl {
+  margin: var(--spacing-xl);
+}
+
+.m-xxl {
+  margin: var(--spacing-xxl);
+}
+
+/* Horizontal margin utilities */
+.mx-xs {
+  margin-left: var(--spacing-xs);
+  margin-right: var(--spacing-xs);
+}
+
+.mx-sm {
+  margin-left: var(--spacing-sm);
+  margin-right: var(--spacing-sm);
+}
+
+.mx-md {
+  margin-left: var(--spacing-md);
+  margin-right: var(--spacing-md);
+}
+
+.mx-lg {
+  margin-left: var(--spacing-lg);
+  margin-right: var(--spacing-lg);
+}
+
+/* Vertical margin utilities */
+.my-xs {
+  margin-top: var(--spacing-xs);
+  margin-bottom: var(--spacing-xs);
+}
+
+.my-sm {
+  margin-top: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.my-md {
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.my-lg {
+  margin-top: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Asymmetric layout utilities */
+.layout-asymmetric-13x1 {
+  display: grid;
+  grid-template-columns: 1fr 3fr 1fr;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl);
+}
+
+.layout-sidebar {
+  width: 280px;
+  padding: var(--spacing-md);
+  margin-left: var(--spacing-sm);
+}

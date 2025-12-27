@@ -5,7 +5,7 @@
   border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-lg);
   min-width: 200px;
-  padding: 4px;
+  padding: var(--space-xs);
   z-index: 1000;
   overflow: hidden;
 }
@@ -14,7 +14,7 @@
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 8px 12px;
+  padding: var(--space-sm) var(--space-md);
   border: none;
   background: none;
   text-align: left;
@@ -44,7 +44,7 @@
 .icon {
   display: inline-flex;
   align-items: center;
-  margin-right: 8px;
+  margin-right: var(--space-sm);
 }
 
 .label {
@@ -54,7 +54,7 @@
 .divider {
   height: 1px;
   background-color: var(--border-light);
-  margin: 4px 0;
+  margin: var(--space-xs) 0;
 }
 
 .menuItemWrapper {
@@ -70,7 +70,7 @@
   border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-lg);
   min-width: 200px;
-  padding: 4px;
+  padding: var(--space-xs);
   z-index: 1001;
   overflow: hidden;
 }
@@ -89,7 +89,7 @@
 }
 
 .menuItem.hasSubmenu {
-  padding-right: 8px;
+  padding-right: var(--space-sm);
 }
 
 .menuItem.hasSubmenu:hover::after,

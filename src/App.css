@@ -15,7 +15,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  padding: 0 var(--space-lg);
   box-shadow: var(--shadow-sm);
 }
 
@@ -36,16 +36,16 @@
 .demo-controls {
   height: var(--controls-height);
   background-color: var(--background-secondary);
-  padding: 0 24px;
+  padding: 0 var(--space-lg);
   border-bottom: 1px solid var(--border-light);
   display: flex;
-  gap: 32px;
+  gap: var(--space-lg);
   align-items: center;
 }
 
 .control-group {
   display: flex;
-  gap: 12px;
+  gap: var(--space-sm);
   align-items: center;
 }
 
@@ -57,7 +57,7 @@
 
 .control-group select,
 .control-group button {
-  padding: 6px 12px;
+  padding: var(--space-sm) var(--space-md);
   border: 1px solid var(--border-medium);
   border-radius: var(--border-radius-sm);
   background-color: white;
@@ -82,7 +82,7 @@
   background-color: var(--primary-action) !important;
   color: white !important;
   border: none !important;
-  padding: 8px 16px !important;
+  padding: var(--space-sm) var(--space-md) !important;
   font-weight: 500;
 }
 
@@ -93,14 +93,14 @@
 .legend-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-md);
   font-size: 13px;
   color: var(--text-secondary);
 }
@@ -168,8 +168,8 @@
 /* Help Button */
 .help-button {
   position: fixed;
-  bottom: 20px;
-  left: 20px;
+  bottom: var(--space-lg);
+  left: var(--space-lg);
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -194,8 +194,8 @@
 /* Help Panel */
 .help-panel {
   position: fixed;
-  bottom: 70px;
-  left: 20px;
+  bottom: calc(var(--space-lg) + 50px);
+  left: var(--space-lg);
   width: 320px;
   max-height: 70vh;
   overflow-y: auto;
@@ -203,7 +203,7 @@
   border: 1px solid var(--border-light);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-lg);
-  padding: 16px;
+  padding: var(--space-md);
   z-index: 100;
 }
 
@@ -211,8 +211,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
   border-bottom: 1px solid var(--border-light);
 }
 
@@ -243,7 +243,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-tertiary);
-  margin: 16px 0 8px;
+  margin: var(--space-md) 0 var(--space-sm);
 }
 
 .help-panel h4:first-of-type {
@@ -252,7 +252,7 @@
 
 .help-panel .legend-grid {
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: var(--space-sm);
 }
 
 .help-panel .legend-item {
@@ -272,7 +272,7 @@
 
 .shortcuts-grid {
   display: grid;
-  gap: 6px;
+  gap: var(--space-xs);
 }
 
 .shortcuts-grid div {
@@ -280,12 +280,12 @@
   color: var(--text-secondary);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-sm);
 }
 
 .shortcuts-grid kbd {
   display: inline-block;
-  padding: 2px 6px;
+  padding: var(--space-xs) var(--space-xs);
   font-size: 11px;
   font-family: inherit;
   background-color: var(--background-secondary);

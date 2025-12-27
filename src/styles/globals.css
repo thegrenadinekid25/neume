@@ -3,6 +3,7 @@
  */
 
 @import './typography.css';
+@import './spacing.css';
 
 *,
 *::before,
@@ -17,12 +18,13 @@
   --font-notation: 'DM Mono', monospace;
   --font-display: 'Fraunces', serif;
 
+  /* Spacing variables (10:1 scale) */
   --space-xs: 4px;
   --space-sm: 8px;
-  --space-md: 12px;
-  --space-lg: 16px;
-  --space-xl: 24px;
-  --space-2xl: 32px;
+  --space-md: 16px;
+  --space-lg: 32px;
+  --space-xl: 64px;
+  --space-2xl: 128px;
 
   --border-radius-sm: 4px;
   --border-radius-md: 6px;
