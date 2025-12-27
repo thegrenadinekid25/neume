@@ -3,6 +3,7 @@ import { DndContext, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/
 import { restrictToHorizontalAxis } from '@dnd-kit/modifiers';
 import { useDragDrop } from '@/hooks/useDragDrop';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useCanvasStore } from '@/store/canvas-store';
 import { Canvas } from './Canvas';
 import { DraggableChord } from './DraggableChord';
 import { ChordShape } from './ChordShape';
@@ -75,6 +76,7 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
   onTempoChange,
 }) => {
   const { sensors } = useDragDrop();
+  const necklaceSettings = useCanvasStore((state) => state.necklaceSettings);
   const [activeChord, setActiveChord] = useState<Chord | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
@@ -270,6 +272,8 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
           playheadPosition={playheadPosition}
           totalBeats={totalBeats}
           phrases={phrases}
+          chords={chords}
+          necklaceSettings={necklaceSettings}
           onAddChord={onAddChord}
           onZoomChange={onZoomChange}
         >

@@ -7,3 +7,4 @@ export { ChordShape } from './ChordShape';
 export { ChordContextMenu } from './ChordContextMenu';
 export { SelectionBox } from './SelectionBox';
 export { MetadataBanner } from './MetadataBanner';
+export { MelodicNecklaces } from './MelodicNecklaces';

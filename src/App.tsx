@@ -14,6 +14,7 @@ import { WelcomeTutorial } from '@/components/Tutorial/WelcomeTutorial';
 import { Sidebar, SidebarSection, SidebarDivider, SidebarSpacer } from '@/components/Sidebar';
 import { AuthModal, UserMenu } from '@/components/Auth';
 import { AudioLoadingIndicator } from '@/components/Audio';
+import { NecklaceToggle } from '@/components/UI';
 
 // Lazy load modals for code splitting
 const KeyboardShortcutsGuide = lazy(() => import('@/components/UI/KeyboardShortcutsGuide').then(m => ({ default: m.KeyboardShortcutsGuide })));
@@ -607,6 +608,13 @@ function App() {
             value={zoom}
             onChange={(v) => setZoom(v as number)}
           />
+        </SidebarSection>
+
+        <SidebarDivider />
+
+        {/* View Settings */}
+        <SidebarSection>
+          <NecklaceToggle />
         </SidebarSection>
 
         <SidebarDivider />

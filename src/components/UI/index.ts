@@ -16,3 +16,5 @@ export type { IconName, MusicalIconProps } from './MusicalIcon';
 
 export { SegmentedControl } from './SegmentedControl';
 export type { SegmentedControlProps, SegmentedControlOption } from './SegmentedControl';
+
+export { NecklaceToggle } from './NecklaceToggle';

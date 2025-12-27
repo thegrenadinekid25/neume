@@ -2,7 +2,9 @@ import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import type { Chord, MusicalKey, Mode, ScaleDegree, ChordQuality } from '@/types';
 import type { PhraseBoundary } from '@/types/progression';
+import type { NecklaceSettings, VoicePart } from '@/types/necklace';
 import { CANVAS_CONFIG, DEFAULT_CHORD_SIZE } from '@/utils/constants';
+import { DEFAULT_NECKLACE_SETTINGS } from '@/types/necklace';
 
 interface CanvasState {
   // Chords
@@ -35,6 +37,9 @@ interface CanvasState {
   // Audio
   masterVolume: number;
   audioReady: boolean;
+
+  // Necklace visualization
+  necklaceSettings: NecklaceSettings;
 
   // Actions - Chords
   addChord: (chord: Partial<Chord> & { scaleDegree: ScaleDegree; position: { x: number; y: number } }) => Chord;
@@ -84,6 +89,13 @@ interface CanvasState {
   // Actions - Audio
   setMasterVolume: (volume: number) => void;
   setAudioReady: (ready: boolean) => void;
+
+  // Actions - Necklace
+  setNecklaceVisible: (visible: boolean) => void;
+  toggleVoiceNecklace: (voice: VoicePart) => void;
+  setVoiceNecklaceColor: (voice: VoicePart, color: string) => void;
+  setVoiceNecklaceOpacity: (voice: VoicePart, opacity: number) => void;
+  resetNecklaceSettings: () => void;
 }
 
 // Helper to determine chord quality from scale degree and mode
@@ -127,6 +139,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   playheadPosition: 0,
   masterVolume: 0.7,
   audioReady: false,
+  necklaceSettings: DEFAULT_NECKLACE_SETTINGS,
 
   // Chord actions
   addChord: (chordInput) => {
@@ -327,4 +340,55 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   setAudioReady: (ready) => {
     set({ audioReady: ready });
   },
+
+  // Necklace actions
+  setNecklaceVisible: (visible) =>
+    set((state) => ({
+      necklaceSettings: { ...state.necklaceSettings, visible },
+    })),
+
+  toggleVoiceNecklace: (voice) =>
+    set((state) => ({
+      necklaceSettings: {
+        ...state.necklaceSettings,
+        voices: {
+          ...state.necklaceSettings.voices,
+          [voice]: {
+            ...state.necklaceSettings.voices[voice],
+            enabled: !state.necklaceSettings.voices[voice].enabled,
+          },
+        },
+      },
+    })),
+
+  setVoiceNecklaceColor: (voice, color) =>
+    set((state) => ({
+      necklaceSettings: {
+        ...state.necklaceSettings,
+        voices: {
+          ...state.necklaceSettings.voices,
+          [voice]: {
+            ...state.necklaceSettings.voices[voice],
+            color,
+          },
+        },
+      },
+    })),
+
+  setVoiceNecklaceOpacity: (voice, opacity) =>
+    set((state) => ({
+      necklaceSettings: {
+        ...state.necklaceSettings,
+        voices: {
+          ...state.necklaceSettings.voices,
+          [voice]: {
+            ...state.necklaceSettings.voices[voice],
+            opacity: Math.max(0, Math.min(1, opacity)),
+          },
+        },
+      },
+    })),
+
+  resetNecklaceSettings: () =>
+    set({ necklaceSettings: DEFAULT_NECKLACE_SETTINGS }),
 }));

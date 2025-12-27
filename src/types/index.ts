@@ -61,3 +61,14 @@ export type {
   AnalysisResult,
   AnalyzedChord,
 } from './analysis';
+
+export type {
+  VoicePart,
+  VoiceNecklaceConfig,
+  NecklaceSettings,
+} from './necklace';
+
+export {
+  VOICE_COLORS,
+  DEFAULT_NECKLACE_SETTINGS,
+} from './necklace';

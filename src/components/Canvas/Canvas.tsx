@@ -5,8 +5,10 @@ import { Playhead } from './Playhead';
 import { TimelineRuler } from './TimelineRuler';
 import { ChordContextMenu } from './ChordContextMenu';
 import { PhraseBackgrounds } from './PhraseBackgrounds';
-import type { ScaleDegree, MusicalKey, Mode } from '@/types';
+import { MelodicNecklaces } from './MelodicNecklaces';
+import type { ScaleDegree, MusicalKey, Mode, Chord } from '@/types';
 import type { PhraseBoundary } from '@/types/progression';
+import type { NecklaceSettings } from '@/types/necklace';
 
 interface CanvasProps {
   currentKey: MusicalKey;
@@ -17,6 +19,8 @@ interface CanvasProps {
   playheadPosition?: number;
   totalBeats?: number;
   phrases?: PhraseBoundary[];
+  chords?: Chord[];
+  necklaceSettings: NecklaceSettings;
   onCanvasClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
   onAddChord?: (scaleDegree: ScaleDegree, position: { x: number }, options?: { quality?: import('@/types').ChordQuality; extensions?: import('@/types').ChordExtensions }) => void;
   onZoomChange?: (zoom: number) => void;
@@ -31,6 +35,8 @@ export const Canvas: React.FC<CanvasProps> = ({
   playheadPosition = 0,
   totalBeats = 32,
   phrases = [],
+  chords = [],
+  necklaceSettings,
   onCanvasClick,
   onAddChord,
   onZoomChange,
@@ -229,6 +235,14 @@ export const Canvas: React.FC<CanvasProps> = ({
           <div className={styles.chordArea} style={{ height: chordAreaHeight }}>
             {/* Phrase background boxes */}
             <PhraseBackgrounds phrases={phrases} zoom={zoom} />
+
+            {/* Melodic necklaces visualization */}
+            <MelodicNecklaces
+              chords={chords}
+              settings={necklaceSettings}
+              containerHeight={chordAreaHeight}
+              zoom={zoom}
+            />
 
             {children}
 

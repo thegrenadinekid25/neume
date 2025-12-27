@@ -1,0 +1,19 @@
+.necklace {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.voicePath {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.voiceDot {
+  transition: r 0.2s ease-out;
+}
