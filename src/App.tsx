@@ -8,7 +8,7 @@ import { SegmentedControl } from '@/components/UI/SegmentedControl';
 import { FloatingActionButton, FABIcons } from '@/components/UI/FloatingActionButton';
 import { ChordPalette } from '@/components/Palette';
 import { HELP_CONTENT } from '@/data/help-content';
-import { WhyThisPanel, BuildFromBonesPanel } from '@/components/Panels';
+import { WhyThisPanel, BuildFromBonesPanel, CompositionToolsPanel } from '@/components/Panels';
 import { PulseRingTempo } from '@/components/Controls';
 import { WelcomeTutorial } from '@/components/Tutorial/WelcomeTutorial';
 import { Sidebar, SidebarSection, SidebarDivider, SidebarSpacer } from '@/components/Sidebar';
@@ -33,6 +33,7 @@ import { useProgressionsStore } from '@/store/progressions-store';
 import { useRefineStore } from '@/store/refine-store';
 import { useTutorialStore } from '@/store/tutorial-store';
 import { useNarrativeComposerStore } from '@/store/narrative-composer-store';
+import { useCompositionToolsStore } from '@/store/composition-tools-store';
 import { generateSATBVoicing } from '@/audio/VoiceLeading';
 import type { Chord, MusicalKey, Mode, ScaleDegree, ChordQuality, ChordExtensions, Voices, SavedProgression } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -154,6 +155,7 @@ function App() {
   const openProgressionsModal = useProgressionsStore(state => state.openModal);
   const openRefineModal = useRefineStore(state => state.openModal);
   const openNarrativeComposerModal = useNarrativeComposerStore(state => state.openModal);
+  const openCompositionTools = useCompositionToolsStore(state => state.openPanel);
 
   // Calculate total beats based on chord positions + buffer
   const totalBeats = useMemo(() => {
@@ -478,6 +480,12 @@ function App() {
         label: 'Compose from Narrative',
         onClick: openNarrativeComposerModal,
       },
+      {
+        id: 'composition-tools',
+        icon: FABIcons.notes,
+        label: 'Lyrics & Voice Lines',
+        onClick: () => openCompositionTools(),
+      },
     ];
 
     // Only show Build From Bones if progression has complex chords
@@ -492,7 +500,7 @@ function App() {
     }
 
     return actions;
-  }, [chords.length, hasComplexChords, openProgressionsModal, openNarrativeComposerModal, handleBuildFromBones]);
+  }, [chords.length, hasComplexChords, openProgressionsModal, openNarrativeComposerModal, openCompositionTools, handleBuildFromBones]);
 
   // Add chord - now just needs x position to calculate startBeat
   const handleAddChord = useCallback((
@@ -554,6 +562,15 @@ function App() {
     setChords((prevChords) =>
       prevChords.map((chord) =>
         chord.id === chordId ? { ...chord, startBeat } : chord
+      )
+    );
+  }, []);
+
+  // Update chord voices - for manual voice line editing
+  const handleUpdateChordVoices = useCallback((chordId: string, voices: Voices) => {
+    setChords((prevChords) =>
+      prevChords.map((chord) =>
+        chord.id === chordId ? { ...chord, voices } : chord
       )
     );
   }, []);
@@ -811,6 +828,10 @@ function App() {
 
       <WhyThisPanel />
       <BuildFromBonesPanel />
+      <CompositionToolsPanel
+        chords={chords}
+        onUpdateChordVoices={handleUpdateChordVoices}
+      />
 
       <WelcomeTutorial />
 
