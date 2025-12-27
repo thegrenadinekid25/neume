@@ -45,21 +45,18 @@ export const VoiceLine: React.FC<VoiceLineComponentProps> = ({
   onNoteDragEnd,
   onNoteHover,
 }) => {
-  if (!voiceLine.enabled) {
-    return null;
-  }
-
   const voicePart = voiceLine.voicePart as VoicePart;
   const voiceColor = VOICE_RANGES[voicePart].color;
 
   // Calculate note positions
   const notePositions = useMemo(() => {
+    if (!voiceLine.enabled) return [];
     return voiceLine.notes.map((note) => ({
       note,
       x: note.startBeat * beatWidth * zoom,
       y: note.midi ? midiToY(note.midi, pitchConfig) : canvasHeight / 2,
     }));
-  }, [voiceLine.notes, beatWidth, zoom, pitchConfig, canvasHeight]);
+  }, [voiceLine.enabled, voiceLine.notes, beatWidth, zoom, pitchConfig, canvasHeight]);
 
   // Get guide lines for this voice's range
   const guideLines = useMemo(() => {
@@ -69,6 +66,7 @@ export const VoiceLine: React.FC<VoiceLineComponentProps> = ({
 
   // Find melisma connections (consecutive notes with same non-empty text)
   const melismaConnections = useMemo(() => {
+    if (!voiceLine.enabled) return [];
     const connections: MelismaConnection[] = [];
     for (let i = 0; i < voiceLine.notes.length - 1; i++) {
       const current = voiceLine.notes[i];
@@ -81,7 +79,7 @@ export const VoiceLine: React.FC<VoiceLineComponentProps> = ({
       }
     }
     return connections;
-  }, [voiceLine.notes]);
+  }, [voiceLine.enabled, voiceLine.notes]);
 
   // Handle note click
   const handleNoteClick = useCallback(
@@ -91,6 +89,11 @@ export const VoiceLine: React.FC<VoiceLineComponentProps> = ({
     },
     [onNoteSelect]
   );
+
+  // Early return after hooks
+  if (!voiceLine.enabled) {
+    return null;
+  }
 
   return (
     <svg

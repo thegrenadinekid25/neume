@@ -94,8 +94,7 @@ function createIssue(
  * Check for overly long melismas
  */
 function analyzeMelismas(
-  assignments: SyllableAssignment[],
-  _notes: MelodicNote[]
+  assignments: SyllableAssignment[]
 ): TextCoachingIssue[] {
   const issues: TextCoachingIssue[] = [];
 
@@ -268,8 +267,7 @@ function analyzeBreathMarks(
  */
 function analyzeClarity(
   assignments: SyllableAssignment[],
-  notes: MelodicNote[],
-  _syllables: Syllable[]
+  notes: MelodicNote[]
 ): TextCoachingIssue[] {
   const issues: TextCoachingIssue[] = [];
 
@@ -316,8 +314,6 @@ function analyzeClarity(
  */
 function analyzeRhythm(
   assignments: SyllableAssignment[],
-  _notes: MelodicNote[],
-  _syllables: Syllable[],
   mode: TextSettingMode
 ): TextCoachingIssue[] {
   const issues: TextCoachingIssue[] = [];
@@ -388,11 +384,11 @@ export function analyzeTextSetting(
   }
 
   // Run all analyses
-  issues.push(...analyzeMelismas(assignments, voiceLine.notes));
+  issues.push(...analyzeMelismas(assignments));
   issues.push(...analyzeSyllableStress(assignments, voiceLine.notes, syllables));
   issues.push(...analyzeBreathMarks(assignments, voiceLine.notes, syllables));
-  issues.push(...analyzeClarity(assignments, voiceLine.notes, syllables));
-  issues.push(...analyzeRhythm(assignments, voiceLine.notes, syllables, mode));
+  issues.push(...analyzeClarity(assignments, voiceLine.notes));
+  issues.push(...analyzeRhythm(assignments, mode));
 
   // Calculate summary
   const byCategory: Partial<Record<TextCoachingCategory, number>> = {};

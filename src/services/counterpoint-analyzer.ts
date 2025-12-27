@@ -512,10 +512,11 @@ function detectUnresolvedDissonances(
       let expectedResolution = '';
 
       // Check resolution based on dissonance type
+      const currNormalized = Math.abs(currInterval) % 12;
+
       switch (prevNormalized) {
         case TRITONE_LOW:
           // Tritone should resolve: d5 inward to 3rd, A4 outward to 6th
-          const currNormalized = Math.abs(currInterval) % 12;
           isResolved = currNormalized === 3 || currNormalized === 4 ||
                        currNormalized === 8 || currNormalized === 9;
           expectedResolution = 'Tritone should resolve to a 3rd or 6th';
@@ -523,16 +524,16 @@ function detectUnresolvedDissonances(
         case MINOR_SEVENTH:
         case MAJOR_SEVENTH:
           // 7th should resolve down by step to 6th or to octave
-          isResolved = Math.abs(currInterval) % 12 === 8 ||
-                       Math.abs(currInterval) % 12 === 9 ||
+          isResolved = currNormalized === 8 ||
+                       currNormalized === 9 ||
                        isPerfectOctaveOrUnison(currInterval);
           expectedResolution = '7th should resolve to a 6th or octave';
           break;
         case MINOR_SECOND:
         case MAJOR_SECOND:
           // 2nd should resolve outward to 3rd or inward to unison
-          isResolved = Math.abs(currInterval) % 12 === 3 ||
-                       Math.abs(currInterval) % 12 === 4 ||
+          isResolved = currNormalized === 3 ||
+                       currNormalized === 4 ||
                        isPerfectOctaveOrUnison(currInterval);
           expectedResolution = '2nd should resolve to a 3rd or unison';
           break;
