@@ -1,0 +1,57 @@
+/**
+ * WarningIndicator Component Styles
+ * Visual ring around notes with counterpoint violations
+ */
+
+.warningRing {
+  fill: none;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.warningRing.error {
+  stroke: var(--warm-terracotta, #E85D3D);
+}
+
+.warningRing.warning {
+  stroke: var(--warm-gold, #E8A03E);
+}
+
+.warningRing.info {
+  stroke: var(--warm-text-secondary, #7A7067);
+  stroke-dasharray: 4, 2;
+}
+
+.badge {
+  pointer-events: none;
+}
+
+.badgeCircle {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+}
+
+.badgeText {
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  user-select: none;
+}
+
+/* Pulse animation for errors */
+@keyframes errorPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.warningRing.error {
+  animation: errorPulse 2s ease-in-out infinite;
+}
+
+/* Accessibility: Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .warningRing.error {
+    animation: none;
+  }
+}

@@ -8,3 +8,4 @@ export { PitchDot } from './PitchDot';
 export { RestCloud } from './RestCloud';
 export { MelismaConnector } from './MelismaConnector';
 export { VoiceLine } from './VoiceLine';
+export { WarningIndicator } from './WarningIndicator';
