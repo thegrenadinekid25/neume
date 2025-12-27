@@ -2,6 +2,8 @@
  * Global styles for Neume
  */
 
+@import './typography.css';
+
 *,
 *::before,
 *::after {
@@ -11,9 +13,9 @@
 }
 
 :root {
-  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-notation: 'DM Sans', 'Space Grotesk', monospace;
-  --font-display: 'Recoleta', Georgia, serif;
+  --font-ui: 'Space Grotesk', sans-serif;
+  --font-notation: 'DM Mono', monospace;
+  --font-display: 'Fraunces', serif;
 
   --space-xs: 4px;
   --space-sm: 8px;

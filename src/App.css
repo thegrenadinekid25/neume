@@ -20,6 +20,7 @@
 }
 
 .app-header h1 {
+  font-family: var(--font-display);
   font-size: 18px;
   font-weight: 600;
   margin: 0;
