@@ -195,10 +195,23 @@
 
 /* Loading spinner */
 .animate-spin {
-  animation: spin var(--duration-normal) linear infinite;
+  animation: spin var(--duration-normal) var(--ease-smooth) infinite;
 }
 
 /* Shimmer effect */
 .animate-shimmer {
   animation: shimmer 2s var(--ease-breathe) infinite;
+}
+
+/* ==================== Accessibility ==================== */
+
+/* Respect prefers-reduced-motion for users who need animations reduced */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

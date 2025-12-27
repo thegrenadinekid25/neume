@@ -496,7 +496,7 @@
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
-  animation: spin var(--duration-slow) linear infinite;
+  animation: spin var(--duration-slow) var(--ease-smooth) infinite;
 }
 
 /* Example links section */

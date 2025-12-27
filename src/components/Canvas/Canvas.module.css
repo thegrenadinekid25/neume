@@ -10,14 +10,14 @@
   overflow-x: hidden;
   overflow-y: hidden;
   flex-shrink: 0;
-  padding: 0 20px;
+  padding: 0 var(--space-lg);
 }
 
 .timeline {
   flex: 1;
   display: flex;
   align-items: center;
-  padding: 20px 20px 40px 20px;
+  padding: var(--space-lg) var(--space-lg) calc(var(--space-lg) * 2) var(--space-lg);
   overflow-x: auto;
   overflow-y: hidden;
   position: relative;
@@ -61,7 +61,7 @@
 
 .chordArea {
   position: relative;
-  height: 80px;
+  height: 5rem;
   display: flex;
   align-items: flex-end;
   width: 100%;
@@ -70,25 +70,25 @@
 .track {
   display: flex;
   align-items: flex-start;
-  height: 20px;
-  padding-top: 2px;
+  height: var(--space-md);
+  padding-top: var(--space-xs);
   width: 100%;
 }
 
 .trackStart,
 .trackEnd {
-  width: 4px;
-  height: 20px;
+  width: var(--space-xs);
+  height: var(--space-md);
   background: rgba(100, 100, 100, 0.4);
-  border-radius: 2px;
+  border-radius: var(--border-radius-sm);
   flex-shrink: 0;
 }
 
 .trackRail {
   flex: 1;
-  height: 4px;
+  height: var(--space-xs);
   background: rgba(100, 100, 100, 0.3);
-  border-radius: 2px;
+  border-radius: var(--border-radius-sm);
 }
 
 .emptyState {
@@ -97,6 +97,6 @@
   left: 50%;
   transform: translate(-50%, -50%);
   color: var(--text-tertiary, #999);
-  font-size: 14px;
+  font-size: var(--type-body);
   pointer-events: none;
 }
