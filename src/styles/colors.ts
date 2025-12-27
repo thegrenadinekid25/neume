@@ -4,29 +4,30 @@
 
 /**
  * Scale Degree Colors - Major Keys
+ * Saturated, vibrant colors for maximum visual impact
  */
 export const SCALE_DEGREE_COLORS_MAJOR = {
-  I: '#D4AF37',
-  ii: '#6B9080',
-  iii: '#B98B8B',
-  IV: '#4A6FA5',
-  V: '#E07A5F',
-  vi: '#9B7EBD',
-  vii: '#6C6C6C',
+  I: '#E8A03E',    // Rich golden amber
+  ii: '#5BAF89',   // Vibrant sage
+  iii: '#D97298',  // Bold rose
+  IV: '#4E7AC7',   // Bright periwinkle
+  V: '#E85D3D',    // Vivid terracotta
+  vi: '#9D6DB0',   // Saturated purple
+  vii: '#4A4A4A',  // Charcoal
 } as const;
 
 /**
  * Scale Degree Colors - Minor Keys
+ * Deep, rich colors for deep tonality
  */
 export const SCALE_DEGREE_COLORS_MINOR = {
-  i: '#8B4545',
-  ii: '#708090',
-  III: '#D4A76A',
-  iv: '#2D4563',
-  v: '#C44536',
-  V: '#C44536',
-  VI: '#7A9B76',
-  VII: '#CC7722',
+  i: '#A73636',    // Deep burgundy
+  ii: '#6B7A8C',   // Slate blue
+  III: '#D4924A',  // Rich amber
+  iv: '#2F4A6B',   // Deep navy
+  v: '#C43A2E',    // Vivid crimson
+  VI: '#6BA870',   // Rich sage
+  VII: '#D87028',  // Bright burnt orange
 } as const;
 
 /**

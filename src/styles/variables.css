@@ -3,24 +3,23 @@
  */
 
 :root {
-  /* Scale Degree Colors - Major */
-  --color-major-I: #D4AF37;
-  --color-major-ii: #6B9080;
-  --color-major-iii: #B98B8B;
-  --color-major-IV: #4A6FA5;
-  --color-major-V: #E07A5F;
-  --color-major-vi: #9B7EBD;
-  --color-major-vii: #6C6C6C;
+  /* Scale Degree Colors - Major (Saturated & Vibrant) */
+  --color-major-I: #E8A03E;
+  --color-major-ii: #5BAF89;
+  --color-major-iii: #D97298;
+  --color-major-IV: #4E7AC7;
+  --color-major-V: #E85D3D;
+  --color-major-vi: #9D6DB0;
+  --color-major-vii: #4A4A4A;
 
-  /* Scale Degree Colors - Minor */
-  --color-minor-i: #8B4545;
-  --color-minor-ii: #708090;
-  --color-minor-III: #D4A76A;
-  --color-minor-iv: #2D4563;
-  --color-minor-v: #C44536;
-  --color-minor-V: #C44536;
-  --color-minor-VI: #7A9B76;
-  --color-minor-VII: #CC7722;
+  /* Scale Degree Colors - Minor (Deep & Rich) */
+  --color-minor-i: #A73636;
+  --color-minor-ii: #6B7A8C;
+  --color-minor-III: #D4924A;
+  --color-minor-iv: #2F4A6B;
+  --color-minor-v: #C43A2E;
+  --color-minor-VI: #6BA870;
+  --color-minor-VII: #D87028;
 
   /* UI Chrome Colors */
   --primary-action: #4A90E2;

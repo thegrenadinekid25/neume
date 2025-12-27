@@ -15,6 +15,12 @@ interface ChordShapeProps {
   zoom?: number;
 }
 
+// Wobble configuration for organic feel
+const WOBBLE_CONFIG = {
+  rotation: 1.5,   // ±1.5° rotation
+  scale: 0.02,     // ±2% scale
+} as const;
+
 export const ChordShape: React.FC<ChordShapeProps> = React.memo(({
   chord,
   isSelected = false,
@@ -30,6 +36,21 @@ export const ChordShape: React.FC<ChordShapeProps> = React.memo(({
   const shapePath = useMemo(() => {
     return generateShapePath(chord.scaleDegree, size);
   }, [chord.scaleDegree, size]);
+
+  // Generate stable organic transform based on chord ID
+  const organicTransform = useMemo(() => {
+    // Use chord ID to seed randomness so same chord always has same wobble
+    const seed = chord.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    const seededRandom = (index: number) => {
+      const x = Math.sin(seed + index) * 10000;
+      return x - Math.floor(x);
+    };
+
+    const rotation = (seededRandom(1) - 0.5) * WOBBLE_CONFIG.rotation;
+    const scale = 1 + (seededRandom(2) - 0.5) * WOBBLE_CONFIG.scale;
+
+    return `rotate(${rotation}deg) scale(${scale})`;
+  }, [chord.id]);
 
   // vi (6) = dotted circle, vii° (7) = outlined pentagon
   const isOutlinedShape = chord.scaleDegree === 6 || chord.scaleDegree === 7;
@@ -95,6 +116,7 @@ export const ChordShape: React.FC<ChordShapeProps> = React.memo(({
       role="button"
       aria-label={`${chord.quality} chord on scale degree ${chord.scaleDegree}`}
       tabIndex={0}
+      style={{ transform: organicTransform }}
     >
       <svg
         width={size}
