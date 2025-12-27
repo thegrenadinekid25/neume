@@ -1,12 +1,16 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { DroppableCanvas } from '@/components/Canvas';
 import { MetadataBanner } from '@/components/Canvas/MetadataBanner';
 import { DeleteConfirmation } from '@/components/UI/DeleteConfirmation';
-import { KeyboardShortcutsGuide } from '@/components/UI/KeyboardShortcutsGuide';
-import { AnalyzeModal, MyProgressionsModal, RefineModal } from '@/components/Modals';
 import { WhyThisPanel, BuildFromBonesPanel } from '@/components/Panels';
 import { TempoDial } from '@/components/Controls';
 import { WelcomeTutorial } from '@/components/Tutorial/WelcomeTutorial';
+
+// Lazy load modals for code splitting
+const KeyboardShortcutsGuide = lazy(() => import('@/components/UI/KeyboardShortcutsGuide').then(m => ({ default: m.KeyboardShortcutsGuide })));
+const AnalyzeModal = lazy(() => import('@/components/Modals/AnalyzeModal').then(m => ({ default: m.AnalyzeModal })));
+const MyProgressionsModal = lazy(() => import('@/components/Modals/MyProgressionsModal').then(m => ({ default: m.MyProgressionsModal })));
+const RefineModal = lazy(() => import('@/components/Modals/RefineModal').then(m => ({ default: m.RefineModal })));
 import { useHistory } from '@/hooks/useHistory';
 import { usePlayback } from '@/hooks/usePlayback';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
@@ -509,19 +513,24 @@ function App() {
         onCancel={() => setShowDeleteConfirm(false)}
       />
 
-      <KeyboardShortcutsGuide
-        isOpen={showShortcuts}
-        onClose={() => setShowShortcuts(false)}
-      />
+      <Suspense fallback={null}>
+        <KeyboardShortcutsGuide
+          isOpen={showShortcuts}
+          onClose={() => setShowShortcuts(false)}
+        />
+      </Suspense>
 
       <TempoDial
         tempo={tempo}
         onTempoChange={setTempo}
       />
 
-      <AnalyzeModal />
-      <MyProgressionsModal />
-      <RefineModal />
+      <Suspense fallback={null}>
+        <AnalyzeModal />
+        <MyProgressionsModal />
+        <RefineModal />
+      </Suspense>
+
       <WhyThisPanel />
       <BuildFromBonesPanel />
 

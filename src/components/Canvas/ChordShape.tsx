@@ -21,7 +21,23 @@ const WOBBLE_CONFIG = {
   scale: 0.02,     // ±2% scale
 } as const;
 
-export const ChordShape: React.FC<ChordShapeProps> = React.memo(({
+// Custom comparison function for React.memo
+function areChordShapePropsEqual(prev: ChordShapeProps, next: ChordShapeProps): boolean {
+  return (
+    prev.chord.id === next.chord.id &&
+    prev.chord.scaleDegree === next.chord.scaleDegree &&
+    prev.chord.size === next.chord.size &&
+    prev.chord.quality === next.chord.quality &&
+    prev.chord.extensions === next.chord.extensions &&
+    prev.chord.isChromatic === next.chord.isChromatic &&
+    prev.isSelected === next.isSelected &&
+    prev.isPlaying === next.isPlaying &&
+    prev.isDragging === next.isDragging &&
+    prev.zoom === next.zoom
+  );
+}
+
+const ChordShapeComponent: React.FC<ChordShapeProps> = ({
   chord,
   isSelected = false,
   isPlaying = false,
@@ -181,9 +197,12 @@ export const ChordShape: React.FC<ChordShapeProps> = React.memo(({
       })()}
     </motion.div>
   );
-});
+};
 
-ChordShape.displayName = 'ChordShape';
+ChordShapeComponent.displayName = 'ChordShape';
+
+// Export memoized version with custom comparison function
+export const ChordShape = React.memo(ChordShapeComponent, areChordShapePropsEqual);
 
 function generateShapePath(scaleDegree: number, size: number): string {
   const center = size / 2;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { ChordShape } from './ChordShape';
@@ -20,7 +20,7 @@ interface DraggableChordProps {
   zoom?: number;
 }
 
-export const DraggableChord: React.FC<DraggableChordProps> = ({
+const DraggableChordComponent: React.FC<DraggableChordProps> = ({
   chord,
   allChords,
   songContext,
@@ -66,26 +66,32 @@ export const DraggableChord: React.FC<DraggableChordProps> = ({
     opacity: isDragging ? 0.8 : 1,
   };
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = useCallback((e: React.MouseEvent) => {
     if (isDragging) return;
     onClick?.(e);
-  };
+  }, [isDragging, onClick]);
 
-  const handleContextMenu = (e: React.MouseEvent) => {
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setContextMenuPosition({ x: e.clientX, y: e.clientY });
     setContextMenuOpen(true);
-  };
+  }, []);
 
   // Get previous and next chords for context (sorted by startBeat for correct order)
-  const sortedChords = [...allChords].sort((a, b) => a.startBeat - b.startBeat);
-  const chordIndex = sortedChords.findIndex(c => c.id === chord.id);
-  const previousChord = chordIndex > 0 ? sortedChords[chordIndex - 1] : undefined;
-  const nextChord = chordIndex < sortedChords.length - 1 ? sortedChords[chordIndex + 1] : undefined;
+  const { sortedChords, previousChord, nextChord } = useMemo(() => {
+    const sorted = [...allChords].sort((a, b) => a.startBeat - b.startBeat);
+    const idx = sorted.findIndex(c => c.id === chord.id);
+    return {
+      sortedChords: sorted,
+      previousChord: idx > 0 ? sorted[idx - 1] : undefined,
+      nextChord: idx < sorted.length - 1 ? sorted[idx + 1] : undefined,
+    };
+  }, [allChords, chord.id]);
 
   // Build context menu items
-  const menuItems: ContextMenuItem[] = [
+  const menuItems = useMemo(() => {
+    const items: ContextMenuItem[] = [
     {
       id: 'why-this',
       label: 'Why This?',
@@ -108,7 +114,9 @@ export const DraggableChord: React.FC<DraggableChordProps> = ({
         setContextMenuOpen(false);
       },
     },
-  ];
+    ];
+    return items;
+  }, [chord, previousChord, nextChord, sortedChords, songContext, openWhyThisPanel, removeChord]);
 
   return (
     <>
@@ -140,3 +148,18 @@ export const DraggableChord: React.FC<DraggableChordProps> = ({
     </>
   );
 };
+
+// Custom comparison for memo to prevent unnecessary re-renders
+function areDraggableChordPropsEqual(prev: DraggableChordProps, next: DraggableChordProps): boolean {
+  return (
+    prev.chord.id === next.chord.id &&
+    prev.chord.startBeat === next.chord.startBeat &&
+    prev.chord.quality === next.chord.quality &&
+    prev.isSelected === next.isSelected &&
+    prev.isPlaying === next.isPlaying &&
+    prev.zoom === next.zoom &&
+    prev.allChords.length === next.allChords.length
+  );
+}
+
+export const DraggableChord = React.memo(DraggableChordComponent, areDraggableChordPropsEqual);
