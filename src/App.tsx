@@ -3,7 +3,7 @@ import { DroppableCanvas } from '@/components/Canvas';
 import { MetadataBanner } from '@/components/Canvas/MetadataBanner';
 import { DeleteConfirmation } from '@/components/UI/DeleteConfirmation';
 import { KeyboardShortcutsGuide } from '@/components/UI/KeyboardShortcutsGuide';
-import { AnalyzeModal } from '@/components/Modals';
+import { AnalyzeModal, MyProgressionsModal, RefineModal } from '@/components/Modals';
 import { WhyThisPanel, BuildFromBonesPanel } from '@/components/Panels';
 import { TempoDial } from '@/components/Controls';
 import { useHistory } from '@/hooks/useHistory';
@@ -11,6 +11,8 @@ import { usePlayback } from '@/hooks/usePlayback';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useAnalysisStore } from '@/store/analysis-store';
 import { useBuildFromBonesStore } from '@/store/build-from-bones-store';
+import { useProgressionsStore } from '@/store/progressions-store';
+import { useRefineStore } from '@/store/refine-store';
 import { generateSATBVoicing } from '@/audio/VoiceLeading';
 import type { Chord, MusicalKey, Mode, ScaleDegree, ChordQuality, ChordExtensions, Voices } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -93,6 +95,8 @@ function App() {
   const analysisResult = useAnalysisStore(state => state.result);
   const clearAnalyzedProgression = useAnalysisStore(state => state.clearAnalyzedProgression);
   const openBuildFromBonesPanel = useBuildFromBonesStore(state => state.openPanel);
+  const openProgressionsModal = useProgressionsStore(state => state.openModal);
+  const openRefineModal = useRefineStore(state => state.openModal);
 
   // Calculate total beats based on chord positions + buffer
   const totalBeats = useMemo(() => {
@@ -391,6 +395,17 @@ function App() {
           <button onClick={openAnalyzeModal} disabled={chords.length === 0} className="analyze-button">
             Analyze
           </button>
+          <button onClick={openProgressionsModal} className="progressions-button">
+            My Progressions
+          </button>
+          <button onClick={() => {
+            // Open refine modal with currently selected chords
+            if (selectedChordIds.length > 0) {
+              openRefineModal(selectedChordIds);
+            }
+          }} disabled={selectedChordIds.length === 0} className="refine-button">
+            Refine
+          </button>
         </div>
       </div>
 
@@ -491,6 +506,8 @@ function App() {
       />
 
       <AnalyzeModal />
+      <MyProgressionsModal />
+      <RefineModal />
       <WhyThisPanel />
       <BuildFromBonesPanel />
     </div>
