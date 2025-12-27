@@ -1,0 +1,126 @@
+/* PitchDot Component Styles */
+/* Using warm Kinfolk palette */
+
+:root {
+  --warm-gold: #E8A03E;
+  --warm-terracotta: #E85D3D;
+  --warm-text-primary: #3D3530;
+  --warm-cream: #FAF8F5;
+  --duration-fast: 150ms;
+  --ease-smooth: cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* SVG group container */
+.container {
+  cursor: grab;
+}
+
+.container:active {
+  cursor: grabbing;
+}
+
+/* Base circle styles */
+.dot {
+  transition: scale var(--duration-fast) var(--ease-smooth),
+              filter var(--duration-fast) var(--ease-smooth);
+}
+
+.dot:active {
+  cursor: grabbing;
+}
+
+/* Selected state - gold drop-shadow glow */
+.selected {
+  filter: drop-shadow(0 0 8px var(--warm-gold));
+}
+
+/* Pulsing animation */
+.playing {
+  animation: pulse 0.4s ease infinite;
+}
+
+/* Accidental symbol styling (♯♭) */
+.accidentalSymbol {
+  font-family: serif;
+  font-size: 14px;
+  font-weight: bold;
+  text-anchor: middle;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Sharp - light shimmer */
+.sharp {
+  color: var(--warm-gold);
+  animation: shimmer-light 2s ease-in-out infinite;
+}
+
+/* Flat - dark shimmer */
+.flat {
+  color: var(--warm-terracotta);
+  animation: shimmer-dark 2s ease-in-out infinite;
+}
+
+/* Small badge below dot */
+.nctBadge {
+  background-color: white;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 4px;
+  color: var(--warm-text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Tooltip styles */
+.tooltip {
+  background-color: var(--warm-text-primary);
+  color: var(--warm-cream);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Keyframe Animations */
+
+@keyframes shimmer-light {
+  0% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes shimmer-dark {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    scale: 1;
+  }
+  50% {
+    scale: 1.2;
+  }
+  100% {
+    scale: 1;
+  }
+}

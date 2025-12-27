@@ -1,0 +1,12 @@
+.cloud {
+  cursor: pointer;
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+.cloud:hover {
+  opacity: 0.25;
+}
+
+.selected {
+  filter: drop-shadow(0 0 6px rgba(218, 165, 32, 0.6));
+}

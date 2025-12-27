@@ -1,0 +1,5 @@
+.connector {
+  pointer-events: none;
+  fill: none;
+  stroke-linecap: round;
+}

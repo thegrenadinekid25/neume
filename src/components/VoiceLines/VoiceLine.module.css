@@ -1,0 +1,22 @@
+.voiceLine {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.guideLine {
+  stroke-dasharray: 4, 4;
+  stroke: var(--warm-text-tertiary, #9A9189);
+  opacity: 0.3;
+}
+
+.guideLine.middleC {
+  stroke-dasharray: none;
+  stroke: var(--warm-text-secondary, #7A7067);
+  opacity: 0.5;
+}
+
+.notesLayer {
+  pointer-events: all;
+}
