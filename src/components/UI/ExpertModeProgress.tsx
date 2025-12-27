@@ -13,7 +13,9 @@ export function ExpertModeProgress() {
     return (
       <div className={styles.container}>
         <div className={styles.unlockedBadge}>
-          <span className={styles.checkmark}>✓</span>
+          <svg className={styles.checkmark} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
           <span>Expert Mode Unlocked</span>
         </div>
       </div>
@@ -23,7 +25,10 @@ export function ExpertModeProgress() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <span className={styles.lockIcon}>🔒</span>
+        <svg className={styles.lockIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
         <span className={styles.title}>Unlock Expert Mode</span>
       </div>
 

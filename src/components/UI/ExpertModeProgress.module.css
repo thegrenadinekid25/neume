@@ -13,7 +13,10 @@
 }
 
 .lockIcon {
-  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--warm-text-secondary, #7A7067);
+  flex-shrink: 0;
 }
 
 .title {
@@ -35,7 +38,9 @@
 }
 
 .checkmark {
-  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 .progressBars {
@@ -81,14 +86,14 @@
   margin-top: 12px;
   width: 100%;
   padding: 6px;
-  background: #f0f0f0;
-  border: 1px dashed #ccc;
+  background: var(--color-linen, #FAF8F5);
+  border: 1px dashed var(--warm-text-tertiary, #9A9189);
   border-radius: 4px;
   font-size: 11px;
-  color: #666;
+  color: var(--warm-text-secondary, #7A7067);
   cursor: pointer;
 }
 
 .devUnlock:hover {
-  background: #e0e0e0;
+  background: var(--color-cream, #F5F2ED);
 }
