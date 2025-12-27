@@ -4,8 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useProgressionsStore } from '@/store/progressions-store';
 import { progressionStorage } from '@/services/progression-storage';
 import { SaveProgressionDialog } from './SaveProgressionDialog';
+import { downloadMusicXML, validateForExport } from '@/services/musicxml-exporter';
 import type { SavedProgression } from '@/types';
 import styles from './MyProgressionsModal.module.css';
+
+type ExportFormat = 'json' | 'musicxml';
 
 /**
  * Modal for browsing, loading, and managing saved progressions
@@ -33,6 +36,9 @@ export const MyProgressionsModal: React.FC = () => {
   // Inline notes editing state
   const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
   const [editingNotesValue, setEditingNotesValue] = useState('');
+
+  // Export menu state
+  const [exportMenuId, setExportMenuId] = useState<string | null>(null);
 
   // Get filtered progressions
   const filteredProgressions = getFilteredProgressions();
@@ -99,19 +105,48 @@ export const MyProgressionsModal: React.FC = () => {
     setEditingNotesValue('');
   };
 
-  // Handle export to MIDI
-  const handleExportMIDI = (progression: SavedProgression) => {
-    // Create a simple MIDI export by downloading JSON for now
-    // In a real implementation, this would use a MIDI library like jsmidgen
-    const dataUri =
-      'data:application/json;charset=utf-8,' +
-      encodeURIComponent(JSON.stringify(progression, null, 2));
+  // Handle export
+  const handleExport = (progression: SavedProgression, format: ExportFormat) => {
+    setExportMenuId(null);
 
-    const link = document.createElement('a');
-    link.download = `${progression.title.replace(/\s+/g, '-')}.json`;
-    link.href = dataUri;
-    link.click();
+    if (format === 'musicxml') {
+      const validation = validateForExport(progression);
+      if (!validation.isValid) {
+        alert('Cannot export: ' + validation.errors.join(', '));
+        return;
+      }
+      downloadMusicXML(progression);
+    } else {
+      // JSON export
+      const dataUri =
+        'data:application/json;charset=utf-8,' +
+        encodeURIComponent(JSON.stringify(progression, null, 2));
+
+      const link = document.createElement('a');
+      link.download = `${progression.title.replace(/\s+/g, '-')}.json`;
+      link.href = dataUri;
+      link.click();
+    }
   };
+
+  // Toggle export menu
+  const toggleExportMenu = (progressionId: string) => {
+    setExportMenuId(exportMenuId === progressionId ? null : progressionId);
+  };
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (exportMenuId) {
+        setExportMenuId(null);
+      }
+    };
+
+    if (exportMenuId) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [exportMenuId]);
 
   // Format date
   const formatDate = (dateString: string): string => {
@@ -358,13 +393,37 @@ export const MyProgressionsModal: React.FC = () => {
                         >
                           Edit
                         </button>
-                        <button
-                          className={`${styles.actionButton} ${styles.exportButton}`}
-                          onClick={() => handleExportMIDI(progression)}
-                          title="Export to MIDI"
-                        >
-                          Export
-                        </button>
+                        <div className={styles.exportButtonWrapper}>
+                          <button
+                            className={`${styles.actionButton} ${styles.exportButton}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleExportMenu(progression.id);
+                            }}
+                            title="Export progression"
+                          >
+                            Export
+                          </button>
+                          {exportMenuId === progression.id && (
+                            <div
+                              className={styles.exportMenu}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                className={styles.exportMenuItem}
+                                onClick={() => handleExport(progression, 'json')}
+                              >
+                                JSON
+                              </button>
+                              <button
+                                className={styles.exportMenuItem}
+                                onClick={() => handleExport(progression, 'musicxml')}
+                              >
+                                MusicXML
+                              </button>
+                            </div>
+                          )}
+                        </div>
                         <button
                           className={`${styles.actionButton} ${styles.deleteButton}`}
                           onClick={() => deleteProgression(progression.id)}

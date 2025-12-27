@@ -696,3 +696,46 @@
     width: 100%;
   }
 }
+
+/* Export Button Wrapper */
+.exportButtonWrapper {
+  position: relative;
+}
+
+/* Export Dropdown Menu */
+.exportMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  min-width: 120px;
+  background: var(--background-primary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--border-radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.exportMenuItem {
+  display: block;
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  font-size: 13px;
+  font-family: var(--font-ui);
+  font-weight: 500;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--duration-slow) var(--ease-breathe);
+}
+
+.exportMenuItem:hover {
+  background-color: var(--background-secondary);
+}
+
+.exportMenuItem:not(:last-child) {
+  border-bottom: 1px solid var(--border-light);
+}
