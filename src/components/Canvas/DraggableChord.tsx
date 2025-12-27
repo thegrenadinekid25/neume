@@ -9,6 +9,10 @@ import styles from './DraggableChord.module.css';
 import { useWhyThisStore, type SongContext } from '@/store/why-this-store';
 import { useCanvasStore } from '@/store/canvas-store';
 import { ContextMenu, type ContextMenuItem } from '@/components/UI/ContextMenu';
+import { useVoiceEditingStore } from '@/store/voice-editing-store';
+import { VoiceHandleGroup } from '@/components/VoiceEditor';
+import { analyzeVoiceLeading } from '@/services/voice-leading-analyzer';
+import type { VoiceType } from '@/services/voice-leading-analyzer';
 
 interface DraggableChordProps {
   chord: Chord;
@@ -46,6 +50,14 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
   const annotations = useCanvasStore(state => state.annotations);
   const setAnnotation = useCanvasStore(state => state.setAnnotation);
   const removeAnnotation = useCanvasStore(state => state.removeAnnotation);
+  const isVoiceEditingMode = useVoiceEditingStore((state) => state.isVoiceEditingMode);
+  const activeChordId = useVoiceEditingStore((state) => state.activeChordId);
+  const voiceLeadingIssues = useVoiceEditingStore((state) => state.voiceLeadingIssues);
+  const pendingVoices = useVoiceEditingStore((state) => state.pendingVoices);
+  const enterVoiceEditingMode = useVoiceEditingStore((state) => state.enterVoiceEditingMode);
+  const updatePendingVoice = useVoiceEditingStore((state) => state.updatePendingVoice);
+  const setVoiceLeadingIssues = useVoiceEditingStore((state) => state.setVoiceLeadingIssues);
+  const exitVoiceEditingMode = useVoiceEditingStore((state) => state.exitVoiceEditingMode);
 
   // Get current annotation for this chord
   const currentAnnotation = annotations[chord.id] || '';
@@ -111,6 +123,34 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
     }
     setAnnotationPopoverOpen(false);
   }, [chord.id, setAnnotation, removeAnnotation]);
+
+  // Voice editing handlers
+  const isEditingThisChord = isVoiceEditingMode && activeChordId === chord.id;
+
+  const handleVoiceDragStart = useCallback((_voice: VoiceType, _midi: number) => {
+    // Enter editing mode if not already
+    if (!isEditingThisChord) {
+      enterVoiceEditingMode(chord.id, chord.voices);
+    }
+  }, [isEditingThisChord, enterVoiceEditingMode, chord.id, chord.voices]);
+
+  const handleVoiceDrag = useCallback((voice: VoiceType, _midi: number, noteName: string) => {
+    updatePendingVoice(voice, noteName);
+    // Analyze voice leading with pending changes
+    if (pendingVoices) {
+      const updatedVoices = { ...pendingVoices, [voice]: noteName };
+      const result = analyzeVoiceLeading(null, updatedVoices);
+      setVoiceLeadingIssues(result.issues);
+    }
+  }, [pendingVoices, updatePendingVoice, setVoiceLeadingIssues]);
+
+  const handleVoiceDragEnd = useCallback(() => {
+    // Commit the voice change
+    if (pendingVoices && updateChord) {
+      updateChord(chord.id, { voices: pendingVoices });
+    }
+    exitVoiceEditingMode();
+  }, [pendingVoices, updateChord, chord.id, exitVoiceEditingMode]);
 
   // Get previous and next chords for context (sorted by startBeat for correct order)
   const { sortedChords, previousChord, nextChord } = useMemo(() => {
@@ -214,6 +254,15 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
           setContextMenuOpen(false);
         },
       },
+      // Edit Voicing
+      {
+        id: 'edit-voicing',
+        label: 'Edit Voicing',
+        action: () => {
+          enterVoiceEditingMode(chord.id, chord.voices);
+          setContextMenuOpen(false);
+        },
+      },
       // Why This?
       {
         id: 'why-this',
@@ -239,7 +288,7 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
       },
     ];
     return items;
-  }, [chord, previousChord, nextChord, sortedChords, songContext, openWhyThisPanel, removeChord, hasExtensions, handleQualityChange, handleExtensionToggle, handleClearExtensions, currentAnnotation, contextMenuPosition, openAnnotationPopover]);
+  }, [chord, previousChord, nextChord, sortedChords, songContext, openWhyThisPanel, removeChord, hasExtensions, handleQualityChange, handleExtensionToggle, handleClearExtensions, currentAnnotation, contextMenuPosition, openAnnotationPopover, enterVoiceEditingMode]);
 
   return (
     <>
@@ -263,6 +312,18 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
           isDragging={isDragging}
           hasAnnotation={!!currentAnnotation}
         />
+        {isEditingThisChord && (
+          <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 8, zIndex: 100 }}>
+            <VoiceHandleGroup
+              voices={pendingVoices || chord.voices}
+              issues={voiceLeadingIssues}
+              activeVoice={null}
+              onDragStart={handleVoiceDragStart}
+              onDrag={handleVoiceDrag}
+              onDragEnd={handleVoiceDragEnd}
+            />
+          </div>
+        )}
       </div>
       <ContextMenu
         isOpen={contextMenuOpen}

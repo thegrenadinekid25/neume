@@ -1,0 +1,50 @@
+.container {
+  position: relative;
+  width: 60px;
+}
+
+.handle {
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.2s ease;
+}
+
+.handle:active {
+  cursor: grabbing;
+}
+
+.handle.active {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.handle.error {
+  outline: 2px solid #dc3545;
+  outline-offset: 2px;
+}
+
+.handle.warning {
+  outline: 2px solid #ffc107;
+  outline-offset: 2px;
+}
+
+.label {
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+}
+
+.note {
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+}
