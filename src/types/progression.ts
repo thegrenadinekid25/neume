@@ -57,6 +57,32 @@ export interface BuildUp {
 }
 
 /**
+ * Saved progression for storage in localStorage
+ */
+export interface SavedProgression {
+  id: string;
+  title: string;
+  key: string;
+  mode: 'major' | 'minor';
+  tempo: number;
+  timeSignature: TimeSignature;
+  chords: Chord[];
+  tags: string[];
+  isFavorite: boolean;
+  createdAt: string;
+  updatedAt: string;
+
+  // Optional metadata
+  analyzedFrom?: {
+    source: 'youtube' | 'audio';
+    title: string;
+    url?: string;
+  };
+
+  buildUpSteps?: BuildUpStep[];
+}
+
+/**
  * Complete progression object
  */
 export interface Progression {

@@ -1,0 +1,542 @@
+/**
+ * MyProgressionsModal Component Styles
+ * CSS Module for the My Progressions Modal - displays and manages saved progressions
+ */
+
+/* Overlay backdrop */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: calc(var(--z-modal) - 1);
+  animation: fadeIn var(--duration-normal) var(--ease-smooth-out);
+}
+
+/* Modal container */
+.modal {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  background: var(--background-primary);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-modal);
+  width: 90%;
+  max-width: 700px;
+  height: fit-content;
+  max-height: calc(100vh - 80px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Modal header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Close button */
+.closeButton {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-radius: var(--border-radius-sm);
+  font-size: 20px;
+  transition: background-color var(--duration-fast) var(--ease-apple-smooth),
+              color var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.closeButton:hover {
+  background-color: var(--background-secondary);
+  color: var(--text-primary);
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+/* Controls section */
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--border-light);
+  background: var(--background-secondary);
+  flex-shrink: 0;
+}
+
+/* Search container */
+.searchContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Search input */
+.searchInput {
+  width: 100%;
+  padding: var(--space-md);
+  padding-right: var(--space-lg);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  font-family: var(--font-ui);
+  color: var(--text-primary);
+  background: var(--background-primary);
+  transition: border-color var(--duration-fast) var(--ease-apple-smooth),
+              box-shadow var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--primary-action);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+/* Clear search button */
+.clearButton {
+  position: absolute;
+  right: var(--space-md);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 16px;
+  padding: 0;
+  transition: color var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.clearButton:hover {
+  color: var(--text-primary);
+}
+
+/* Filter tabs */
+.filterTabs {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+/* Filter tab button */
+.filterTab {
+  padding: var(--space-sm) var(--space-md);
+  background: var(--background-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.filterTab:hover {
+  background: var(--background-secondary);
+  color: var(--text-primary);
+}
+
+.filterTab.active {
+  background: var(--primary-action);
+  color: white;
+  border-color: var(--primary-action);
+}
+
+.filterTab:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+/* Modal content area */
+.content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Progressions list */
+.progressionsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* Progression card */
+.progressionCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  background: var(--background-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-md);
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.progressionCard:hover {
+  border-color: var(--border-medium);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Card header with title and favorite */
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+/* Progression title */
+.progressionTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  word-break: break-word;
+}
+
+/* Favorite button */
+.favoriteButton {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  font-size: 18px;
+  border-radius: var(--border-radius-sm);
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  padding: 0;
+}
+
+.favoriteButton:hover {
+  background-color: rgba(74, 144, 226, 0.1);
+  color: var(--primary-action);
+}
+
+.favoriteButton.isFavorite {
+  color: #ffd700;
+}
+
+.favoriteButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+/* Metadata */
+.metadata {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Metadata item */
+.metadataItem {
+  display: inline-block;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--background-primary);
+  border-radius: var(--border-radius-sm);
+}
+
+/* Tags section */
+.tags {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+/* Tag */
+.tag {
+  display: inline-block;
+  padding: var(--space-xs) var(--space-sm);
+  background: rgba(74, 144, 226, 0.1);
+  color: var(--primary-action);
+  border-radius: var(--border-radius-sm);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Date */
+.date {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* Action buttons */
+.actions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-top: var(--space-sm);
+}
+
+/* Action button base */
+.actionButton {
+  flex: 1;
+  min-width: 80px;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.actionButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+.actionButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Load button */
+.loadButton {
+  background: var(--primary-action);
+  color: white;
+  border-color: var(--primary-action);
+}
+
+.loadButton:hover:not(:disabled) {
+  background-color: #3a7bc8;
+  border-color: #3a7bc8;
+  transform: translateY(-1px);
+}
+
+.loadButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Edit button */
+.editButton {
+  background: var(--background-primary);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.editButton:hover:not(:disabled) {
+  background-color: var(--background-secondary);
+  border-color: var(--border-dark);
+}
+
+/* Export button */
+.exportButton {
+  background: var(--background-primary);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.exportButton:hover:not(:disabled) {
+  background-color: var(--background-secondary);
+  border-color: var(--border-dark);
+}
+
+/* Delete button */
+.deleteButton {
+  background: transparent;
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.deleteButton:hover:not(:disabled) {
+  background-color: rgba(196, 69, 54, 0.1);
+  border-color: var(--error);
+}
+
+/* Empty state */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3xl) var(--space-lg);
+  text-align: center;
+  min-height: 300px;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  margin-bottom: var(--space-lg);
+  opacity: 0.5;
+}
+
+.emptyTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.emptyText {
+  font-size: 13px;
+  color: var(--text-secondary);
+  max-width: 300px;
+}
+
+/* Storage warning */
+.storageWarning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: var(--border-radius-md);
+  margin: var(--space-lg);
+  border-top: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.warningIcon {
+  flex-shrink: 0;
+  font-size: 20px;
+}
+
+.warningText {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.storageDetails {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* Modal footer */
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-lg);
+  border-top: 1px solid var(--border-light);
+  background: var(--background-primary);
+  flex-shrink: 0;
+}
+
+/* Close footer button */
+.closeFooterButton {
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--background-secondary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.closeFooterButton:hover {
+  background: var(--border-light);
+  border-color: var(--border-dark);
+}
+
+.closeFooterButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .modal {
+    width: 95%;
+    max-width: 100%;
+    max-height: 90vh;
+  }
+
+  .header {
+    padding: var(--space-md);
+  }
+
+  .controls {
+    padding: var(--space-md);
+    gap: var(--space-sm);
+  }
+
+  .content {
+    padding: var(--space-md);
+  }
+
+  .progressionCard {
+    padding: var(--space-md);
+    gap: var(--space-xs);
+  }
+
+  .cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .footer {
+    padding: var(--space-md);
+  }
+
+  .closeFooterButton {
+    width: 100%;
+  }
+
+  .filterTabs {
+    width: 100%;
+  }
+
+  .filterTab {
+    flex: 1;
+    min-width: 0;
+  }
+}

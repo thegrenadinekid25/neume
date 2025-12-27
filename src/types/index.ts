@@ -24,6 +24,7 @@ export type {
   AnalyzedFrom,
   BuildUpStep,
   BuildUp,
+  SavedProgression,
 } from './progression';
 
 export type {
