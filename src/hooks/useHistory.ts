@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Chord } from '@/types';
 
 const MAX_HISTORY_SIZE = 50;
@@ -15,51 +15,63 @@ interface UseHistoryReturn {
 export function useHistory(): UseHistoryReturn {
   const [history, setHistory] = useState<Chord[][]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(-1);
+  // Use a ref to avoid closure issues with currentIndex
+  const currentIndexRef = useRef<number>(-1);
 
   const pushState = useCallback((chords: Chord[]) => {
     setHistory((prevHistory) => {
+      // Use ref value to get the actual current index
+      const idx = currentIndexRef.current;
+
       // When pushing a new state while not at the end, clear the "future" states
-      const newHistory = prevHistory.slice(0, currentIndex + 1);
+      const newHistory = prevHistory.slice(0, idx + 1);
 
       // Add the new state
       newHistory.push([...chords]);
 
       // Limit history to MAX_HISTORY_SIZE entries
+      let newIndex = newHistory.length - 1;
       if (newHistory.length > MAX_HISTORY_SIZE) {
         newHistory.shift();
-        // Don't need to adjust currentIndex here since we'll set it below
-        setCurrentIndex(newHistory.length - 1);
-      } else {
-        setCurrentIndex(newHistory.length - 1);
+        newIndex = newHistory.length - 1;
       }
+
+      // Update both ref and state
+      currentIndexRef.current = newIndex;
+      setCurrentIndex(newIndex);
 
       return newHistory;
     });
-  }, [currentIndex]);
+  }, []);
 
   const undo = useCallback((): Chord[] | null => {
-    if (currentIndex <= 0) {
+    const idx = currentIndexRef.current;
+    if (idx <= 0) {
       return null;
     }
 
-    const newIndex = currentIndex - 1;
+    const newIndex = idx - 1;
+    currentIndexRef.current = newIndex;
     setCurrentIndex(newIndex);
     return [...history[newIndex]];
-  }, [currentIndex, history]);
+  }, [history]);
 
   const redo = useCallback((): Chord[] | null => {
-    if (currentIndex >= history.length - 1) {
+    const idx = currentIndexRef.current;
+    if (idx >= history.length - 1) {
       return null;
     }
 
-    const newIndex = currentIndex + 1;
+    const newIndex = idx + 1;
+    currentIndexRef.current = newIndex;
     setCurrentIndex(newIndex);
     return [...history[newIndex]];
-  }, [currentIndex, history]);
+  }, [history]);
 
   const clearHistory = useCallback(() => {
     setHistory([]);
     setCurrentIndex(-1);
+    currentIndexRef.current = -1;
   }, []);
 
   const canUndo = currentIndex > 0;
