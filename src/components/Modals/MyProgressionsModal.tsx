@@ -30,6 +30,10 @@ export const MyProgressionsModal: React.FC = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // Inline notes editing state
+  const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
+  const [editingNotesValue, setEditingNotesValue] = useState('');
+
   // Get filtered progressions
   const filteredProgressions = getFilteredProgressions();
 
@@ -71,6 +75,28 @@ export const MyProgressionsModal: React.FC = () => {
       new CustomEvent('loadProgression', { detail: progression })
     );
     closeModal();
+  };
+
+  // Handle inline notes editing
+  const handleStartEditingNotes = (progression: SavedProgression) => {
+    setEditingNotesId(progression.id);
+    setEditingNotesValue(progression.notes || '');
+  };
+
+  const handleSaveNotes = (progression: SavedProgression) => {
+    const updatedProgression: SavedProgression = {
+      ...progression,
+      notes: editingNotesValue.trim() || undefined,
+      updatedAt: new Date().toISOString(),
+    };
+    saveProgression(updatedProgression);
+    setEditingNotesId(null);
+    setEditingNotesValue('');
+  };
+
+  const handleCancelEditingNotes = () => {
+    setEditingNotesId(null);
+    setEditingNotesValue('');
   };
 
   // Handle export to MIDI
@@ -241,6 +267,19 @@ export const MyProgressionsModal: React.FC = () => {
                         </span>
                       </div>
 
+                      {/* Composer info (if from analysis) */}
+                      {progression.analyzedFrom?.composer && (
+                        <div className={styles.composerInfo}>
+                          <span className={styles.composerLabel}>From:</span>
+                          <span className={styles.composerName}>
+                            {progression.analyzedFrom.title}
+                          </span>
+                          <span className={styles.composerBy}>
+                            by {progression.analyzedFrom.composer}
+                          </span>
+                        </div>
+                      )}
+
                       {/* Tags */}
                       {progression.tags.length > 0 && (
                         <div className={styles.tags}>
@@ -251,6 +290,52 @@ export const MyProgressionsModal: React.FC = () => {
                           ))}
                         </div>
                       )}
+
+                      {/* Notes section */}
+                      <div className={styles.notesSection}>
+                        {editingNotesId === progression.id ? (
+                          // Inline editing mode
+                          <div className={styles.notesEditing}>
+                            <textarea
+                              className={styles.notesTextarea}
+                              value={editingNotesValue}
+                              onChange={(e) => setEditingNotesValue(e.target.value)}
+                              placeholder="Add notes about this progression..."
+                              rows={3}
+                              autoFocus
+                            />
+                            <div className={styles.notesEditActions}>
+                              <button
+                                className={styles.notesSaveButton}
+                                onClick={() => handleSaveNotes(progression)}
+                              >
+                                Save
+                              </button>
+                              <button
+                                className={styles.notesCancelButton}
+                                onClick={handleCancelEditingNotes}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          // Display mode
+                          <div
+                            className={styles.notesDisplay}
+                            onClick={() => handleStartEditingNotes(progression)}
+                            title="Click to edit notes"
+                          >
+                            {progression.notes ? (
+                              <p className={styles.notesText}>{progression.notes}</p>
+                            ) : (
+                              <p className={styles.notesPlaceholder}>
+                                Click to add notes...
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
 
                       {/* Saved date */}
                       <div className={styles.date}>

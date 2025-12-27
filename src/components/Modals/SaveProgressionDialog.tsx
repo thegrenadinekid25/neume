@@ -23,6 +23,7 @@ export const SaveProgressionDialog: React.FC<SaveProgressionDialogProps> = ({
 }) => {
   const [title, setTitle] = useState(progression.title);
   const [tagsInput, setTagsInput] = useState(progression.tags.join(', '));
+  const [notes, setNotes] = useState(progression.notes || '');
   const [isFavorite, setIsFavorite] = useState(progression.isFavorite);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -31,6 +32,7 @@ export const SaveProgressionDialog: React.FC<SaveProgressionDialogProps> = ({
     if (isOpen) {
       setTitle(progression.title);
       setTagsInput(progression.tags.join(', '));
+      setNotes(progression.notes || '');
       setIsFavorite(progression.isFavorite);
     }
   }, [isOpen, progression]);
@@ -70,6 +72,7 @@ export const SaveProgressionDialog: React.FC<SaveProgressionDialogProps> = ({
         ...progression,
         title: title.trim(),
         tags,
+        notes: notes.trim() || undefined,
         isFavorite,
         updatedAt: new Date().toISOString(),
       };
@@ -164,6 +167,42 @@ export const SaveProgressionDialog: React.FC<SaveProgressionDialogProps> = ({
                   Separate tags with commas for easy searching
                 </div>
               </div>
+
+              {/* Notes textarea */}
+              <div className={styles.formGroup}>
+                <label htmlFor="progression-notes" className={styles.label}>
+                  Notes
+                </label>
+                <textarea
+                  id="progression-notes"
+                  className={styles.textarea}
+                  placeholder="Add notes about this progression..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  disabled={isSaving}
+                  rows={3}
+                />
+                <div className={styles.helpText}>
+                  Personal notes, inspiration, or context for this progression
+                </div>
+              </div>
+
+              {/* Analyzed from metadata */}
+              {progression.analyzedFrom && (
+                <div className={styles.analyzedInfo}>
+                  <div className={styles.analyzedLabel}>Analyzed from</div>
+                  <div className={styles.analyzedContent}>
+                    <span className={styles.analyzedTitle}>
+                      {progression.analyzedFrom.title}
+                    </span>
+                    {progression.analyzedFrom.composer && (
+                      <span className={styles.analyzedComposer}>
+                        by {progression.analyzedFrom.composer}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Favorite checkbox */}
               <div className={styles.checkboxGroup}>

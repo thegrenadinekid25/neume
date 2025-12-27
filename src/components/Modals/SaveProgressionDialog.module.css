@@ -136,6 +136,68 @@
   opacity: 0.6;
 }
 
+/* Textarea */
+.textarea {
+  padding: var(--space-md);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  font-family: var(--font-ui);
+  color: var(--text-primary);
+  background: var(--background-primary);
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color var(--duration-fast) var(--ease-apple-smooth),
+              box-shadow var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--primary-action);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.textarea:disabled {
+  background: var(--background-secondary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Analyzed from info */
+.analyzedInfo {
+  padding: var(--space-md);
+  background: var(--background-secondary);
+  border-radius: var(--border-radius-sm);
+  border-left: 3px solid var(--warm-terracotta);
+}
+
+.analyzedLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-xs);
+}
+
+.analyzedContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.analyzedTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.analyzedComposer {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
 /* Help text */
 .helpText {
   font-size: 12px;

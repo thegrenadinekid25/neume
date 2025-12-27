@@ -31,7 +31,9 @@ from models.schemas import (
     DeconstructStep,
     SuggestRequest,
     SuggestResponse,
-    SuggestionData
+    SuggestionData,
+    ChordInsightRequest,
+    ChordInsightResponse,
 )
 from services.youtube_downloader import YouTubeDownloader
 from services.chord_extractor import ChordExtractor, parse_chord_label
@@ -437,11 +439,13 @@ async def deconstruct_progression(request: DeconstructRequest):
             for chord in request.chords
         ]
 
-        # Perform deconstruction
+        # Perform deconstruction with optional song context
         steps_data = await progression_deconstructor.deconstruct(
             chord_dicts,
             request.key,
-            request.mode
+            request.mode,
+            song_title=request.songTitle,
+            composer=request.composer
         )
 
         # Convert to DeconstructStep objects
@@ -722,6 +726,142 @@ async def suggest_refinements(request: SuggestRequest):
         return SuggestResponse(
             success=False,
             error=f"Suggestion generation failed: {str(e)}"
+        )
+
+
+def build_chord_insight_prompt(
+    chords: list,
+    selected_indices: list[int],
+    key: str,
+    mode: str,
+    song_title: str | None,
+    composer: str | None,
+    annotations: list | None
+) -> str:
+    """Build prompt for chord insight analysis."""
+    prompt = "You are an expert music theorist providing deep insight into a specific moment in a chord progression.\n\n"
+
+    # Song context
+    if song_title or composer:
+        prompt += "## Song Context\n"
+        if song_title:
+            prompt += f'This progression is from "{song_title}"'
+            if composer:
+                prompt += f" by {composer}"
+            prompt += ".\n"
+        elif composer:
+            prompt += f"Composed by {composer}.\n"
+        prompt += "\n"
+
+    # Key and mode
+    prompt += f"## Key: {key} {mode}\n\n"
+
+    # Full progression
+    prompt += "## Full Progression\n"
+    progression_str = " → ".join(
+        to_roman_numeral(c.scaleDegree, c.quality, mode)
+        for c in chords
+    )
+    prompt += f"{progression_str}\n\n"
+
+    # Highlighted chords
+    selected_chords = [chords[i] for i in selected_indices if i < len(chords)]
+    prompt += "## Highlighted Moment(s)\n"
+    for i, chord in zip(selected_indices, selected_chords):
+        numeral = to_roman_numeral(chord.scaleDegree, chord.quality, mode)
+        prompt += f"- Chord #{i+1}: {numeral} (Scale Degree {chord.scaleDegree}, {chord.quality})\n"
+
+        # Include any user annotation for this chord
+        if annotations:
+            for ann in annotations:
+                if ann.chordId == chord.id:
+                    prompt += f"  User note: \"{ann.note}\"\n"
+    prompt += "\n"
+
+    prompt += "## Analysis Request\n"
+    prompt += "Provide a focused, educational analysis of this specific moment. Cover:\n"
+    prompt += "1. Why this chord/moment is musically interesting or effective\n"
+    prompt += "2. The harmonic function and voice leading at play\n"
+    prompt += "3. Similar techniques used by other composers\n"
+    prompt += "4. Learning suggestions for the student\n\n"
+
+    prompt += "Respond with valid JSON:\n"
+    prompt += "{\n"
+    prompt += '  "insight": "main educational insight about this moment (2-3 sentences)",\n'
+    prompt += '  "harmonicFunction": "brief description of harmonic function",\n'
+    prompt += '  "suggestions": ["learning tip 1", "learning tip 2"]\n'
+    prompt += "}\n"
+    prompt += "\nReturn only the JSON object."
+
+    return prompt
+
+
+@app.post("/api/chord-insight", response_model=ChordInsightResponse)
+async def get_chord_insight(request: ChordInsightRequest):
+    """
+    Get AI-powered insight for selected chord(s).
+
+    Provides deep analysis of a specific moment in a progression,
+    considering user annotations and song context.
+    """
+    api_key = os.getenv("CLAUDE_API_KEY")
+
+    if not api_key:
+        return ChordInsightResponse(
+            success=False,
+            error="Claude API key not configured"
+        )
+
+    if not request.selectedIndices:
+        return ChordInsightResponse(
+            success=False,
+            error="No chords selected for analysis"
+        )
+
+    try:
+        # Build the prompt
+        prompt = build_chord_insight_prompt(
+            chords=request.chords,
+            selected_indices=request.selectedIndices,
+            key=request.key,
+            mode=request.mode,
+            song_title=request.songTitle,
+            composer=request.composer,
+            annotations=request.annotations
+        )
+
+        # Call Claude API
+        client = anthropic.Anthropic(api_key=api_key)
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1024,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        response_text = message.content[0].text.strip()
+
+        # Parse JSON response
+        import re
+        json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+        if not json_match:
+            return ChordInsightResponse(
+                success=False,
+                error="Failed to parse AI response"
+            )
+
+        result = json.loads(json_match.group())
+
+        return ChordInsightResponse(
+            success=True,
+            insight=result.get("insight"),
+            harmonicFunction=result.get("harmonicFunction"),
+            suggestions=result.get("suggestions", [])
+        )
+
+    except Exception as e:
+        return ChordInsightResponse(
+            success=False,
+            error=f"Chord insight failed: {str(e)}"
         )
 
 

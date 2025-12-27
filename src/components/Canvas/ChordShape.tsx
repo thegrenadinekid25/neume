@@ -10,6 +10,7 @@ interface ChordShapeProps {
   isSelected?: boolean;
   isPlaying?: boolean;
   isDragging?: boolean;
+  hasAnnotation?: boolean;
   onSelect?: () => void;
   onHover?: () => void;
   zoom?: number;
@@ -33,6 +34,7 @@ function areChordShapePropsEqual(prev: ChordShapeProps, next: ChordShapeProps): 
     prev.isSelected === next.isSelected &&
     prev.isPlaying === next.isPlaying &&
     prev.isDragging === next.isDragging &&
+    prev.hasAnnotation === next.hasAnnotation &&
     prev.zoom === next.zoom
   );
 }
@@ -42,6 +44,7 @@ const ChordShapeComponent: React.FC<ChordShapeProps> = ({
   isSelected = false,
   isPlaying = false,
   isDragging = false,
+  hasAnnotation = false,
   onSelect,
   onHover,
   zoom = 1.0,
@@ -195,6 +198,26 @@ const ChordShapeComponent: React.FC<ChordShapeProps> = ({
           </motion.div>
         );
       })()}
+
+      {hasAnnotation && (
+        <motion.div
+          className={styles.annotationIndicator}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.2 }}
+          title="This chord has an annotation"
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M8.5 1.5L10.5 3.5L4 10H2V8L8.5 1.5Z"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </motion.div>
+      )}
     </motion.div>
   );
 };

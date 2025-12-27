@@ -13,6 +13,8 @@ interface ProgressionRow {
   chords: unknown;
   tags: string[];
   is_favorite: boolean;
+  notes: string | null;
+  annotations: unknown | null;
   analyzed_from: unknown | null;
   build_up_steps: unknown | null;
   created_at: string;
@@ -57,7 +59,7 @@ class ProgressionStorage {
   private async saveToCloud(progression: SavedProgression, userId: string): Promise<void> {
     if (!supabase) return;
 
-    const { id, title, key, mode, tempo, timeSignature, chords, tags, isFavorite, analyzedFrom, buildUpSteps } = progression;
+    const { id, title, key, mode, tempo, timeSignature, chords, tags, isFavorite, notes, annotations, analyzedFrom, buildUpSteps } = progression;
 
     // Check if exists
     const { data: existing } = await supabase
@@ -77,6 +79,8 @@ class ProgressionStorage {
         chords: chords as unknown,
         tags,
         is_favorite: isFavorite,
+        notes: notes || null,
+        annotations: annotations as unknown || [],
         analyzed_from: analyzedFrom as unknown,
         build_up_steps: buildUpSteps as unknown,
       };
@@ -100,6 +104,8 @@ class ProgressionStorage {
         chords: chords as unknown,
         tags,
         is_favorite: isFavorite,
+        notes: notes || null,
+        annotations: annotations as unknown || [],
         analyzed_from: analyzedFrom as unknown,
         build_up_steps: buildUpSteps as unknown,
       };
@@ -171,6 +177,8 @@ class ProgressionStorage {
       isFavorite: row.is_favorite,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
+      notes: row.notes || undefined,
+      annotations: row.annotations as SavedProgression['annotations'],
       analyzedFrom: row.analyzed_from as SavedProgression['analyzedFrom'],
       buildUpSteps: row.build_up_steps as SavedProgression['buildUpSteps'],
     }));
@@ -213,6 +221,8 @@ class ProgressionStorage {
         isFavorite: row.is_favorite,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
+        notes: row.notes || undefined,
+        annotations: row.annotations as SavedProgression['annotations'],
         analyzedFrom: row.analyzed_from as SavedProgression['analyzedFrom'],
         buildUpSteps: row.build_up_steps as SavedProgression['buildUpSteps'],
       };

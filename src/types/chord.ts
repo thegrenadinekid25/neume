@@ -104,6 +104,8 @@ export interface Chord {
   source: ChordSource;
   analyzedFrom?: string;
   createdAt: string;
+  // User annotation for this chord (runtime state, persisted separately)
+  annotation?: string;
 }
 
 /**

@@ -50,6 +50,15 @@ export interface BuildUpStep {
 }
 
 /**
+ * Per-chord annotation from user
+ */
+export interface ChordAnnotation {
+  chordId: string;
+  note: string;
+  createdAt: string;
+}
+
+/**
  * Build-up progression data
  */
 export interface BuildUp {
@@ -72,10 +81,17 @@ export interface SavedProgression {
   createdAt: string;
   updatedAt: string;
 
-  // Optional metadata
+  // User notes about this progression
+  notes?: string;
+
+  // Per-chord annotations
+  annotations?: ChordAnnotation[];
+
+  // Optional metadata from analysis
   analyzedFrom?: {
     source: 'youtube' | 'audio';
     title: string;
+    composer?: string;
     url?: string;
   };
 

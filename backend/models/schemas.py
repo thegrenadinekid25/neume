@@ -137,6 +137,8 @@ class DeconstructRequest(BaseModel):
     chords: List[SimpleChord]
     key: str
     mode: str
+    songTitle: Optional[str] = None
+    composer: Optional[str] = None
 
 
 class DeconstructStep(BaseModel):
@@ -180,4 +182,32 @@ class SuggestResponse(BaseModel):
     """Response body for /api/suggest endpoint"""
     success: bool
     suggestions: Optional[List[SuggestionData]] = None
+    error: Optional[str] = None
+
+
+# Chord Insight models (for "Get AI Insight" feature)
+
+class ChordAnnotation(BaseModel):
+    """Per-chord annotation from user"""
+    chordId: str
+    note: str
+
+
+class ChordInsightRequest(BaseModel):
+    """Request body for /api/chord-insight endpoint"""
+    chords: List[ExplainChordData]  # All chords in progression
+    selectedIndices: List[int]  # Indices of chords to analyze
+    key: str
+    mode: str
+    songTitle: Optional[str] = None
+    composer: Optional[str] = None
+    annotations: Optional[List[ChordAnnotation]] = None  # User annotations for context
+
+
+class ChordInsightResponse(BaseModel):
+    """Response body for /api/chord-insight endpoint"""
+    success: bool
+    insight: Optional[str] = None  # Main AI insight
+    harmonicFunction: Optional[str] = None  # Function analysis
+    suggestions: Optional[List[str]] = None  # Learning suggestions
     error: Optional[str] = None

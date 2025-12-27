@@ -11,6 +11,9 @@ interface CanvasState {
   // Phrase boundaries for visual grouping
   phrases: PhraseBoundary[];
 
+  // Chord annotations (chordId -> note)
+  annotations: Record<string, string>;
+
   // Selection
   selectedChordIds: string[];
 
@@ -69,6 +72,11 @@ interface CanvasState {
   // Actions - Clear phrases
   clearPhrases: () => void;
 
+  // Actions - Annotations
+  setAnnotation: (chordId: string, note: string) => void;
+  removeAnnotation: (chordId: string) => void;
+  clearAnnotations: () => void;
+
   // Actions - Playback
   setIsPlaying: (isPlaying: boolean) => void;
   setPlayheadPosition: (position: number) => void;
@@ -108,6 +116,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   // Initial state
   chords: [],
   phrases: [],
+  annotations: {},
   selectedChordIds: [],
   currentKey: 'C',
   currentMode: 'major',
@@ -149,17 +158,27 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   },
 
   removeChord: (id) => {
-    set((state) => ({
-      chords: state.chords.filter((c) => c.id !== id),
-      selectedChordIds: state.selectedChordIds.filter((cid) => cid !== id),
-    }));
+    set((state) => {
+      const newAnnotations = { ...state.annotations };
+      delete newAnnotations[id];
+      return {
+        chords: state.chords.filter((c) => c.id !== id),
+        selectedChordIds: state.selectedChordIds.filter((cid) => cid !== id),
+        annotations: newAnnotations,
+      };
+    });
   },
 
   removeChords: (ids) => {
-    set((state) => ({
-      chords: state.chords.filter((c) => !ids.includes(c.id)),
-      selectedChordIds: state.selectedChordIds.filter((cid) => !ids.includes(cid)),
-    }));
+    set((state) => {
+      const newAnnotations = { ...state.annotations };
+      ids.forEach((id) => delete newAnnotations[id]);
+      return {
+        chords: state.chords.filter((c) => !ids.includes(c.id)),
+        selectedChordIds: state.selectedChordIds.filter((cid) => !ids.includes(cid)),
+        annotations: newAnnotations,
+      };
+    });
   },
 
   updateChord: (id, updates) => {
@@ -183,7 +202,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   },
 
   clearChords: () => {
-    set({ chords: [], phrases: [], selectedChordIds: [] });
+    set({ chords: [], phrases: [], selectedChordIds: [], annotations: {} });
   },
 
   // Selection actions
@@ -269,6 +288,25 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
   clearPhrases: () => {
     set({ phrases: [] });
+  },
+
+  // Annotation actions
+  setAnnotation: (chordId, note) => {
+    set((state) => ({
+      annotations: { ...state.annotations, [chordId]: note },
+    }));
+  },
+
+  removeAnnotation: (chordId) => {
+    set((state) => {
+      const newAnnotations = { ...state.annotations };
+      delete newAnnotations[chordId];
+      return { annotations: newAnnotations };
+    });
+  },
+
+  clearAnnotations: () => {
+    set({ annotations: {} });
   },
 
   // Playback actions

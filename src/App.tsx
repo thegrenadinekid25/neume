@@ -5,6 +5,8 @@ import { DeleteConfirmation } from '@/components/UI/DeleteConfirmation';
 import { HelpTooltip } from '@/components/UI/HelpTooltip';
 import { KeySelector, ModeToggle, BeatsSelector } from '@/components/UI/MusicalSelector';
 import { SegmentedControl } from '@/components/UI/SegmentedControl';
+import { FloatingActionButton, FABIcons } from '@/components/UI/FloatingActionButton';
+import { ChordPalette } from '@/components/Palette';
 import { HELP_CONTENT } from '@/data/help-content';
 import { WhyThisPanel, BuildFromBonesPanel } from '@/components/Panels';
 import { PulseRingTempo } from '@/components/Controls';
@@ -17,6 +19,7 @@ const KeyboardShortcutsGuide = lazy(() => import('@/components/UI/KeyboardShortc
 const AnalyzeModal = lazy(() => import('@/components/Modals/AnalyzeModal').then(m => ({ default: m.AnalyzeModal })));
 const MyProgressionsModal = lazy(() => import('@/components/Modals/MyProgressionsModal').then(m => ({ default: m.MyProgressionsModal })));
 const RefineModal = lazy(() => import('@/components/Modals/RefineModal').then(m => ({ default: m.RefineModal })));
+const SaveProgressionDialog = lazy(() => import('@/components/Modals/SaveProgressionDialog').then(m => ({ default: m.SaveProgressionDialog })));
 import { useHistory } from '@/hooks/useHistory';
 import { usePlayback } from '@/hooks/usePlayback';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
@@ -27,9 +30,10 @@ import { useProgressionsStore } from '@/store/progressions-store';
 import { useRefineStore } from '@/store/refine-store';
 import { useTutorialStore } from '@/store/tutorial-store';
 import { generateSATBVoicing } from '@/audio/VoiceLeading';
-import type { Chord, MusicalKey, Mode, ScaleDegree, ChordQuality, ChordExtensions, Voices } from '@/types';
+import type { Chord, MusicalKey, Mode, ScaleDegree, ChordQuality, ChordExtensions, Voices, SavedProgression } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { CANVAS_CONFIG } from '@/utils/constants';
+import { progressionHasComplexity } from '@/utils/chord-helpers';
 import './App.css';
 
 function getChordQuality(degree: ScaleDegree, mode: Mode): ChordQuality {
@@ -114,8 +118,9 @@ function App() {
 
   // Auth state
   const { user, initialize: initializeAuth } = useAuthStore();
-  const { migrateLocalData, loadProgressions } = useProgressionsStore();
+  const { migrateLocalData, loadProgressions, saveProgression } = useProgressionsStore();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   // Initialize auth on mount
   useEffect(() => {
@@ -304,29 +309,104 @@ function App() {
     setSelectedChordIds(duplicates.map((c) => c.id));
   }, [selectedChordIds, chords, saveToHistory]);
 
-  // Handle Build From Bones - creates mock steps for demonstration
+  // Handle Build From Bones - generates smart steps based on actual chord complexity
   const handleBuildFromBones = useCallback(() => {
-    // Create mock steps since backend isn't ready yet
-    const mockSteps = [
-      {
-        stepNumber: 0,
-        stepName: 'Skeleton',
-        description: 'Basic harmonic structure - the fundamental progression',
+    const steps: Array<{
+      stepNumber: number;
+      stepName: string;
+      description: string;
+      chords: Chord[];
+    }> = [];
+
+    // Check what types of complexity exist in the progression
+    const has7ths = chords.some(c => ['dom7', 'maj7', 'min7', 'halfdim7', 'dim7'].includes(c.quality));
+    const hasExtensions = chords.some(c => c.extensions.add9 || c.extensions.add11 || c.extensions.add13);
+    const hasAlterations = chords.some(c => c.extensions.flat9 || c.extensions.sharp9 || c.extensions.sharp11 || c.extensions.flat13);
+    const hasSuspensions = chords.some(c => c.extensions.sus2 || c.extensions.sus4);
+
+    // Step 0: Always start with the skeleton (basic triads)
+    steps.push({
+      stepNumber: 0,
+      stepName: 'Skeleton',
+      description: 'The fundamental harmonic structure - basic triads only',
+      chords: chords.map(c => ({
+        ...c,
+        quality: (c.quality === 'minor' || c.quality === 'min7') ? 'minor' as ChordQuality :
+                 (c.quality === 'diminished' || c.quality === 'halfdim7' || c.quality === 'dim7') ? 'diminished' as ChordQuality :
+                 (c.quality === 'augmented') ? 'augmented' as ChordQuality : 'major' as ChordQuality,
+        extensions: {} as ChordExtensions,
+      })),
+    });
+
+    // Step: Add 7ths (if any chords have 7th qualities)
+    if (has7ths) {
+      steps.push({
+        stepNumber: steps.length,
+        stepName: 'Add 7ths',
+        description: 'Adding 7th tones to deepen the harmonic color',
         chords: chords.map(c => ({
           ...c,
-          quality: 'major' as ChordQuality,
-          extensions: {} as ChordExtensions,
+          extensions: {} as ChordExtensions, // Keep 7th quality but strip extensions
         })),
-      },
-      {
-        stepNumber: 1,
-        stepName: 'Add 7ths',
-        description: 'Adding 7th extensions to deepen the harmonic color',
-        chords: chords,
-      },
-    ];
+      });
+    }
 
-    openBuildFromBonesPanel(mockSteps);
+    // Step: Add suspensions (if any)
+    if (hasSuspensions) {
+      steps.push({
+        stepNumber: steps.length,
+        stepName: 'Add Suspensions',
+        description: 'Replacing the 3rd with sus2 or sus4 for tension',
+        chords: chords.map(c => ({
+          ...c,
+          extensions: {
+            sus2: c.extensions.sus2,
+            sus4: c.extensions.sus4,
+          } as ChordExtensions,
+        })),
+      });
+    }
+
+    // Step: Add extensions (9ths, 11ths, 13ths)
+    if (hasExtensions) {
+      steps.push({
+        stepNumber: steps.length,
+        stepName: 'Add Extensions',
+        description: 'Upper structure tones (9ths, 11ths, 13ths) for richness',
+        chords: chords.map(c => ({
+          ...c,
+          extensions: {
+            ...c.extensions,
+            flat9: false,
+            sharp9: false,
+            sharp11: false,
+            flat13: false,
+          } as ChordExtensions,
+        })),
+      });
+    }
+
+    // Step: Add alterations (only if different from previous step)
+    if (hasAlterations) {
+      steps.push({
+        stepNumber: steps.length,
+        stepName: 'Add Alterations',
+        description: 'Chromatic alterations (♭9, ♯9, ♯11, ♭13) for color and tension',
+        chords: chords,
+      });
+    }
+
+    // Final step: Full progression (if not already the last step)
+    if (!hasAlterations && (has7ths || hasExtensions || hasSuspensions)) {
+      steps.push({
+        stepNumber: steps.length,
+        stepName: 'Final',
+        description: 'The complete progression with all voicings',
+        chords: chords,
+      });
+    }
+
+    openBuildFromBonesPanel(steps);
   }, [chords, openBuildFromBonesPanel]);
 
   const chordsWithPlayState = useMemo(() => {
@@ -335,6 +415,72 @@ function App() {
       playing: isPlaying && playheadPosition >= chord.startBeat && playheadPosition < chord.startBeat + chord.duration,
     }));
   }, [chords, isPlaying, playheadPosition]);
+
+  // Create current progression for saving
+  const currentProgression = useMemo((): SavedProgression => {
+    // Map beats per measure to time signature
+    const timeSignatureMap: Record<number, SavedProgression['timeSignature']> = {
+      2: '2/2',
+      3: '3/4',
+      4: '4/4',
+      6: '6/8',
+    };
+    const timeSignature = timeSignatureMap[beatsPerMeasure] || '4/4';
+
+    return {
+      id: uuidv4(),
+      title: metadata?.title || 'Untitled Progression',
+      key: currentKey,
+      mode: currentMode,
+      tempo,
+      timeSignature,
+      chords,
+      tags: [],
+      isFavorite: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      analyzedFrom: metadata ? {
+        source: 'youtube' as const,
+        title: metadata.title,
+        url: metadata.sourceUrl,
+      } : undefined,
+    };
+  }, [currentKey, currentMode, tempo, beatsPerMeasure, chords, metadata]);
+
+  // Check if progression has complex chords (7ths, extensions, etc.)
+  const hasComplexChords = useMemo(() => progressionHasComplexity(chords), [chords]);
+
+  // FAB actions
+  const fabActions = useMemo(() => {
+    const actions = [
+      {
+        id: 'save',
+        icon: FABIcons.save,
+        label: 'Save Progression',
+        onClick: () => setShowSaveDialog(true),
+        disabled: chords.length === 0,
+      },
+      {
+        id: 'library',
+        icon: FABIcons.folder,
+        label: 'My Progressions',
+        onClick: openProgressionsModal,
+      },
+    ];
+
+    // Only show Build From Bones if progression has complex chords
+    if (hasComplexChords) {
+      actions.push({
+        id: 'bones',
+        icon: FABIcons.bones,
+        label: 'Build From Bones',
+        onClick: handleBuildFromBones,
+        disabled: false,
+      });
+    }
+
+    return actions;
+  }, [chords.length, hasComplexChords, openProgressionsModal, handleBuildFromBones]);
 
   // Add chord - now just needs x position to calculate startBeat
   const handleAddChord = useCallback((
@@ -377,6 +523,20 @@ function App() {
     saveToHistory(newChords);
   }, [zoom, currentKey, currentMode, chords, saveToHistory]);
 
+  // Add chord from palette at next available position
+  const handleAddChordFromPalette = useCallback((scaleDegree: ScaleDegree) => {
+    // Find the next available position (after the last chord)
+    const lastChordEnd = chords.length > 0
+      ? Math.max(...chords.map(c => c.startBeat + c.duration))
+      : 0;
+
+    // Convert to pixel position for handleAddChord
+    const beatWidth = CANVAS_CONFIG.GRID_BEAT_WIDTH * zoom;
+    const position = { x: lastChordEnd * beatWidth };
+
+    handleAddChord(scaleDegree, position);
+  }, [chords, zoom, handleAddChord]);
+
   // Update chord position - now just updates startBeat
   const handleUpdateChordPosition = useCallback((chordId: string, startBeat: number) => {
     setChords((prevChords) =>
@@ -393,7 +553,7 @@ function App() {
           <span className="header-accent" aria-hidden="true" />
           <h1>Neume</h1>
         </div>
-        <p className="header-hint">Right-click to add chords</p>
+        {/* Hint removed - using chord palette instead */}
         <div className="header-right">
           <UserMenu onSignInClick={() => setShowAuthModal(true)} />
         </div>
@@ -634,6 +794,19 @@ function App() {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
       />
+
+      <ChordPalette mode={currentMode} onAddChord={handleAddChordFromPalette} />
+
+      <FloatingActionButton actions={fabActions} />
+
+      <Suspense fallback={null}>
+        <SaveProgressionDialog
+          progression={currentProgression}
+          isOpen={showSaveDialog}
+          onClose={() => setShowSaveDialog(false)}
+          onSave={saveProgression}
+        />
+      </Suspense>
     </div>
   );
 }

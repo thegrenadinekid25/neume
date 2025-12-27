@@ -175,10 +175,28 @@ class ProgressionDeconstructor:
         """Format a chord list as a readable string"""
         return " → ".join(str(c) for c in chords)
 
-    async def generate_explanation(self, step_name: str, chords: List[Chord], previous_chords: Optional[List[Chord]] = None) -> str:
+    async def generate_explanation(
+        self,
+        step_name: str,
+        chords: List[Chord],
+        previous_chords: Optional[List[Chord]] = None,
+        song_title: Optional[str] = None,
+        composer: Optional[str] = None,
+        key: Optional[str] = None,
+        mode: Optional[str] = None
+    ) -> str:
         """
         Use Claude API to generate explanation for a step.
         Returns a 2-3 sentence explanation.
+
+        Args:
+            step_name: Name of the current step (e.g., "Skeleton", "Add 7ths")
+            chords: Current chord list for this step
+            previous_chords: Chord list from the previous step
+            song_title: Optional song title for contextual explanations
+            composer: Optional composer/artist name for contextual explanations
+            key: Musical key (e.g., "C", "G")
+            mode: Musical mode (e.g., "major", "minor")
         """
         if not self.client:
             return "Explanation unavailable - API key not configured"
@@ -188,20 +206,54 @@ class ProgressionDeconstructor:
             self.format_chord_list(previous_chords) if previous_chords else "basic triads"
         )
 
-        prompt = f"""You are an expert music theorist explaining chord progression evolution.
+        # Build context-aware prompt
+        if song_title and composer:
+            prompt = f"""You are an expert music theorist teaching how "{song_title}" by {composer} builds its harmonic structure.
 
-Explain what happens in this harmonic layer step:
+You're explaining the step-by-step evolution of the chord progression from this song.
+
+"""
+        elif song_title:
+            prompt = f"""You are an expert music theorist teaching how "{song_title}" builds its harmonic structure.
+
+You're explaining the step-by-step evolution of the chord progression from this song.
+
+"""
+        elif composer:
+            prompt = f"""You are an expert music theorist teaching how {composer}'s harmonic language develops.
+
+You're explaining the step-by-step evolution of a chord progression in their style.
+
+"""
+        else:
+            prompt = """You are an expert music theorist explaining chord progression evolution.
+
+"""
+
+        prompt += f"""Explain what happens in this harmonic layer step:
 
 Previous Step: {previous_str}
 Current Step: {step_name}
-Current Chords: {chord_str}
+Current Chords: {chord_str}"""
 
-Provide a 2-3 sentence explanation covering:
-1. What this layer adds musically
-2. Why composers use this technique
-3. Historical/stylistic context
+        if key and mode:
+            prompt += f"\nKey: {key} {mode}"
 
-Write for composers - be inspiring and educational. Keep it concise."""
+        prompt += "\n\nProvide a 2-3 sentence explanation covering:\n"
+        prompt += "1. What this layer adds musically"
+
+        if song_title or composer:
+            prompt += f"\n2. How this technique contributes to the song's emotional character"
+            if composer:
+                prompt += f"\n3. Why {composer} might have made this harmonic choice"
+        else:
+            prompt += "\n2. Why composers use this technique"
+            prompt += "\n3. Historical/stylistic context"
+
+        prompt += "\n\nWrite for composers - be inspiring and educational. Keep it concise."
+
+        if song_title:
+            prompt += f" Reference \"{song_title}\" naturally in your explanation."
 
         try:
             message = self.client.messages.create(
@@ -214,11 +266,26 @@ Write for composers - be inspiring and educational. Keep it concise."""
         except Exception as e:
             return f"Explanation generation failed: {str(e)}"
 
-    async def deconstruct(self, chords: List[Dict], key: str, mode: str) -> List[Dict]:
+    async def deconstruct(
+        self,
+        chords: List[Dict],
+        key: str,
+        mode: str,
+        song_title: Optional[str] = None,
+        composer: Optional[str] = None
+    ) -> List[Dict]:
         """
         Main deconstruction method.
-        Input: list of chord dicts with root, quality, extensions
-        Output: list of step dicts with stepNumber, stepName, description, chords
+
+        Args:
+            chords: List of chord dicts with root, quality, extensions
+            key: Musical key (e.g., "C", "G")
+            mode: Musical mode (e.g., "major", "minor")
+            song_title: Optional song title for richer, contextual descriptions
+            composer: Optional composer/artist name for contextual descriptions
+
+        Returns:
+            List of step dicts with stepNumber, stepName, description, chords
         """
         # Convert to internal Chord objects
         chord_objects = [Chord(c["root"], c["quality"], c.get("extensions", {})) for c in chords]
@@ -237,8 +304,16 @@ Write for composers - be inspiring and educational. Keep it concise."""
         previous_chords = None
 
         for step_number, (step_name, step_chords) in enumerate(progression_steps):
-            # Generate explanation
-            description = await self.generate_explanation(step_name, step_chords, previous_chords)
+            # Generate explanation with song context if available
+            description = await self.generate_explanation(
+                step_name,
+                step_chords,
+                previous_chords,
+                song_title=song_title,
+                composer=composer,
+                key=key,
+                mode=mode
+            )
 
             # Build step response
             steps.append({

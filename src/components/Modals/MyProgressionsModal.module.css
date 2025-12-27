@@ -304,6 +304,138 @@
   color: var(--text-tertiary);
 }
 
+/* Composer info section */
+.composerInfo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--background-primary);
+  border-left: 3px solid var(--warm-terracotta);
+  border-radius: var(--border-radius-sm);
+  font-size: 12px;
+}
+
+.composerLabel {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.composerName {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.composerBy {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Notes section */
+.notesSection {
+  margin-top: var(--space-xs);
+}
+
+.notesDisplay {
+  padding: var(--space-sm) var(--space-md);
+  background: var(--background-primary);
+  border: 1px dashed var(--border-light);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all var(--duration-slow) var(--ease-breathe);
+}
+
+.notesDisplay:hover {
+  border-color: var(--border-medium);
+  background: var(--background-secondary);
+}
+
+.notesText {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.notesPlaceholder {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* Notes editing mode */
+.notesEditing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.notesTextarea {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  font-family: var(--font-ui);
+  color: var(--text-primary);
+  background: var(--background-primary);
+  resize: vertical;
+  min-height: 60px;
+  transition: border-color var(--duration-slow) var(--ease-breathe),
+              box-shadow var(--duration-slow) var(--ease-breathe);
+}
+
+.notesTextarea:focus {
+  outline: none;
+  border-color: var(--primary-action);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.notesEditActions {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+}
+
+.notesSaveButton {
+  padding: var(--space-xs) var(--space-md);
+  background: var(--primary-action);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  color: white;
+  cursor: pointer;
+  transition: all var(--duration-slow) var(--ease-breathe);
+}
+
+.notesSaveButton:hover {
+  background-color: #3a7bc8;
+}
+
+.notesCancelButton {
+  padding: var(--space-xs) var(--space-md);
+  background: var(--background-primary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--border-radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--duration-slow) var(--ease-breathe);
+}
+
+.notesCancelButton:hover {
+  background: var(--background-secondary);
+  border-color: var(--border-dark);
+}
+
 /* Action buttons */
 .actions {
   display: flex;
@@ -548,5 +680,19 @@
   .filterTab {
     flex: 1;
     min-width: 0;
+  }
+
+  .composerInfo {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .notesEditActions {
+    flex-direction: column;
+  }
+
+  .notesSaveButton,
+  .notesCancelButton {
+    width: 100%;
   }
 }

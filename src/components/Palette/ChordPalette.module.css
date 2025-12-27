@@ -1,0 +1,170 @@
+/**
+ * Chord Palette Styles
+ * Hover-expand palette for adding chords
+ */
+
+.container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Collapsed trigger button */
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--warm-cream);
+  border: 1px solid var(--border-light);
+  border-radius: 24px;
+  cursor: pointer;
+  box-shadow:
+    0 2px 8px rgba(61, 53, 48, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: background var(--duration-fast) var(--ease-breathe),
+              box-shadow var(--duration-fast) var(--ease-breathe),
+              transform var(--duration-fast) var(--ease-breathe);
+}
+
+.trigger:hover {
+  background: var(--warm-sand);
+  box-shadow:
+    0 4px 12px rgba(61, 53, 48, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.triggerIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--warm-terracotta);
+}
+
+.triggerIcon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.triggerLabel {
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  color: var(--warm-text-primary);
+}
+
+/* Expanded palette */
+.palette {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--warm-cream);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  padding: 12px 16px 16px;
+  box-shadow:
+    0 8px 32px rgba(61, 53, 48, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 400px;
+}
+
+.paletteHeader {
+  text-align: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.paletteHeader span {
+  font-size: 12px;
+  font-family: var(--font-ui);
+  color: var(--warm-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Chord grid */
+.chordGrid {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Individual chord item */
+.chordItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-breathe),
+              transform var(--duration-fast) var(--ease-breathe);
+  user-select: none;
+}
+
+.chordItem:hover {
+  background: var(--warm-sand);
+  transform: translateY(-2px);
+}
+
+.chordItem:active {
+  transform: scale(0.95);
+}
+
+.chordItem:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--warm-gold);
+}
+
+.chordShape {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  transition: filter var(--duration-fast) var(--ease-breathe);
+}
+
+.chordItem:hover .chordShape {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+}
+
+.chordNumeral {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  text-transform: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 520px) {
+  .palette {
+    min-width: calc(100vw - 32px);
+    max-width: calc(100vw - 32px);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .chordGrid {
+    gap: 4px;
+  }
+
+  .chordItem {
+    padding: 6px;
+  }
+
+  .chordShape {
+    width: 40px;
+    height: 40px;
+  }
+}

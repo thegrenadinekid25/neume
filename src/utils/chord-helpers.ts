@@ -1,4 +1,4 @@
-import { ChordQuality, ChordExtensions } from '../types/chord';
+import type { Chord, ChordQuality, ChordExtensions } from '../types/chord';
 
 /**
  * Badge labels for displaying chord extensions and alterations
@@ -144,6 +144,14 @@ export function getChordIntervals(
 
   // Sort intervals
   return intervals.sort((a, b) => a - b);
+}
+
+/**
+ * Check if a progression has any complex chords (7ths, extensions, alterations)
+ * Used to determine if Build From Bones feature should be enabled
+ */
+export function progressionHasComplexity(chords: Chord[]): boolean {
+  return chords.some(chord => hasChordModifications(chord.quality, chord.extensions));
 }
 
 /**

@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { ChordShape } from './ChordShape';
+import { ChordAnnotationPopover } from './ChordAnnotationPopover';
 import { CANVAS_CONFIG } from '@/utils/constants';
 import type { Chord, ChordQuality, ChordExtensions } from '@/types';
 import styles from './DraggableChord.module.css';
@@ -34,10 +35,20 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
 
+  // Annotation popover state
+  const [annotationPopoverOpen, setAnnotationPopoverOpen] = useState(false);
+  const [annotationPopoverPosition, setAnnotationPopoverPosition] = useState({ x: 0, y: 0 });
+
   // Store hooks
   const openWhyThisPanel = useWhyThisStore(state => state.openPanel);
   const removeChord = useCanvasStore(state => state.removeChord);
   const updateChord = useCanvasStore(state => state.updateChord);
+  const annotations = useCanvasStore(state => state.annotations);
+  const setAnnotation = useCanvasStore(state => state.setAnnotation);
+  const removeAnnotation = useCanvasStore(state => state.removeAnnotation);
+
+  // Get current annotation for this chord
+  const currentAnnotation = annotations[chord.id] || '';
 
   const {
     attributes,
@@ -72,12 +83,34 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
     onClick?.(e);
   }, [isDragging, onClick]);
 
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isDragging) return;
+    setAnnotationPopoverPosition({ x: e.clientX, y: e.clientY });
+    setAnnotationPopoverOpen(true);
+  }, [isDragging]);
+
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setContextMenuPosition({ x: e.clientX, y: e.clientY });
     setContextMenuOpen(true);
   }, []);
+
+  const openAnnotationPopover = useCallback((x: number, y: number) => {
+    setAnnotationPopoverPosition({ x, y });
+    setAnnotationPopoverOpen(true);
+  }, []);
+
+  const handleSaveAnnotation = useCallback((note: string) => {
+    if (note) {
+      setAnnotation(chord.id, note);
+    } else {
+      removeAnnotation(chord.id);
+    }
+    setAnnotationPopoverOpen(false);
+  }, [chord.id, setAnnotation, removeAnnotation]);
 
   // Get previous and next chords for context (sorted by startBeat for correct order)
   const { sortedChords, previousChord, nextChord } = useMemo(() => {
@@ -172,6 +205,15 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
         label: '',
         divider: true,
       },
+      // Add Note
+      {
+        id: 'add-note',
+        label: currentAnnotation ? 'Edit Note' : 'Add Note',
+        action: () => {
+          openAnnotationPopover(contextMenuPosition.x, contextMenuPosition.y);
+          setContextMenuOpen(false);
+        },
+      },
       // Why This?
       {
         id: 'why-this',
@@ -197,7 +239,7 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
       },
     ];
     return items;
-  }, [chord, previousChord, nextChord, sortedChords, songContext, openWhyThisPanel, removeChord, hasExtensions, handleQualityChange, handleExtensionToggle, handleClearExtensions]);
+  }, [chord, previousChord, nextChord, sortedChords, songContext, openWhyThisPanel, removeChord, hasExtensions, handleQualityChange, handleExtensionToggle, handleClearExtensions, currentAnnotation, contextMenuPosition, openAnnotationPopover]);
 
   return (
     <>
@@ -207,6 +249,7 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
         className={styles.draggableChord}
         data-chord="true"
         onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
         onContextMenu={handleContextMenu}
         {...listeners}
         {...attributes}
@@ -218,6 +261,7 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
           onSelect={onSelect}
           zoom={zoom}
           isDragging={isDragging}
+          hasAnnotation={!!currentAnnotation}
         />
       </div>
       <ContextMenu
@@ -225,6 +269,13 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
         position={contextMenuPosition}
         items={menuItems}
         onClose={() => setContextMenuOpen(false)}
+      />
+      <ChordAnnotationPopover
+        isOpen={annotationPopoverOpen}
+        position={annotationPopoverPosition}
+        initialNote={currentAnnotation}
+        onSave={handleSaveAnnotation}
+        onCancel={() => setAnnotationPopoverOpen(false)}
       />
     </>
   );
