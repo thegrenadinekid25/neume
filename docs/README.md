@@ -52,9 +52,22 @@ Architecture, implementation details, and development workflows.
 
 ---
 
-## Phase 1 Features
+## Current Features
 
-Neume Phase 1 (current) includes:
+### Phase 2 (Current Release)
+
+See full details: [`PHASE-2-RELEASE-NOTES.md`](./PHASE-2-RELEASE-NOTES.md)
+
+**New in Phase 2:**
+- **Salamander Grand Piano** - Professional sampled piano audio
+- **Melodic Necklaces** - Visual voice leading curves between chords
+- **Expert Mode** - Unlockable 9th/11th/13th chords + altered dominants
+- **Manual Voicing Controls** - Drag handles to adjust SATB voices
+- **Text Annotations** - Per-chord notes (theory, performance, reference)
+- **AI Narrative Composer** - Describe emotions, AI generates chords
+- **Cloud Storage** - Supabase-powered sync across devices
+
+### Phase 1 Foundation
 
 - **Visual chord progression editor** with timeline-based interface
 - **Audio playback** with tempo control (60-220 BPM)
@@ -62,7 +75,6 @@ Neume Phase 1 (current) includes:
 - **AI explanations** ("Why This?") for music theory learning
 - **Progression deconstruction** ("Build From Bones")
 - **AI suggestions** ("Refine This") for chord improvements
-- **localStorage-based saving** (no login required, no cloud sync)
 - **Keyboard shortcuts** for efficient workflow
 - **SATB voicing** with voice leading algorithms
 - **Modal switching** (Major/Minor key changes)
@@ -100,15 +112,12 @@ All progressions are stored in your browser's localStorage:
 
 ---
 
-## Coming Soon (Phase 2+)
+## Coming Soon (Phase 2.5+)
 
-- User accounts & cloud sync
 - MIDI import/export
-- Direct chord voicing editing
 - Melody-based harmony suggestions
-- Progression library database
 - Collaboration features
-- Mobile apps
+- Mobile responsive improvements
 
 ---
 
@@ -118,5 +127,5 @@ For issues or feature requests, refer to the [Troubleshooting section](./USER-GU
 
 ---
 
-**Version**: Phase 1 (localStorage only)
-**Last Updated**: December 2025
+**Version**: Phase 2.0
+**Last Updated**: December 2024
