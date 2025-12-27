@@ -14,7 +14,7 @@ import { WelcomeTutorial } from '@/components/Tutorial/WelcomeTutorial';
 import { Sidebar, SidebarSection, SidebarDivider, SidebarSpacer } from '@/components/Sidebar';
 import { AuthModal, UserMenu } from '@/components/Auth';
 import { AudioLoadingIndicator } from '@/components/Audio';
-import { NecklaceToggle } from '@/components/UI';
+import { NecklaceToggle, ExpertModeProgress, ExpertModeToggle } from '@/components/UI';
 
 // Lazy load modals for code splitting
 const KeyboardShortcutsGuide = lazy(() => import('@/components/UI/KeyboardShortcutsGuide').then(m => ({ default: m.KeyboardShortcutsGuide })));
@@ -615,6 +615,14 @@ function App() {
         {/* View Settings */}
         <SidebarSection>
           <NecklaceToggle />
+        </SidebarSection>
+
+        <SidebarDivider />
+
+        {/* Expert Mode */}
+        <SidebarSection>
+          <ExpertModeProgress />
+          <ExpertModeToggle />
         </SidebarSection>
 
         <SidebarDivider />

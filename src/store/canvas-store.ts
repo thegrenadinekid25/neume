@@ -5,6 +5,8 @@ import type { PhraseBoundary } from '@/types/progression';
 import type { NecklaceSettings, VoicePart } from '@/types/necklace';
 import { CANVAS_CONFIG, DEFAULT_CHORD_SIZE } from '@/utils/constants';
 import { DEFAULT_NECKLACE_SETTINGS } from '@/types/necklace';
+import { useExpertModeStore } from './expert-mode-store';
+import { getChordIdentifier } from '@/utils/chord-helpers';
 
 interface CanvasState {
   // Chords
@@ -167,6 +169,15 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     };
 
     set((state) => ({ chords: [...state.chords, newChord] }));
+
+    // Track chord usage for Expert Mode
+    const chordId = getChordIdentifier({
+      scaleDegree: newChord.scaleDegree,
+      quality: newChord.quality,
+      extensions: newChord.extensions,
+    });
+    useExpertModeStore.getState().trackChordUsed(chordId);
+
     return newChord;
   },
 

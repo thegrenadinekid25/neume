@@ -18,3 +18,7 @@ export { SegmentedControl } from './SegmentedControl';
 export type { SegmentedControlProps, SegmentedControlOption } from './SegmentedControl';
 
 export { NecklaceToggle } from './NecklaceToggle';
+
+export { ExpertModeToggle } from './ExpertModeToggle';
+
+export { ExpertModeProgress } from './ExpertModeProgress';

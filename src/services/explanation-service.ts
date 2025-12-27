@@ -1,5 +1,6 @@
 import { Chord } from '../types/chord';
 import { ChordExplanation } from '../types/ai';
+import { useExpertModeStore } from '../store/expert-mode-store';
 
 /**
  * Scale degree contexts for mock explanations
@@ -156,8 +157,12 @@ export function getMockExplanation(
     // Explain common progressions
     if (prevDegree === 5 && degreeNum === 1) {
       contextual += `This V→I movement is the strongest resolution in tonal music (authentic cadence). `;
+      // Track cadence for Expert Mode
+      useExpertModeStore.getState().trackCadenceCompleted();
     } else if (prevDegree === 4 && degreeNum === 1) {
       contextual += `This IV→I movement creates a plagal cadence, often heard as "Amen" in hymns. `;
+      // Track cadence for Expert Mode
+      useExpertModeStore.getState().trackCadenceCompleted();
     } else if (degreeNum === 5 && nextDegree === 1) {
       contextual += `The dominant naturally wants to resolve to the tonic that follows. `;
     } else if (degreeNum === 4 && nextDegree === 5) {
@@ -171,6 +176,8 @@ export function getMockExplanation(
 
     if (prevDegree === 5 && degreeNum === 1) {
       contextual += `This V→I resolution provides harmonic closure. `;
+      // Track cadence for Expert Mode
+      useExpertModeStore.getState().trackCadenceCompleted();
     } else if (prevDegree === 4 && degreeNum === 5) {
       contextual += `The subdominant naturally leads to dominant. `;
     }

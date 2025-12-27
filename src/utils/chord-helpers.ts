@@ -1,4 +1,5 @@
 import type { Chord, ChordQuality, ChordExtensions } from '../types/chord';
+import { EXTENDED_BADGE_LABELS, EXTENDED_CHORD_TYPE_NAMES } from '@/data/extended-chords';
 
 /**
  * Badge labels for displaying chord extensions and alterations
@@ -20,10 +21,13 @@ export const BADGE_LABELS: Record<string, string> = {
   flat13: '♭13',
 };
 
+// Merge extended badge labels
+Object.assign(BADGE_LABELS, EXTENDED_BADGE_LABELS);
+
 /**
  * Human-readable names for chord qualities
  */
-export const CHORD_TYPE_NAMES: Record<ChordQuality, string> = {
+export const CHORD_TYPE_NAMES: Record<string, string> = {
   major: 'Major',
   minor: 'Minor',
   diminished: 'Diminished',
@@ -34,6 +38,9 @@ export const CHORD_TYPE_NAMES: Record<ChordQuality, string> = {
   halfdim7: 'Half-Diminished 7th',
   dim7: 'Diminished 7th',
 };
+
+// Merge extended chord type names
+Object.assign(CHORD_TYPE_NAMES, EXTENDED_CHORD_TYPE_NAMES);
 
 /**
  * Categories of chord types for organization
@@ -107,7 +114,7 @@ export function getChordIntervals(
   extensions: ChordExtensions
 ): number[] {
   // Base intervals for each quality (in semitones from root)
-  const baseIntervals: Record<ChordQuality, number[]> = {
+  const baseIntervals: Record<string, number[]> = {
     major: [0, 4, 7], // Root, Major 3rd, Perfect 5th
     minor: [0, 3, 7], // Root, Minor 3rd, Perfect 5th
     diminished: [0, 3, 6], // Root, Minor 3rd, Diminished 5th
@@ -186,4 +193,52 @@ export function getChordDisplayName(
   }
 
   return displayName;
+}
+
+/**
+ * Get intervals for extended chord qualities
+ */
+export function getExtendedChordIntervals(quality: string): number[] | null {
+  const extendedIntervals: Record<string, number[]> = {
+    dom9: [0, 4, 7, 10, 14],
+    maj9: [0, 4, 7, 11, 14],
+    min9: [0, 3, 7, 10, 14],
+    dom11: [0, 4, 7, 10, 14, 17],
+    min11: [0, 3, 7, 10, 14, 17],
+    dom13: [0, 4, 7, 10, 14, 21],
+    maj13: [0, 4, 7, 11, 14, 21],
+    min13: [0, 3, 7, 10, 14, 21],
+    alt: [0, 4, 8, 10, 13],
+    dom7b9: [0, 4, 7, 10, 13],
+    dom7sharp9: [0, 4, 7, 10, 15],
+    dom7sharp11: [0, 4, 7, 10, 18],
+  };
+  return extendedIntervals[quality] || null;
+}
+
+/**
+ * Check if a quality is an extended chord type
+ */
+export function isExtendedChordQuality(quality: string): boolean {
+  const extendedQualities = [
+    'dom9', 'maj9', 'min9',
+    'dom11', 'min11',
+    'dom13', 'maj13', 'min13',
+    'alt', 'dom7b9', 'dom7sharp9', 'dom7sharp11'
+  ];
+  return extendedQualities.includes(quality);
+}
+
+/**
+ * Generate a unique identifier for a chord (used for tracking)
+ */
+export function getChordIdentifier(chord: { scaleDegree: number; quality: string; extensions?: ChordExtensions }): string {
+  const extParts = chord.extensions
+    ? Object.entries(chord.extensions)
+        .filter(([_, v]) => v)
+        .map(([k]) => k)
+        .sort()
+        .join('-')
+    : '';
+  return `${chord.scaleDegree}-${chord.quality}${extParts ? '-' + extParts : ''}`;
 }

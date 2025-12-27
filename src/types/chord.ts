@@ -10,7 +10,19 @@ export type ChordQuality =
   | 'maj7'
   | 'min7'
   | 'halfdim7'
-  | 'dim7';
+  | 'dim7'
+  | 'dom9'
+  | 'maj9'
+  | 'min9'
+  | 'dom11'
+  | 'min11'
+  | 'dom13'
+  | 'maj13'
+  | 'min13'
+  | 'alt'
+  | 'dom7b9'
+  | 'dom7sharp9'
+  | 'dom7sharp11';
 
 /**
  * Scale degree (1-7 for I-vii)
@@ -52,6 +64,8 @@ export interface ChordExtensions {
   flat9?: boolean;
   sharp9?: boolean;
   flat13?: boolean;
+  flat5?: boolean;
+  sharp5?: boolean;
 }
 
 /**

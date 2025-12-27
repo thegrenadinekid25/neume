@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { SavedProgression } from '../types';
 import { progressionStorage } from '../services/progression-storage';
+import { useExpertModeStore } from './expert-mode-store';
 
 interface ProgressionsState {
   // Modal state
@@ -73,6 +74,10 @@ export const useProgressionsStore = create<ProgressionsState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       await progressionStorage.save(progression);
+
+      // Track progression save for Expert Mode
+      useExpertModeStore.getState().trackProgressionSaved();
+
       await get().loadProgressions();
     } catch (error) {
       console.error('Failed to save progression:', error);

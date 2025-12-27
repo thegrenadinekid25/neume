@@ -1,0 +1,55 @@
+.container {
+  padding: 12px;
+  background: linear-gradient(135deg, var(--color-cream) 0%, #f5f0e8 100%);
+  border: 1px solid var(--color-sage);
+  border-radius: 12px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.badge {
+  padding: 2px 8px;
+  background: var(--color-sage);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: white;
+  letter-spacing: 0.5px;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-charcoal);
+}
+
+.toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toggleOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.toggleOption input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-sage);
+  cursor: pointer;
+}
+
+.toggleLabel {
+  font-size: 13px;
+  color: var(--color-charcoal);
+}
