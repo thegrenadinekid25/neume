@@ -200,6 +200,38 @@
   color: var(--text-secondary);
 }
 
+/* Play Demo Button */
+.playDemoButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--warm-terracotta, #E85D3D);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-smooth);
+  white-space: nowrap;
+}
+
+.playDemoButton:hover:not(:disabled) {
+  background: #D4503A;
+  box-shadow: 0 4px 12px rgba(232, 93, 61, 0.3);
+  transform: translateY(-1px);
+}
+
+.playDemoButton:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.playDemoButton svg {
+  flex-shrink: 0;
+}
+
 /* Arrow Pulse */
 .arrow {
   position: absolute;

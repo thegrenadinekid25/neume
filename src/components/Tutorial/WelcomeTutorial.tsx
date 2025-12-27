@@ -3,7 +3,7 @@
  * Guides first-time users through core features
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTutorialStore } from '@/store/tutorial-store';
 import styles from './WelcomeTutorial.module.css';
 
@@ -60,26 +60,25 @@ export function WelcomeTutorial() {
   } = useTutorialStore();
 
   const [showConfetti, setShowConfetti] = useState(false);
+  const [hasPlayedDemo, setHasPlayedDemo] = useState(false);
 
-  // Handle step-specific actions
+  // Handle play button in tutorial
+  const handleTutorialPlay = useCallback(() => {
+    // Click the actual play button in the sidebar
+    const playButton = document.querySelector('.play-button') as HTMLButtonElement;
+    if (playButton) {
+      playButton.click();
+      setHasPlayedDemo(true);
+      // Advance after a short delay to let them hear the music
+      setTimeout(() => nextStep(), 1500);
+    }
+  }, [nextStep]);
+
+  // Handle step-specific actions (only for add-chord step now)
   useEffect(() => {
     if (!isActive) return;
 
     const step = TUTORIAL_STEPS[currentStep];
-
-    // For play step, wait for play button click
-    if (step.action === 'play') {
-      const playButton = document.querySelector('.play-button') as HTMLButtonElement;
-      if (playButton) {
-        const handleClick = () => {
-          // Give audio a moment to start, then advance
-          setTimeout(() => nextStep(), 500);
-          playButton.removeEventListener('click', handleClick);
-        };
-        playButton.addEventListener('click', handleClick);
-        return () => playButton.removeEventListener('click', handleClick);
-      }
-    }
 
     // For add-chord step, wait for right-click
     if (step.action === 'add-chord') {
@@ -154,6 +153,18 @@ export function WelcomeTutorial() {
               </div>
 
               <div className={styles.tooltipActions}>
+                {step.action === 'play' && (
+                  <button
+                    className={styles.playDemoButton}
+                    onClick={handleTutorialPlay}
+                    disabled={hasPlayedDemo}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M4 2.5v11l9-5.5-9-5.5z" />
+                    </svg>
+                    {hasPlayedDemo ? 'Playing...' : 'Play Demo'}
+                  </button>
+                )}
                 {!isLastStep && step.action !== 'play' && step.action !== 'add-chord' && (
                   <button
                     className={styles.primaryButton}

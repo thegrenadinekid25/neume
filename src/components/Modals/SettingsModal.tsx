@@ -23,13 +23,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
-          <motion.div
-            className={styles.modal}
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.2 }}
-          >
+          <div className={styles.modalContainer}>
+            <motion.div
+              className={styles.modal}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+            >
             <div className={styles.header}>
               <h2 className={styles.title}>Settings</h2>
               <button
@@ -56,7 +57,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 </div>
               </section>
             </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>,
