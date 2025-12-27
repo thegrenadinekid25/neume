@@ -102,3 +102,19 @@ export {
   DEFAULT_MELODIC_NOTE_VISUAL_STATE,
   DEFAULT_COMPOSITION_MODE,
 } from './voice-line';
+
+export type {
+  CounterpointViolationType,
+  CounterpointSeverity,
+  RangeViolationSubtype,
+  ViolationLocation,
+  CounterpointViolation,
+  CounterpointAnalyzerConfig,
+  CounterpointSummary,
+  CounterpointAnalysisResult,
+  BeatSnapshot,
+} from './counterpoint';
+
+export {
+  DEFAULT_COUNTERPOINT_CONFIG,
+} from './counterpoint';
