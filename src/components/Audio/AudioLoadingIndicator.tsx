@@ -23,7 +23,12 @@ export function AudioLoadingIndicator() {
     <div className={`${styles.container} ${isSamplesLoaded ? styles.loaded : ''}`}>
       <div className={styles.content}>
         {isSamplesLoaded ? (
-          <span className={styles.label}>🎹 Piano ready</span>
+          <span className={styles.label}>
+            <svg className={styles.icon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Piano ready
+          </span>
         ) : (
           <>
             <span className={styles.spinner} />

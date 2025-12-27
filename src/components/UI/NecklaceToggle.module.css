@@ -23,8 +23,8 @@
 }
 
 .toggleButton.active {
-  background: var(--color-sage);
-  border-color: var(--color-sage);
+  background: var(--warm-gold, #E8A03E);
+  border-color: var(--warm-gold, #E8A03E);
   color: white;
 }
 
@@ -81,7 +81,7 @@
 .voiceOption input {
   width: 16px;
   height: 16px;
-  accent-color: var(--color-sage);
+  accent-color: var(--warm-gold, #E8A03E);
   cursor: pointer;
 }
 

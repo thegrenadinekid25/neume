@@ -27,12 +27,12 @@
 }
 
 .handle.error {
-  outline: 2px solid #dc3545;
+  outline: 2px solid var(--warm-terracotta, #E85D3D);
   outline-offset: 2px;
 }
 
 .handle.warning {
-  outline: 2px solid #ffc107;
+  outline: 2px solid var(--warm-gold, #E8A03E);
   outline-offset: 2px;
 }
 

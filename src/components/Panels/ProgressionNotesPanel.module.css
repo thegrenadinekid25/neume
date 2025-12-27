@@ -83,7 +83,7 @@
 }
 
 .closeButton:focus-visible {
-  outline: 2px solid var(--primary-action);
+  outline: 2px solid var(--warm-gold, #E8A03E);
   outline-offset: 2px;
 }
 
@@ -154,8 +154,8 @@
 }
 
 .filterTab.active {
-  color: var(--primary-action);
-  border-bottom-color: var(--primary-action);
+  color: var(--warm-gold, #E8A03E);
+  border-bottom-color: var(--warm-gold, #E8A03E);
 }
 
 /* Annotations list */
@@ -265,7 +265,7 @@
 
 .editInput:focus {
   outline: none;
-  border-color: var(--primary-action);
+  border-color: var(--warm-gold, #E8A03E);
 }
 
 .editActions {
@@ -285,12 +285,12 @@
 }
 
 .editButton.save {
-  background: var(--primary-action);
+  background: var(--warm-gold, #E8A03E);
   color: white;
 }
 
 .editButton.save:hover {
-  background-color: #3a7bc8;
+  background-color: var(--warm-amber, #D4924A);
   transform: translateY(-1px);
 }
 
@@ -310,7 +310,7 @@
 }
 
 .editButton:focus-visible {
-  outline: 2px solid var(--primary-action);
+  outline: 2px solid var(--warm-gold, #E8A03E);
   outline-offset: 2px;
 }
 
@@ -333,12 +333,12 @@
 }
 
 .deleteButton:hover {
-  background-color: rgba(196, 69, 54, 0.1);
-  color: #c44536;
+  background-color: rgba(232, 93, 61, 0.1);
+  color: var(--warm-terracotta, #E85D3D);
 }
 
 .deleteButton:focus-visible {
-  outline: 2px solid #c44536;
+  outline: 2px solid var(--warm-terracotta, #E85D3D);
   outline-offset: 2px;
 }
 
@@ -388,7 +388,7 @@
 
 .typeSelect:focus {
   outline: none;
-  border-color: var(--primary-action);
+  border-color: var(--warm-gold, #E8A03E);
 }
 
 .textInput {
@@ -406,12 +406,12 @@
 
 .textInput:focus {
   outline: none;
-  border-color: var(--primary-action);
+  border-color: var(--warm-gold, #E8A03E);
 }
 
 .addButton {
   padding: var(--space-md) var(--space-lg);
-  background: var(--primary-action);
+  background: var(--warm-gold, #E8A03E);
   border: none;
   border-radius: var(--border-radius-md);
   color: white;
@@ -422,9 +422,9 @@
 }
 
 .addButton:hover:not(:disabled) {
-  background-color: #3a7bc8;
+  background-color: var(--warm-amber, #D4924A);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+  box-shadow: 0 2px 8px rgba(232, 160, 62, 0.3);
 }
 
 .addButton:active:not(:disabled) {
@@ -437,7 +437,7 @@
 }
 
 .addButton:focus-visible:not(:disabled) {
-  outline: 2px solid #2b5aa5;
+  outline: 2px solid var(--warm-amber, #D4924A);
   outline-offset: 2px;
 }
 

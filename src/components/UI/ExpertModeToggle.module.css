@@ -1,7 +1,7 @@
 .container {
   padding: 12px;
-  background: linear-gradient(135deg, var(--color-cream) 0%, #f5f0e8 100%);
-  border: 1px solid var(--color-sage);
+  background: linear-gradient(135deg, var(--warm-cream, #FAF8F5) 0%, var(--warm-sand, #F5F1E8) 100%);
+  border: 1px solid rgba(232, 160, 62, 0.3);
   border-radius: 12px;
 }
 
@@ -14,7 +14,7 @@
 
 .badge {
   padding: 2px 8px;
-  background: var(--color-sage);
+  background: var(--warm-gold, #E8A03E);
   border-radius: 4px;
   font-size: 10px;
   font-weight: 700;
@@ -45,7 +45,7 @@
 .toggleOption input {
   width: 16px;
   height: 16px;
-  accent-color: var(--color-sage);
+  accent-color: var(--warm-gold, #E8A03E);
   cursor: pointer;
 }
 

@@ -28,11 +28,11 @@
 }
 
 .issue.error {
-  background: #fee2e2;
-  color: #dc2626;
+  background: rgba(232, 93, 61, 0.1);
+  color: var(--warm-terracotta, #E85D3D);
 }
 
 .issue.warning {
-  background: #fef3c7;
-  color: #d97706;
+  background: rgba(232, 160, 62, 0.1);
+  color: var(--warm-amber, #D4924A);
 }

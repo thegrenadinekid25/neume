@@ -104,14 +104,14 @@
 }
 
 .deleteButton:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: #ef4444;
-  color: #ef4444;
+  background: rgba(232, 93, 61, 0.1);
+  border-color: var(--warm-terracotta, #E85D3D);
+  color: var(--warm-terracotta, #E85D3D);
 }
 
 .editButton:focus-visible,
 .deleteButton:focus-visible {
-  outline: 2px solid var(--primary-action);
+  outline: 2px solid var(--warm-gold, #E8A03E);
   outline-offset: 1px;
 }
 
@@ -137,8 +137,8 @@
 
 .editTextarea:focus {
   outline: none;
-  border-color: var(--primary-action);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  border-color: var(--warm-gold, #E8A03E);
+  box-shadow: 0 0 0 2px rgba(232, 160, 62, 0.15);
 }
 
 .editButtons {
@@ -169,8 +169,8 @@
 }
 
 .typePill:hover {
-  border-color: var(--primary-action);
-  background: var(--background-tertiary);
+  border-color: var(--warm-gold, #E8A03E);
+  background: var(--warm-sand, #F5F1E8);
 }
 
 .typePillActive {
@@ -179,7 +179,7 @@
 }
 
 .typePill:focus-visible {
-  outline: 2px solid var(--primary-action);
+  outline: 2px solid var(--warm-gold, #E8A03E);
   outline-offset: 1px;
 }
 
@@ -221,8 +221,8 @@
 
 .textarea:focus {
   outline: none;
-  border-color: var(--primary-action);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  border-color: var(--warm-gold, #E8A03E);
+  box-shadow: 0 0 0 2px rgba(232, 160, 62, 0.15);
 }
 
 .footer {
@@ -267,13 +267,13 @@
 }
 
 .saveButton {
-  background: var(--primary-action);
+  background: var(--warm-gold, #E8A03E);
   color: white;
   border: 1px solid transparent;
 }
 
 .saveButton:hover:not(:disabled) {
-  background: var(--primary-action-hover, #3a80d2);
+  background: var(--warm-amber, #D4924A);
 }
 
 .saveButton:disabled {
@@ -284,6 +284,6 @@
 
 .cancelButton:focus-visible,
 .saveButton:focus-visible {
-  outline: 2px solid var(--primary-action);
+  outline: 2px solid var(--warm-gold, #E8A03E);
   outline-offset: 2px;
 }
