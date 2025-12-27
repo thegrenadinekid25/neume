@@ -6,6 +6,7 @@ import { KeyboardShortcutsGuide } from '@/components/UI/KeyboardShortcutsGuide';
 import { AnalyzeModal, MyProgressionsModal, RefineModal } from '@/components/Modals';
 import { WhyThisPanel, BuildFromBonesPanel } from '@/components/Panels';
 import { TempoDial } from '@/components/Controls';
+import { WelcomeTutorial } from '@/components/Tutorial/WelcomeTutorial';
 import { useHistory } from '@/hooks/useHistory';
 import { usePlayback } from '@/hooks/usePlayback';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
@@ -13,6 +14,7 @@ import { useAnalysisStore } from '@/store/analysis-store';
 import { useBuildFromBonesStore } from '@/store/build-from-bones-store';
 import { useProgressionsStore } from '@/store/progressions-store';
 import { useRefineStore } from '@/store/refine-store';
+import { useTutorialStore } from '@/store/tutorial-store';
 import { generateSATBVoicing } from '@/audio/VoiceLeading';
 import type { Chord, MusicalKey, Mode, ScaleDegree, ChordQuality, ChordExtensions, Voices } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -88,6 +90,17 @@ function App() {
 
   const { pushState, undo, redo } = useHistory();
   useAudioEngine(); // Hook needed for auto-init on first interaction
+
+  // Tutorial initialization
+  const { startTutorial, checkCompletion } = useTutorialStore();
+  useEffect(() => {
+    checkCompletion();
+    const hasCompleted = localStorage.getItem('tutorial-completed') === 'true';
+    if (!hasCompleted) {
+      startTutorial();
+    }
+  }, [startTutorial, checkCompletion]);
+
   const openAnalyzeModal = useAnalysisStore(state => state.openModal);
   const metadata = useAnalysisStore(state => state.metadata);
   const convertedChords = useAnalysisStore(state => state.convertedChords);
@@ -510,6 +523,8 @@ function App() {
       <RefineModal />
       <WhyThisPanel />
       <BuildFromBonesPanel />
+
+      <WelcomeTutorial />
     </div>
   );
 }
