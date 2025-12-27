@@ -7,6 +7,8 @@ interface MetadataBannerProps {
   composer?: string;
   sourceUrl?: string;
   onClear: () => void;
+  onBuildFromBones?: () => void;
+  showBuildFromBones?: boolean;
 }
 
 export const MetadataBanner: React.FC<MetadataBannerProps> = ({
@@ -14,6 +16,8 @@ export const MetadataBanner: React.FC<MetadataBannerProps> = ({
   composer,
   sourceUrl,
   onClear,
+  onBuildFromBones,
+  showBuildFromBones = false,
 }) => {
   const subtitle = composer ? `by ${composer}` : undefined;
 
@@ -56,27 +60,43 @@ export const MetadataBanner: React.FC<MetadataBannerProps> = ({
           )}
         </div>
 
-        <motion.button
-          className={styles.clearButton}
-          onClick={onClear}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ duration: 0.2 }}
-          aria-label="Clear analyzed progression"
-          title="Clear"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <div className={styles.buttonGroup}>
+          {showBuildFromBones && onBuildFromBones && (
+            <motion.button
+              className={styles.buildButton}
+              onClick={onBuildFromBones}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              aria-label="Build from bones"
+              title="Build From Bones"
+            >
+              Build From Bones
+            </motion.button>
+          )}
+
+          <motion.button
+            className={styles.clearButton}
+            onClick={onClear}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            aria-label="Clear analyzed progression"
+            title="Clear"
           >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </motion.button>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </motion.button>
+        </div>
       </div>
     </motion.div>
   );

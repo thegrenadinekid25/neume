@@ -4,3 +4,4 @@
  */
 
 export { WhyThisPanel } from './WhyThisPanel';
+export { BuildFromBonesPanel } from './BuildFromBonesPanel';

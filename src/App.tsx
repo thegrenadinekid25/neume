@@ -4,12 +4,13 @@ import { MetadataBanner } from '@/components/Canvas/MetadataBanner';
 import { DeleteConfirmation } from '@/components/UI/DeleteConfirmation';
 import { KeyboardShortcutsGuide } from '@/components/UI/KeyboardShortcutsGuide';
 import { AnalyzeModal } from '@/components/Modals';
-import { WhyThisPanel } from '@/components/Panels';
+import { WhyThisPanel, BuildFromBonesPanel } from '@/components/Panels';
 import { TempoDial } from '@/components/Controls';
 import { useHistory } from '@/hooks/useHistory';
 import { usePlayback } from '@/hooks/usePlayback';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useAnalysisStore } from '@/store/analysis-store';
+import { useBuildFromBonesStore } from '@/store/build-from-bones-store';
 import { generateSATBVoicing } from '@/audio/VoiceLeading';
 import type { Chord, MusicalKey, Mode, ScaleDegree, ChordQuality, ChordExtensions, Voices } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -91,6 +92,7 @@ function App() {
   const phraseBoundaries = useAnalysisStore(state => state.phraseBoundaries);
   const analysisResult = useAnalysisStore(state => state.result);
   const clearAnalyzedProgression = useAnalysisStore(state => state.clearAnalyzedProgression);
+  const openBuildFromBonesPanel = useBuildFromBonesStore(state => state.openPanel);
 
   // Calculate total beats based on chord positions + buffer
   const totalBeats = useMemo(() => {
@@ -253,6 +255,31 @@ function App() {
     setSelectedChordIds(duplicates.map((c) => c.id));
   }, [selectedChordIds, chords, saveToHistory]);
 
+  // Handle Build From Bones - creates mock steps for demonstration
+  const handleBuildFromBones = useCallback(() => {
+    // Create mock steps since backend isn't ready yet
+    const mockSteps = [
+      {
+        stepNumber: 0,
+        stepName: 'Skeleton',
+        description: 'Basic harmonic structure - the fundamental progression',
+        chords: chords.map(c => ({
+          ...c,
+          quality: 'major' as ChordQuality,
+          extensions: {} as ChordExtensions,
+        })),
+      },
+      {
+        stepNumber: 1,
+        stepName: 'Add 7ths',
+        description: 'Adding 7th extensions to deepen the harmonic color',
+        chords: chords,
+      },
+    ];
+
+    openBuildFromBonesPanel(mockSteps);
+  }, [chords, openBuildFromBonesPanel]);
+
   const chordsWithPlayState = useMemo(() => {
     return chords.map(chord => ({
       ...chord,
@@ -376,6 +403,8 @@ function App() {
             clearAnalyzedProgression();
             setChords([]); // Clear the canvas
           }}
+          showBuildFromBones={!!analysisResult}
+          onBuildFromBones={handleBuildFromBones}
         />
       )}
 
@@ -463,6 +492,7 @@ function App() {
 
       <AnalyzeModal />
       <WhyThisPanel />
+      <BuildFromBonesPanel />
     </div>
   );
 }

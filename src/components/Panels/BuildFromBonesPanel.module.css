@@ -1,0 +1,521 @@
+/**
+ * BuildFromBonesPanel Component Styles
+ * CSS Module for the Build From Bones Panel - step-by-step deconstruction view
+ */
+
+/* Overlay backdrop */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+  z-index: calc(var(--z-panel) - 1);
+}
+
+/* Panel container - bottom sheet style */
+.panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-height: 400px;
+  background: var(--background-primary);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
+  z-index: var(--z-panel);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+}
+
+/* Panel header with close button */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+  gap: var(--space-md);
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Close button - X in top right */
+.closeButton {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-radius: var(--border-radius-sm);
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: background-color var(--duration-fast) var(--ease-apple-smooth),
+              color var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.closeButton:hover {
+  background-color: var(--background-secondary);
+  color: var(--text-primary);
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+/* Step indicator - flex container for step dots and progress lines */
+.stepIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  padding: var(--space-lg) var(--space-lg) var(--space-md);
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+}
+
+/* Individual step dot - 20px circles */
+.stepDot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--background-secondary);
+  border: 2px solid var(--border-light);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.stepDot:hover {
+  border-color: var(--border-medium);
+  transform: scale(1.1);
+}
+
+/* Active step dot - current step */
+.stepDot.active {
+  background: var(--primary-action);
+  border-color: var(--primary-action);
+  color: white;
+  box-shadow: 0 0 8px rgba(74, 144, 226, 0.4);
+}
+
+/* Completed step dot */
+.stepDot.completed {
+  background: var(--success);
+  border-color: var(--success);
+  color: white;
+}
+
+/* Progress line connecting dots - 3px */
+.progressLine {
+  flex: 0 0 24px;
+  height: 3px;
+  background: var(--border-light);
+  border-radius: 2px;
+  transition: background-color var(--duration-fast) var(--ease-apple-smooth);
+  flex-shrink: 0;
+}
+
+/* Filled progress line (between completed steps) */
+.progressLine.filled {
+  background: var(--primary-action);
+}
+
+/* Scrollable step content area */
+.stepContent {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  padding-right: calc(var(--space-lg) - 4px); /* Account for scrollbar */
+}
+
+/* Scrollbar styling for step content */
+.stepContent::-webkit-scrollbar {
+  width: 6px;
+}
+
+.stepContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.stepContent::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 3px;
+}
+
+.stepContent::-webkit-scrollbar-thumb:hover {
+  background: var(--border-dark);
+}
+
+/* Step title - 18px font */
+.stepTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Step description - 13px with background */
+.stepDescription {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  padding: var(--space-md);
+  background: var(--background-secondary);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-light);
+  margin: 0;
+}
+
+/* Progression display section */
+.progressionSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.progressionLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.progressionChords {
+  font-size: 13px;
+  font-family: var(--font-notation);
+  font-weight: 500;
+  color: var(--text-primary);
+  padding: var(--space-md);
+  background: var(--background-secondary);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-light);
+  word-break: break-word;
+}
+
+/* Navigation controls - flex container for prev/play/next buttons */
+.navControls {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  border-top: 1px solid var(--border-light);
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+/* Global controls section - bottom controls */
+.globalControls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  border-top: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+/* Button base styles */
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid transparent;
+  border-radius: var(--border-radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  white-space: nowrap;
+}
+
+/* Primary action button - bright blue */
+.playButton.primary {
+  background: var(--primary-action);
+  color: white;
+  border-color: var(--primary-action);
+}
+
+.playButton.primary:hover:not(:disabled) {
+  background-color: #3a7bc8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+}
+
+.playButton.primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Secondary action button - muted */
+.playButton.secondary {
+  background: var(--background-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-light);
+}
+
+.playButton.secondary:hover:not(:disabled) {
+  background: var(--border-light);
+  border-color: var(--border-medium);
+  transform: translateY(-1px);
+}
+
+.playButton.secondary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Disabled button state */
+.playButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.playButton:focus-visible:not(:disabled) {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+/* Play button icon styling */
+.playIcon {
+  font-size: 11px;
+  display: inline-block;
+}
+
+/* Navigation button styles (prev/next) */
+.navButton {
+  flex: 1;
+  padding: var(--space-md) var(--space-sm);
+  background: var(--background-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-md);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.navButton:hover:not(:disabled) {
+  background: var(--border-light);
+  border-color: var(--border-medium);
+  transform: translateY(-1px);
+}
+
+.navButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.navButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.navButton:focus-visible:not(:disabled) {
+  outline: 2px solid var(--primary-action);
+  outline-offset: -2px;
+}
+
+/* Loading state */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl) var(--space-lg);
+  gap: var(--space-lg);
+  min-height: 150px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(74, 144, 226, 0.2);
+  border-top-color: var(--primary-action);
+  border-radius: 50%;
+  animation: spin var(--duration-normal) linear infinite;
+}
+
+.loadingText {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin: 0;
+}
+
+/* Empty state */
+.emptyContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl) var(--space-lg);
+  gap: var(--space-md);
+  text-align: center;
+  min-height: 150px;
+}
+
+.emptyIcon {
+  font-size: 32px;
+  opacity: 0.5;
+}
+
+.emptyMessage {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Animations */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+/* Responsive design - tablet */
+@media (max-width: 768px) {
+  .panel {
+    max-height: 450px;
+  }
+
+  .stepIndicator {
+    padding: var(--space-md) var(--space-lg);
+    gap: var(--space-sm);
+  }
+
+  .progressLine {
+    flex: 0 0 16px;
+  }
+
+  .stepContent {
+    padding: var(--space-md);
+  }
+
+  .navControls {
+    padding: var(--space-md);
+    gap: var(--space-xs);
+  }
+
+  .globalControls {
+    padding: var(--space-md);
+  }
+
+  .navButton {
+    font-size: 11px;
+    padding: var(--space-sm) var(--space-xs);
+  }
+}
+
+/* Responsive design - mobile */
+@media (max-width: 480px) {
+  .panel {
+    max-height: 70vh;
+    border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+  }
+
+  .header {
+    padding: var(--space-md);
+  }
+
+  .title {
+    font-size: 14px;
+  }
+
+  .stepIndicator {
+    padding: var(--space-md);
+    gap: var(--space-xs);
+  }
+
+  .stepDot {
+    width: 18px;
+    height: 18px;
+    font-size: 9px;
+  }
+
+  .progressLine {
+    flex: 0 0 12px;
+  }
+
+  .stepTitle {
+    font-size: 16px;
+  }
+
+  .stepDescription {
+    font-size: 12px;
+    padding: var(--space-sm);
+  }
+
+  .stepContent {
+    padding: var(--space-md);
+    gap: var(--space-md);
+  }
+
+  .navControls {
+    flex-direction: column;
+    padding: var(--space-md);
+    gap: var(--space-xs);
+  }
+
+  .navButton {
+    width: 100%;
+    font-size: 12px;
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .playButton {
+    width: 100%;
+    padding: var(--space-md);
+    font-size: 12px;
+  }
+
+  .globalControls {
+    padding: var(--space-md);
+    gap: var(--space-xs);
+  }
+}

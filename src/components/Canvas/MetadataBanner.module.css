@@ -96,6 +96,47 @@
   flex-shrink: 0;
 }
 
+.buttonGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.buildButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  background-color: var(--primary-action);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  outline: none;
+  font-family: inherit;
+  letter-spacing: -0.3px;
+}
+
+.buildButton:hover {
+  background-color: var(--primary-action);
+  opacity: 0.9;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.buildButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+.buildButton:active {
+  opacity: 0.8;
+}
+
 .clearButton {
   display: inline-flex;
   align-items: center;
@@ -155,6 +196,11 @@
     padding: 4px;
   }
 
+  .buildButton {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
   .linkIcon {
     width: 14px;
     height: 14px;
@@ -183,6 +229,11 @@
     width: 26px;
     height: 26px;
     padding: 3px;
+  }
+
+  .buildButton {
+    padding: 4px 8px;
+    font-size: 11px;
   }
 
   .linkIcon {
