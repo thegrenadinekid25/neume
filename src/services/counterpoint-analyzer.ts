@@ -65,6 +65,48 @@ function isSimilarMotion(
   return motion1 === motion2 && motion1 !== 'static';
 }
 
+function isContraryMotion(
+  voice1From: number,
+  voice1To: number,
+  voice2From: number,
+  voice2To: number
+): boolean {
+  const motion1 = getMotionDirection(voice1From, voice1To);
+  const motion2 = getMotionDirection(voice2From, voice2To);
+  if (motion1 === 'static' || motion2 === 'static') return false;
+  return motion1 !== motion2;
+}
+
+// Dissonance interval types
+const MINOR_SECOND = 1;
+const MAJOR_SECOND = 2;
+const TRITONE_LOW = 6;  // diminished 5th / augmented 4th
+const MINOR_SEVENTH = 10;
+const MAJOR_SEVENTH = 11;
+
+function isDissonantInterval(interval: number): boolean {
+  const normalized = Math.abs(interval) % 12;
+  return (
+    normalized === MINOR_SECOND ||
+    normalized === MAJOR_SECOND ||
+    normalized === TRITONE_LOW ||
+    normalized === MINOR_SEVENTH ||
+    normalized === MAJOR_SEVENTH
+  );
+}
+
+function getDissonanceType(interval: number): string {
+  const normalized = Math.abs(interval) % 12;
+  switch (normalized) {
+    case MINOR_SECOND: return 'minor 2nd';
+    case MAJOR_SECOND: return 'major 2nd';
+    case TRITONE_LOW: return 'tritone';
+    case MINOR_SEVENTH: return 'minor 7th';
+    case MAJOR_SEVENTH: return 'major 7th';
+    default: return 'dissonance';
+  }
+}
+
 // ============================================================================
 // Beat Snapshot Helpers
 // ============================================================================
@@ -337,6 +379,188 @@ function detectHiddenOctaves(
   return violations;
 }
 
+/**
+ * Detect anti-parallel fifths (P5 to P5 by contrary motion)
+ * Forbidden in strict Renaissance counterpoint, allowed in later styles
+ */
+function detectAntiparallelFifths(
+  prevSnapshot: BeatSnapshot,
+  currSnapshot: BeatSnapshot,
+  config: CounterpointAnalyzerConfig
+): CounterpointViolation[] {
+  if (!config.checkAntiparallelFifths) return [];
+
+  const violations: CounterpointViolation[] = [];
+  const severity: CounterpointSeverity = config.strictness === 'strict' ? 'error' : 'warning';
+
+  for (const [voice1, voice2] of ALL_VOICE_PAIRS) {
+    const prev1 = prevSnapshot.notes[voice1];
+    const prev2 = prevSnapshot.notes[voice2];
+    const curr1 = currSnapshot.notes[voice1];
+    const curr2 = currSnapshot.notes[voice2];
+
+    if (!prev1 || !prev2 || !curr1 || !curr2) continue;
+
+    const prevInterval = prev1.midi - prev2.midi;
+    const currInterval = curr1.midi - curr2.midi;
+
+    // Anti-parallel: P5 to P5 by contrary motion
+    if (
+      isPerfectFifth(prevInterval) &&
+      isPerfectFifth(currInterval) &&
+      isContraryMotion(prev1.midi, curr1.midi, prev2.midi, curr2.midi)
+    ) {
+      violations.push(createViolation(
+        'antiparallelFifths',
+        severity,
+        `Anti-parallel fifths between ${voice1} and ${voice2}`,
+        {
+          beat: currSnapshot.beat,
+          noteIds: [curr1.noteId, curr2.noteId],
+        },
+        {
+          voicePair: [voice1, voice2],
+          interval: Math.abs(currInterval),
+          suggestion: `Use oblique motion or approach via a different interval`,
+        }
+      ));
+    }
+  }
+
+  return violations;
+}
+
+/**
+ * Detect anti-parallel octaves (P8 to P8 by contrary motion)
+ * Strictly forbidden in Renaissance, sometimes allowed in later styles
+ */
+function detectAntiparallelOctaves(
+  prevSnapshot: BeatSnapshot,
+  currSnapshot: BeatSnapshot,
+  config: CounterpointAnalyzerConfig
+): CounterpointViolation[] {
+  if (!config.checkAntiparallelOctaves) return [];
+
+  const violations: CounterpointViolation[] = [];
+  const severity: CounterpointSeverity = config.strictness === 'strict' ? 'error' : 'warning';
+
+  for (const [voice1, voice2] of ALL_VOICE_PAIRS) {
+    const prev1 = prevSnapshot.notes[voice1];
+    const prev2 = prevSnapshot.notes[voice2];
+    const curr1 = currSnapshot.notes[voice1];
+    const curr2 = currSnapshot.notes[voice2];
+
+    if (!prev1 || !prev2 || !curr1 || !curr2) continue;
+
+    const prevInterval = prev1.midi - prev2.midi;
+    const currInterval = curr1.midi - curr2.midi;
+
+    // Anti-parallel: P8 to P8 by contrary motion
+    if (
+      isPerfectOctaveOrUnison(prevInterval) &&
+      isPerfectOctaveOrUnison(currInterval) &&
+      isContraryMotion(prev1.midi, curr1.midi, prev2.midi, curr2.midi)
+    ) {
+      violations.push(createViolation(
+        'antiparallelOctaves',
+        severity,
+        `Anti-parallel octaves between ${voice1} and ${voice2}`,
+        {
+          beat: currSnapshot.beat,
+          noteIds: [curr1.noteId, curr2.noteId],
+        },
+        {
+          voicePair: [voice1, voice2],
+          interval: Math.abs(currInterval),
+          suggestion: `Use oblique motion or approach via a different interval`,
+        }
+      ));
+    }
+  }
+
+  return violations;
+}
+
+/**
+ * Detect unresolved dissonances
+ * Only checked in strict/baroque modes - OFF by default for modern music
+ */
+function detectUnresolvedDissonances(
+  prevSnapshot: BeatSnapshot,
+  currSnapshot: BeatSnapshot,
+  config: CounterpointAnalyzerConfig
+): CounterpointViolation[] {
+  if (!config.checkDissonanceResolution) return [];
+
+  const violations: CounterpointViolation[] = [];
+
+  for (const [voice1, voice2] of ALL_VOICE_PAIRS) {
+    const prev1 = prevSnapshot.notes[voice1];
+    const prev2 = prevSnapshot.notes[voice2];
+    const curr1 = currSnapshot.notes[voice1];
+    const curr2 = currSnapshot.notes[voice2];
+
+    if (!prev1 || !prev2 || !curr1 || !curr2) continue;
+
+    const prevInterval = prev1.midi - prev2.midi;
+    const currInterval = curr1.midi - curr2.midi;
+
+    // Check if previous interval was dissonant
+    if (isDissonantInterval(prevInterval)) {
+      const prevNormalized = Math.abs(prevInterval) % 12;
+      let isResolved = false;
+      let expectedResolution = '';
+
+      // Check resolution based on dissonance type
+      switch (prevNormalized) {
+        case TRITONE_LOW:
+          // Tritone should resolve: d5 inward to 3rd, A4 outward to 6th
+          const currNormalized = Math.abs(currInterval) % 12;
+          isResolved = currNormalized === 3 || currNormalized === 4 ||
+                       currNormalized === 8 || currNormalized === 9;
+          expectedResolution = 'Tritone should resolve to a 3rd or 6th';
+          break;
+        case MINOR_SEVENTH:
+        case MAJOR_SEVENTH:
+          // 7th should resolve down by step to 6th or to octave
+          isResolved = Math.abs(currInterval) % 12 === 8 ||
+                       Math.abs(currInterval) % 12 === 9 ||
+                       isPerfectOctaveOrUnison(currInterval);
+          expectedResolution = '7th should resolve to a 6th or octave';
+          break;
+        case MINOR_SECOND:
+        case MAJOR_SECOND:
+          // 2nd should resolve outward to 3rd or inward to unison
+          isResolved = Math.abs(currInterval) % 12 === 3 ||
+                       Math.abs(currInterval) % 12 === 4 ||
+                       isPerfectOctaveOrUnison(currInterval);
+          expectedResolution = '2nd should resolve to a 3rd or unison';
+          break;
+      }
+
+      if (!isResolved) {
+        const dissonanceType = getDissonanceType(prevInterval);
+        violations.push(createViolation(
+          'unresolvedDissonance',
+          config.strictness === 'strict' ? 'error' : 'warning',
+          `Unresolved ${dissonanceType} between ${voice1} and ${voice2}`,
+          {
+            beat: currSnapshot.beat,
+            noteIds: [curr1.noteId, curr2.noteId],
+          },
+          {
+            voicePair: [voice1, voice2],
+            interval: prevNormalized,
+            suggestion: expectedResolution,
+          }
+        ));
+      }
+    }
+  }
+
+  return violations;
+}
+
 function detectVoiceCrossing(
   snapshot: BeatSnapshot,
   config: CounterpointAnalyzerConfig
@@ -603,9 +827,12 @@ export function analyzeCounterpoint(
 
     violations.push(...detectParallelFifths(prev, curr, fullConfig));
     violations.push(...detectParallelOctaves(prev, curr, fullConfig));
+    violations.push(...detectAntiparallelFifths(prev, curr, fullConfig));
+    violations.push(...detectAntiparallelOctaves(prev, curr, fullConfig));
     violations.push(...detectHiddenFifths(prev, curr, fullConfig));
     violations.push(...detectHiddenOctaves(prev, curr, fullConfig));
     violations.push(...detectVoiceOverlap(prev, curr, fullConfig));
+    violations.push(...detectUnresolvedDissonances(prev, curr, fullConfig));
   }
 
   // Range violations

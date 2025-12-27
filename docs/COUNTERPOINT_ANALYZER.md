@@ -10,16 +10,19 @@ This analyzer detects voice-leading violations in real-time as users compose, pr
 
 ### Violation Detection
 
-| Rule | Severity | Description |
-|------|----------|-------------|
-| **Parallel Fifths** | Error | Two voices moving in parallel perfect fifths |
-| **Parallel Octaves** | Error | Two voices moving in parallel octaves/unisons |
-| **Hidden Fifths** | Warning | Approaching a perfect fifth by similar motion |
-| **Hidden Octaves** | Warning | Approaching an octave by similar motion |
-| **Voice Crossing** | Warning | A lower voice goes above a higher voice |
-| **Voice Overlap** | Info | A voice's note crosses the previous note of adjacent voice |
-| **Spacing Violation** | Warning | More than an octave between soprano/alto or alto/tenor |
-| **Range Violation** | Error/Warning | Notes outside voice's absolute or comfortable range |
+| Rule | Severity | Description | Styles |
+|------|----------|-------------|--------|
+| **Parallel Fifths** | Error | Two voices moving in parallel perfect fifths | All |
+| **Parallel Octaves** | Error | Two voices moving in parallel octaves/unisons | All |
+| **Anti-parallel Fifths** | Warning | P5 to P5 by contrary motion | Renaissance, Baroque |
+| **Anti-parallel Octaves** | Warning | P8 to P8 by contrary motion | Renaissance |
+| **Hidden Fifths** | Warning | Approaching a perfect fifth by similar motion | Renaissance, Baroque, Common-practice |
+| **Hidden Octaves** | Warning | Approaching an octave by similar motion | Renaissance, Baroque, Common-practice |
+| **Voice Crossing** | Warning | A lower voice goes above a higher voice | All |
+| **Voice Overlap** | Info | A voice's note crosses the previous note of adjacent voice | Renaissance, Baroque, Common-practice |
+| **Spacing Violation** | Warning | More than an octave between soprano/alto or alto/tenor | All |
+| **Range Violation** | Error/Warning | Notes outside voice's absolute or comfortable range | All |
+| **Unresolved Dissonance** | Warning/Error | Dissonant intervals not properly resolved | Renaissance, Baroque |
 
 ### Architecture
 
@@ -107,23 +110,53 @@ Voice motion is classified as:
 
 ## Configuration
 
-The analyzer supports configurable strictness levels:
+The analyzer supports configurable strictness levels and style presets:
 
 ```typescript
 interface CounterpointAnalyzerConfig {
-  checkParallelFifths: boolean;      // default: true
-  checkParallelOctaves: boolean;     // default: true
-  checkHiddenFifths: boolean;        // default: true
-  checkHiddenOctaves: boolean;       // default: true
-  checkVoiceCrossing: boolean;       // default: true
-  checkVoiceOverlap: boolean;        // default: true
-  checkSpacing: boolean;             // default: true
-  checkRange: boolean;               // default: true
-  maxSopranoAltoSpacing: number;     // default: 12 semitones
-  maxAltoTenorSpacing: number;       // default: 12 semitones
-  warnOnExtendedRange: boolean;      // default: true
+  checkParallelFifths: boolean;        // default: true
+  checkParallelOctaves: boolean;       // default: true
+  checkAntiparallelFifths: boolean;    // default: false (strict styles only)
+  checkAntiparallelOctaves: boolean;   // default: false (strict styles only)
+  checkHiddenFifths: boolean;          // default: true
+  checkHiddenOctaves: boolean;         // default: true
+  checkVoiceCrossing: boolean;         // default: true
+  checkVoiceOverlap: boolean;          // default: true
+  checkSpacing: boolean;               // default: true
+  checkRange: boolean;                 // default: true
+  checkDissonanceResolution: boolean;  // default: false (modern music compatibility)
+  maxSopranoAltoSpacing: number;       // default: 12 semitones
+  maxAltoTenorSpacing: number;         // default: 12 semitones
+  warnOnExtendedRange: boolean;        // default: true
   strictness: 'strict' | 'normal' | 'relaxed';
+  style: 'renaissance' | 'baroque' | 'common-practice' | 'modern';
 }
+```
+
+### Style Presets
+
+For ease of use, the analyzer includes presets for different compositional styles:
+
+| Style | Anti-parallel | Dissonance Resolution | Hidden Parallels | Strictness |
+|-------|---------------|----------------------|------------------|------------|
+| **Renaissance** | Yes | Yes | Yes | Strict |
+| **Baroque** | Fifths only | Yes | Yes | Normal |
+| **Common-practice** | No | No | Yes | Normal |
+| **Modern** | No | No | No | Relaxed |
+
+The **Modern** preset is designed for contemporary choral music (Whitacre, Lauridsen, etc.) where:
+- Unresolved dissonances are intentional stylistic features
+- Cluster chords and added tones don't need traditional resolution
+- Hidden parallels are commonly accepted
+- Voice overlap is less strictly enforced
+
+```typescript
+import { COUNTERPOINT_STYLE_PRESETS } from './types/counterpoint';
+
+// Apply a style preset
+const result = analyzeCounterpoint(voiceLines, {
+  ...COUNTERPOINT_STYLE_PRESETS.modern,
+});
 ```
 
 ## Dependencies
@@ -146,6 +179,14 @@ console.log(result.summary.score);    // 0-100 quality score
 console.log(result.violations);       // array of violations
 ```
 
+## Implemented Features (from music21)
+
+The following features have been ported from music21's voice leading analysis:
+
+1. **Anti-parallel Motion Detection** - P5 to P5 and P8 to P8 by contrary motion
+2. **Dissonance Resolution Rules** - Tritone, 7th, and 2nd resolution checking
+3. **Style-Specific Presets** - Renaissance, Baroque, Common-practice, Modern
+
 ## Future Improvements
 
 ### Planned Enhancements
@@ -160,16 +201,15 @@ console.log(result.violations);       // array of violations
    - Incomplete chord warnings
    - Seventh chord resolution rules
 
-3. **Style-Specific Rules**
-   - Renaissance (Palestrina) style
-   - Baroque (Bach) chorale style
-   - Common practice period rules
-   - Modern/jazz voice leading
-
-4. **Performance Optimization**
+3. **Performance Optimization**
    - Incremental analysis (only re-analyze changed sections)
    - Web Worker support for background analysis
    - Caching of analysis results
+
+4. **Smoothness Metrics**
+   - Voice leading smoothness score
+   - Leap penalty calculations
+   - Stepwise motion rewards
 
 ### Academic References
 

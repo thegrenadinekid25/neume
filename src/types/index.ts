@@ -106,6 +106,7 @@ export {
 export type {
   CounterpointViolationType,
   CounterpointSeverity,
+  CounterpointStyle,
   RangeViolationSubtype,
   ViolationLocation,
   CounterpointViolation,
@@ -117,4 +118,18 @@ export type {
 
 export {
   DEFAULT_COUNTERPOINT_CONFIG,
+  COUNTERPOINT_STYLE_PRESETS,
 } from './counterpoint';
+
+export type {
+  Syllable,
+  SyllableParseResult,
+  SyllableAssignment,
+  TextSettingMode,
+  VoiceTextSetting,
+  MelismaMarker,
+} from './text-setting';
+
+export {
+  DEFAULT_TEXT_SETTING,
+} from './text-setting';
