@@ -22,6 +22,7 @@ const AnalyzeModal = lazy(() => import('@/components/Modals/AnalyzeModal').then(
 const MyProgressionsModal = lazy(() => import('@/components/Modals/MyProgressionsModal').then(m => ({ default: m.MyProgressionsModal })));
 const RefineModal = lazy(() => import('@/components/Modals/RefineModal').then(m => ({ default: m.RefineModal })));
 const SaveProgressionDialog = lazy(() => import('@/components/Modals/SaveProgressionDialog').then(m => ({ default: m.SaveProgressionDialog })));
+const NarrativeComposerModal = lazy(() => import('@/components/Modals/NarrativeComposerModal').then(m => ({ default: m.NarrativeComposerModal })));
 import { useHistory } from '@/hooks/useHistory';
 import { usePlayback } from '@/hooks/usePlayback';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
@@ -31,6 +32,7 @@ import { useBuildFromBonesStore } from '@/store/build-from-bones-store';
 import { useProgressionsStore } from '@/store/progressions-store';
 import { useRefineStore } from '@/store/refine-store';
 import { useTutorialStore } from '@/store/tutorial-store';
+import { useNarrativeComposerStore } from '@/store/narrative-composer-store';
 import { generateSATBVoicing } from '@/audio/VoiceLeading';
 import type { Chord, MusicalKey, Mode, ScaleDegree, ChordQuality, ChordExtensions, Voices, SavedProgression } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -150,6 +152,7 @@ function App() {
   const openBuildFromBonesPanel = useBuildFromBonesStore(state => state.openPanel);
   const openProgressionsModal = useProgressionsStore(state => state.openModal);
   const openRefineModal = useRefineStore(state => state.openModal);
+  const openNarrativeComposerModal = useNarrativeComposerStore(state => state.openModal);
 
   // Calculate total beats based on chord positions + buffer
   const totalBeats = useMemo(() => {
@@ -468,6 +471,12 @@ function App() {
         label: 'My Progressions',
         onClick: openProgressionsModal,
       },
+      {
+        id: 'narrative',
+        icon: FABIcons.wand,
+        label: 'Compose from Narrative',
+        onClick: openNarrativeComposerModal,
+      },
     ];
 
     // Only show Build From Bones if progression has complex chords
@@ -482,7 +491,7 @@ function App() {
     }
 
     return actions;
-  }, [chords.length, hasComplexChords, openProgressionsModal, handleBuildFromBones]);
+  }, [chords.length, hasComplexChords, openProgressionsModal, openNarrativeComposerModal, handleBuildFromBones]);
 
   // Add chord - now just needs x position to calculate startBeat
   const handleAddChord = useCallback((
@@ -800,6 +809,7 @@ function App() {
         <AnalyzeModal />
         <MyProgressionsModal />
         <RefineModal />
+        <NarrativeComposerModal />
       </Suspense>
 
       <WhyThisPanel />

@@ -76,3 +76,13 @@ export {
   VOICE_COLORS,
   DEFAULT_NECKLACE_SETTINGS,
 } from './necklace';
+
+export type {
+  StyleReference,
+  NarrativePhase,
+  GeneratedChordData,
+  NarrativeResult,
+  ComposerOptions,
+  NarrativeComposerError,
+  NarrativeConversionResult,
+} from './narrative';
