@@ -11,7 +11,7 @@ Create a beautiful, non-intrusive first-time user onboarding experience that tea
 ```
 ┌─────────────────────────────────────────────┐
 │                                             │
-│         🎵 Welcome to Harmonic Canvas        │
+│         🎵 Welcome to Neume        │
 │                                             │
 │   Explore chord progressions through        │
 │   shapes, colors, and intelligent AI        │

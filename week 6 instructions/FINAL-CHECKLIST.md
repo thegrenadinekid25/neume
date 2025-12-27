@@ -1,6 +1,6 @@
 # Final Pre-Launch Checklist
 
-**Complete this checklist before sharing Harmonic Canvas with anyone**
+**Complete this checklist before sharing Neume with anyone**
 
 ---
 

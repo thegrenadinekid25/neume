@@ -1,257 +1,292 @@
 import { create } from 'zustand';
-import { Chord } from '@types';
-import { Command, DeleteChordsCommand, DuplicateChordsCommand } from '@/types/commands';
+import { v4 as uuidv4 } from 'uuid';
+import type { Chord, MusicalKey, Mode, ScaleDegree, ChordQuality } from '@/types';
+import type { PhraseBoundary } from '@/types/progression';
+import { CANVAS_CONFIG, DEFAULT_CHORD_SIZE } from '@/utils/constants';
 
 interface CanvasState {
-  // Data
+  // Chords
   chords: Chord[];
-  selectedChordIds: string[];
-  showConnectionLines: boolean;
 
-  // Undo/Redo stacks
-  undoStack: Command[];
-  redoStack: Command[];
-
-  // Actions (direct - used internally by commands)
-  addChordDirect: (chord: Chord) => void;
-  removeChordDirect: (id: string) => void;
-  updateChordPositionDirect: (id: string, position: { x: number; y: number }, beat: number) => void;
-  deleteChordsDirectinternal: (ids: string[]) => void;
-
-  // Actions (user-facing - create commands)
-  addChord: (chord: Chord) => void;
-  removeChord: (id: string) => void;
-  updateChordPosition: (id: string, position: { x: number; y: number }, beat: number) => void;
-  updateChord: (id: string, updates: Partial<Chord>) => void;
-  clearChords: () => void;
-  setChords: (chords: Chord[]) => void;
+  // Phrase boundaries for visual grouping
+  phrases: PhraseBoundary[];
 
   // Selection
-  selectChord: (id: string) => void;
-  deselectChord: (id: string) => void;
-  clearSelection: () => void;
-  selectAll: () => void;
-  selectChords: (ids: string[]) => void;
-  selectRange: (fromId: string, toId: string) => void;
-  toggleChordSelection: (id: string) => void;
+  selectedChordIds: string[];
+
+  // Current key/mode
+  currentKey: MusicalKey;
+  currentMode: Mode;
+
+  // Tempo
+  tempo: number;
 
   // View settings
+  zoom: number;
+  showConnectionLines: boolean;
+
+  // Playback
+  isPlaying: boolean;
+  playheadPosition: number;
+
+  // Audio
+  masterVolume: number;
+  audioReady: boolean;
+
+  // Actions - Chords
+  addChord: (chord: Partial<Chord> & { scaleDegree: ScaleDegree; position: { x: number; y: number } }) => Chord;
+  removeChord: (id: string) => void;
+  removeChords: (ids: string[]) => void;
+  updateChord: (id: string, updates: Partial<Chord>) => void;
+  updateChordPosition: (id: string, x: number, y: number) => void;
+  clearChords: () => void;
+
+  // Actions - Selection
+  selectChord: (id: string) => void;
+  selectChords: (ids: string[]) => void;
+  deselectChord: (id: string) => void;
+  toggleChordSelection: (id: string) => void;
+  selectAll: () => void;
+  selectRange: (fromId: string, toId: string) => void;
+  clearSelection: () => void;
+
+  // Actions - View
+  setZoom: (zoom: number) => void;
+  setCurrentKey: (key: MusicalKey) => void;
+  setCurrentMode: (mode: Mode) => void;
+  setTempo: (tempo: number) => void;
   toggleConnectionLines: () => void;
 
-  // Delete & duplicate
-  deleteSelected: () => void;
-  duplicateSelected: () => void;
+  // Actions - Load analyzed progression
+  loadAnalyzedProgression: (options: {
+    chords: Chord[];
+    phrases?: PhraseBoundary[];
+    key: MusicalKey;
+    mode: Mode;
+    tempo: number;
+  }) => void;
 
-  // Undo/redo
-  executeCommand: (command: Command) => void;
-  undo: () => void;
-  redo: () => void;
-  canUndo: () => boolean;
-  canRedo: () => boolean;
-  clearHistory: () => void;
+  // Actions - Clear phrases
+  clearPhrases: () => void;
+
+  // Actions - Playback
+  setIsPlaying: (isPlaying: boolean) => void;
+  setPlayheadPosition: (position: number) => void;
+
+  // Actions - Audio
+  setMasterVolume: (volume: number) => void;
+  setAudioReady: (ready: boolean) => void;
+}
+
+// Helper to determine chord quality from scale degree and mode
+function getDefaultQuality(scaleDegree: ScaleDegree, mode: Mode): ChordQuality {
+  if (mode === 'major') {
+    switch (scaleDegree) {
+      case 1: case 4: case 5: return 'major';
+      case 2: case 3: case 6: return 'minor';
+      case 7: return 'diminished';
+      default: return 'major';
+    }
+  } else {
+    switch (scaleDegree) {
+      case 1: case 4: return 'minor';
+      case 3: case 6: case 7: return 'major';
+      case 2: return 'diminished';
+      case 5: return 'minor'; // Natural minor; could be major for harmonic minor
+      default: return 'minor';
+    }
+  }
+}
+
+// Snap x position to nearest beat
+function snapToBeat(x: number, zoom: number): number {
+  const beatWidth = CANVAS_CONFIG.GRID_BEAT_WIDTH * zoom;
+  return Math.round(x / beatWidth) * beatWidth;
 }
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
+  // Initial state
   chords: [],
+  phrases: [],
   selectedChordIds: [],
+  currentKey: 'C',
+  currentMode: 'major',
+  tempo: 120,
+  zoom: 1.0,
   showConnectionLines: true,
-  undoStack: [],
-  redoStack: [],
+  isPlaying: false,
+  playheadPosition: 0,
+  masterVolume: 0.7,
+  audioReady: false,
 
-  // Direct actions (used by commands, don't add to undo stack)
-  addChordDirect: (chord) => set((state) => ({
-    chords: [...state.chords, chord]
-  })),
+  // Chord actions
+  addChord: (chordInput) => {
+    const { currentKey, currentMode, zoom } = get();
+    const snappedX = snapToBeat(chordInput.position.x, zoom);
+    const startBeat = Math.round(snappedX / (CANVAS_CONFIG.GRID_BEAT_WIDTH * zoom));
 
-  removeChordDirect: (id) => set((state) => ({
-    chords: state.chords.filter(c => c.id !== id),
-    selectedChordIds: state.selectedChordIds.filter(sid => sid !== id)
-  })),
-
-  updateChordPositionDirect: (id, position, beat) => set((state) => ({
-    chords: state.chords.map(chord =>
-      chord.id === id
-        ? { ...chord, position, startBeat: beat }
-        : chord
-    )
-  })),
-
-  deleteChordsDirectinternal: (ids) => set((state) => ({
-    chords: state.chords.filter(c => !ids.includes(c.id)),
-    selectedChordIds: state.selectedChordIds.filter(sid => !ids.includes(sid))
-  })),
-
-  // User-facing actions (for backward compatibility, don't create commands here)
-  addChord: (chord) => set((state) => ({
-    chords: [...state.chords, chord]
-  })),
-
-  removeChord: (id) => set((state) => ({
-    chords: state.chords.filter(c => c.id !== id),
-    selectedChordIds: state.selectedChordIds.filter(sid => sid !== id)
-  })),
-
-  updateChordPosition: (id, position, beat) => set((state) => ({
-    chords: state.chords.map(chord =>
-      chord.id === id
-        ? { ...chord, position, startBeat: beat }
-        : chord
-    )
-  })),
-
-  updateChord: (id, updates) => set((state) => ({
-    chords: state.chords.map(chord =>
-      chord.id === id
-        ? { ...chord, ...updates }
-        : chord
-    )
-  })),
-
-  clearChords: () => set({ chords: [], selectedChordIds: [] }),
-
-  setChords: (chords) => set({ chords }),
-
-  // Selection actions
-  selectChord: (id) => set((state) => ({
-    selectedChordIds: [...state.selectedChordIds, id],
-    chords: state.chords.map(chord =>
-      chord.id === id ? { ...chord, selected: true } : chord
-    )
-  })),
-
-  deselectChord: (id) => set((state) => ({
-    selectedChordIds: state.selectedChordIds.filter(sid => sid !== id),
-    chords: state.chords.map(chord =>
-      chord.id === id ? { ...chord, selected: false } : chord
-    )
-  })),
-
-  clearSelection: () => set((state) => ({
-    selectedChordIds: [],
-    chords: state.chords.map(chord => ({ ...chord, selected: false }))
-  })),
-
-  selectAll: () => set((state) => ({
-    selectedChordIds: state.chords.map(c => c.id),
-    chords: state.chords.map(chord => ({ ...chord, selected: true }))
-  })),
-
-  selectChords: (ids: string[]) => set((state) => ({
-    selectedChordIds: ids,
-    chords: state.chords.map(chord => ({
-      ...chord,
-      selected: ids.includes(chord.id)
-    }))
-  })),
-
-  selectRange: (fromId: string, toId: string) => set((state) => {
-    const chordsSorted = [...state.chords].sort((a, b) => a.startBeat - b.startBeat);
-    const fromIndex = chordsSorted.findIndex(c => c.id === fromId);
-    const toIndex = chordsSorted.findIndex(c => c.id === toId);
-
-    if (fromIndex === -1 || toIndex === -1) return state;
-
-    const [start, end] = fromIndex < toIndex
-      ? [fromIndex, toIndex]
-      : [toIndex, fromIndex];
-
-    const rangeIds = chordsSorted.slice(start, end + 1).map(c => c.id);
-
-    return {
-      selectedChordIds: rangeIds,
-      chords: state.chords.map(chord => ({
-        ...chord,
-        selected: rangeIds.includes(chord.id)
-      }))
+    const newChord: Chord = {
+      id: uuidv4(),
+      scaleDegree: chordInput.scaleDegree,
+      quality: chordInput.quality || getDefaultQuality(chordInput.scaleDegree, currentMode),
+      extensions: chordInput.extensions || {},
+      key: currentKey,
+      mode: currentMode,
+      isChromatic: chordInput.isChromatic || false,
+      voices: chordInput.voices || { soprano: 'C4', alto: 'G3', tenor: 'E3', bass: 'C3' },
+      startBeat,
+      duration: chordInput.duration || 4,
+      position: { x: snappedX, y: chordInput.position.y },
+      size: chordInput.size || DEFAULT_CHORD_SIZE,
+      selected: false,
+      playing: false,
+      source: chordInput.source || 'user',
+      createdAt: new Date().toISOString(),
     };
-  }),
 
-  toggleChordSelection: (id: string) => set((state) => ({
-    selectedChordIds: state.selectedChordIds.includes(id)
-      ? state.selectedChordIds.filter(selectedId => selectedId !== id)
-      : [...state.selectedChordIds, id],
-    chords: state.chords.map(chord =>
-      chord.id === id ? { ...chord, selected: !chord.selected } : chord
-    )
-  })),
-
-  // View settings
-  toggleConnectionLines: () => set((state) => ({
-    showConnectionLines: !state.showConnectionLines
-  })),
-
-  // Delete & duplicate (using command pattern)
-  deleteSelected: () => {
-    const { selectedChordIds, executeCommand } = get();
-    if (selectedChordIds.length > 0) {
-      const command = new DeleteChordsCommand(selectedChordIds, useCanvasStore);
-      executeCommand(command);
-    }
+    set((state) => ({ chords: [...state.chords, newChord] }));
+    return newChord;
   },
 
-  duplicateSelected: () => {
-    const { selectedChordIds, executeCommand } = get();
-    if (selectedChordIds.length > 0) {
-      const command = new DuplicateChordsCommand(selectedChordIds, useCanvasStore);
-      executeCommand(command);
-    }
-  },
-
-  // Command pattern for undo/redo
-  executeCommand: (command) => {
-    // Execute the command
-    command.execute();
-
-    // Add to undo stack
+  removeChord: (id) => {
     set((state) => ({
-      undoStack: [...state.undoStack, command].slice(-50), // Keep last 50
-      redoStack: [], // Clear redo stack on new action
+      chords: state.chords.filter((c) => c.id !== id),
+      selectedChordIds: state.selectedChordIds.filter((cid) => cid !== id),
     }));
   },
 
-  undo: () => {
-    const { undoStack, redoStack } = get();
+  removeChords: (ids) => {
+    set((state) => ({
+      chords: state.chords.filter((c) => !ids.includes(c.id)),
+      selectedChordIds: state.selectedChordIds.filter((cid) => !ids.includes(cid)),
+    }));
+  },
 
-    if (undoStack.length === 0) return;
+  updateChord: (id, updates) => {
+    set((state) => ({
+      chords: state.chords.map((c) =>
+        c.id === id ? { ...c, ...updates } : c
+      ),
+    }));
+  },
 
-    // Pop from undo stack
-    const command = undoStack[undoStack.length - 1];
-    const newUndoStack = undoStack.slice(0, -1);
+  updateChordPosition: (id, x, y) => {
+    const { zoom } = get();
+    const snappedX = snapToBeat(x, zoom);
+    const startBeat = Math.round(snappedX / (CANVAS_CONFIG.GRID_BEAT_WIDTH * zoom));
 
-    // Undo the command
-    command.undo();
+    set((state) => ({
+      chords: state.chords.map((c) =>
+        c.id === id ? { ...c, position: { x: snappedX, y }, startBeat } : c
+      ),
+    }));
+  },
 
-    // Push to redo stack
-    set({
-      undoStack: newUndoStack,
-      redoStack: [...redoStack, command],
+  clearChords: () => {
+    set({ chords: [], phrases: [], selectedChordIds: [] });
+  },
+
+  // Selection actions
+  selectChord: (id) => {
+    set({ selectedChordIds: [id] });
+  },
+
+  selectChords: (ids) => {
+    set({ selectedChordIds: ids });
+  },
+
+  deselectChord: (id) => {
+    set((state) => ({
+      selectedChordIds: state.selectedChordIds.filter((cid) => cid !== id),
+    }));
+  },
+
+  toggleChordSelection: (id) => {
+    set((state) => {
+      if (state.selectedChordIds.includes(id)) {
+        return { selectedChordIds: state.selectedChordIds.filter((cid) => cid !== id) };
+      }
+      return { selectedChordIds: [...state.selectedChordIds, id] };
     });
   },
 
-  redo: () => {
-    const { redoStack, undoStack } = get();
+  selectAll: () => {
+    set((state) => ({
+      selectedChordIds: state.chords.map((c) => c.id),
+    }));
+  },
 
-    if (redoStack.length === 0) return;
+  selectRange: (fromId, toId) => {
+    const { chords } = get();
+    const sortedChords = [...chords].sort((a, b) => a.startBeat - b.startBeat);
+    const fromIndex = sortedChords.findIndex((c) => c.id === fromId);
+    const toIndex = sortedChords.findIndex((c) => c.id === toId);
 
-    // Pop from redo stack
-    const command = redoStack[redoStack.length - 1];
-    const newRedoStack = redoStack.slice(0, -1);
+    if (fromIndex === -1 || toIndex === -1) return;
 
-    // Re-execute the command
-    command.execute();
+    const start = Math.min(fromIndex, toIndex);
+    const end = Math.max(fromIndex, toIndex);
+    const rangeIds = sortedChords.slice(start, end + 1).map((c) => c.id);
 
-    // Push to undo stack
+    set({ selectedChordIds: rangeIds });
+  },
+
+  clearSelection: () => {
+    set({ selectedChordIds: [] });
+  },
+
+  // View actions
+  setZoom: (zoom) => {
+    set({ zoom: Math.max(CANVAS_CONFIG.MIN_ZOOM, Math.min(CANVAS_CONFIG.MAX_ZOOM, zoom)) });
+  },
+
+  setCurrentKey: (key) => {
+    set({ currentKey: key });
+  },
+
+  setCurrentMode: (mode) => {
+    set({ currentMode: mode });
+  },
+
+  setTempo: (tempo) => {
+    set({ tempo: Math.max(20, Math.min(300, tempo)) });
+  },
+
+  toggleConnectionLines: () => {
+    set((state) => ({ showConnectionLines: !state.showConnectionLines }));
+  },
+
+  loadAnalyzedProgression: ({ chords, phrases, key, mode, tempo }) => {
     set({
-      redoStack: newRedoStack,
-      undoStack: [...undoStack, command],
+      chords,
+      phrases: phrases || [],
+      currentKey: key,
+      currentMode: mode,
+      tempo: Math.max(20, Math.min(300, Math.round(tempo))),
+      selectedChordIds: [],
     });
   },
 
-  canUndo: () => get().undoStack.length > 0,
-  canRedo: () => get().redoStack.length > 0,
+  clearPhrases: () => {
+    set({ phrases: [] });
+  },
 
-  clearHistory: () => set({
-    undoStack: [],
-    redoStack: [],
-  }),
+  // Playback actions
+  setIsPlaying: (isPlaying) => {
+    set({ isPlaying });
+  },
+
+  setPlayheadPosition: (position) => {
+    set({ playheadPosition: position });
+  },
+
+  // Audio actions
+  setMasterVolume: (volume) => {
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    set({ masterVolume: clampedVolume });
+  },
+
+  setAudioReady: (ready) => {
+    set({ audioReady: ready });
+  },
 }));

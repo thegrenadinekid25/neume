@@ -6,7 +6,7 @@
 
 ## Overview
 
-Week 3 transforms Harmonic Canvas from a visual tool into a complete musical instrument. You'll add professional audio synthesis, intelligent voicing, synchronized playback, and beautiful reverb.
+Week 3 transforms Neume from a visual tool into a complete musical instrument. You'll add professional audio synthesis, intelligent voicing, synchronized playback, and beautiful reverb.
 
 **Duration:** 3-4 days (13-16 hours total)  
 **Prerequisites:** Weeks 1-2 completed  
@@ -492,4 +492,4 @@ After Week 3 is complete:
 6. **Ask for help** - If stuck, create new Claude chat with error details
 7. **Have fun!** - This is where your tool comes alive 🎵
 
-**You've got this!** Week 3 is where Harmonic Canvas transforms from a visual tool into a living, breathing musical instrument. Enjoy the journey!
+**You've got this!** Week 3 is where Neume transforms from a visual tool into a living, breathing musical instrument. Enjoy the journey!

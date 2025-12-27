@@ -5,18 +5,20 @@ interface TimelineRulerProps {
   totalBeats: number;
   zoom: number;
   beatWidth: number;
+  beatsPerMeasure?: number;
 }
 
 export const TimelineRuler: React.FC<TimelineRulerProps> = ({
   totalBeats,
   zoom,
   beatWidth,
+  beatsPerMeasure = 4,
 }) => {
-  const measures = Math.ceil(totalBeats / 4); // Assuming 4/4 time
+  const measures = Math.ceil(totalBeats / beatsPerMeasure);
   const measureMarkers: React.ReactNode[] = [];
 
   for (let i = 1; i <= measures; i++) {
-    const x = (i - 1) * 4 * beatWidth * zoom;
+    const x = (i - 1) * beatsPerMeasure * beatWidth * zoom;
     measureMarkers.push(
       <div
         key={`measure-${i}`}

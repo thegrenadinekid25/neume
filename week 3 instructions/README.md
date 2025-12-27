@@ -1,6 +1,6 @@
 # Week 3 Prompt Package - Audio & Playback
 
-**Harmonic Canvas Development - Phase 1, Week 3**
+**Neume Development - Phase 1, Week 3**
 
 Bring your chord progressions to life with professional audio synthesis, perfect SATB voicing, and synchronized playback.
 
@@ -325,4 +325,4 @@ You'll have a **complete audio playback system** that:
 2. Read [EXECUTION-GUIDE.md](computer:///mnt/user-data/outputs/week3-prompts/EXECUTION-GUIDE.md)
 3. Start with [Prompt 001](computer:///mnt/user-data/outputs/week3-prompts/001-audio-engine-setup.md)
 
-**Let's bring Harmonic Canvas to life with sound!** 🎵🎹✨
+**Let's bring Neume to life with sound!** 🎵🎹✨

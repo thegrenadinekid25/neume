@@ -3,9 +3,10 @@
   top: 0;
   bottom: 0;
   width: 3px;
-  background-color: #E07A5F; /* Red from spec */
+  background-color: #E07A5F;
   opacity: 0.8;
   pointer-events: none;
   z-index: 100;
-  transition: left 50ms linear; /* Smooth movement during playback */
+  /* No transition - using requestAnimationFrame for smooth animation */
+  will-change: left;
 }

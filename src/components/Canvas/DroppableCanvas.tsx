@@ -1,64 +1,214 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
+import { restrictToHorizontalAxis } from '@dnd-kit/modifiers';
 import { useDragDrop } from '@/hooks/useDragDrop';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Canvas } from './Canvas';
 import { DraggableChord } from './DraggableChord';
 import { ChordShape } from './ChordShape';
 import { SelectionBox } from './SelectionBox';
-import { ConnectionLines } from './ConnectionLines';
-import { Chord } from '@types';
+import type { Chord, ScaleDegree, MusicalKey, Mode } from '@/types';
+import type { PhraseBoundary } from '@/types/progression';
+import type { SongContext } from '@/store/why-this-store';
 import { CANVAS_CONFIG } from '@/utils/constants';
+import styles from './DroppableCanvas.module.css';
 
 interface DroppableCanvasProps {
   chords: Chord[];
-  currentKey: string;
-  currentMode: 'major' | 'minor';
-  zoom: number;
+  phrases?: PhraseBoundary[];
+  songContext?: SongContext;
+  currentKey: MusicalKey;
+  currentMode: Mode;
+  beatsPerMeasure?: number;
+  zoom?: number;
   isPlaying?: boolean;
   playheadPosition?: number;
-  selectedChordIds?: string[];
-  showConnectionLines?: boolean;
-  onUpdateChordPosition: (chordId: string, newPosition: { x: number; y: number }, newBeat: number) => void;
-  onAddChord: (chord: Chord) => void;
-  onSelectChord?: (chordId: string, event?: React.MouseEvent) => void;
-  onSelectMultiple?: (chordIds: string[]) => void;
-  onClearSelection?: () => void;
+  totalBeats?: number;
+  selectedChordIds: string[];
+  onUpdateChordPosition: (chordId: string, startBeat: number) => void;
+  onAddChord: (scaleDegree: ScaleDegree, position: { x: number }, options?: { quality?: import('@/types').ChordQuality; extensions?: import('@/types').ChordExtensions }) => void;
+  onSelectChord: (id: string) => void;
+  onSelectChords: (ids: string[]) => void;
+  onToggleChordSelection: (id: string) => void;
+  onSelectRange: (fromId: string, toId: string) => void;
+  onClearSelection: () => void;
+  onSelectAll: () => void;
+  onDeleteSelected?: () => void;
+  onDuplicateSelected?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  onZoomChange?: (zoom: number) => void;
+  onShowHelp?: () => void;
+  onTogglePlay?: () => void;
+  onTempoChange?: (delta: number) => void;
 }
 
 export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
   chords,
+  phrases = [],
+  songContext,
   currentKey,
   currentMode,
-  zoom,
+  beatsPerMeasure = 4,
+  zoom = 1.0,
   isPlaying = false,
   playheadPosition = 0,
-  selectedChordIds = [],
-  showConnectionLines = true,
+  totalBeats = 32,
+  selectedChordIds,
   onUpdateChordPosition,
   onAddChord,
   onSelectChord,
-  onSelectMultiple,
+  onSelectChords,
+  onToggleChordSelection,
+  onSelectRange,
   onClearSelection,
+  onSelectAll,
+  onDeleteSelected,
+  onDuplicateSelected,
+  onUndo,
+  onRedo,
+  onZoomChange,
+  onShowHelp,
+  onTogglePlay,
+  onTempoChange,
 }) => {
   const { sensors } = useDragDrop();
   const [activeChord, setActiveChord] = useState<Chord | null>(null);
-  const [isSelecting, setIsSelecting] = useState(false);
-  const [selectionStart, setSelectionStart] = useState<{ x: number; y: number } | null>(null);
-  const [selectionCurrent, setSelectionCurrent] = useState<{ x: number; y: number } | null>(null);
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
+
+  // Selection box state
+  const [selectionBox, setSelectionBox] = useState<{
+    isSelecting: boolean;
+    start: { x: number; y: number };
+    current: { x: number; y: number };
+  } | null>(null);
 
   const beatWidth = CANVAS_CONFIG.GRID_BEAT_WIDTH * zoom;
-  const totalBeats = Math.max(32, ...chords.map(c => c.startBeat + c.duration));
 
-  const handleDragStart = (event: DragStartEvent) => {
+  // Handle arrow key movement
+  const handleMoveSelected = useCallback((direction: 'left' | 'right', amount: number) => {
+    if (selectedChordIds.length === 0) return;
+
+    const delta = direction === 'left' ? -amount : amount;
+    selectedChordIds.forEach(id => {
+      const chord = chords.find(c => c.id === id);
+      if (chord) {
+        const newBeat = Math.max(0, chord.startBeat + delta);
+        onUpdateChordPosition(id, newBeat);
+      }
+    });
+  }, [selectedChordIds, chords, onUpdateChordPosition]);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onSelectAll,
+    onClearSelection,
+    onDeleteSelected,
+    onDuplicateSelected,
+    onUndo,
+    onRedo,
+    onMoveSelected: handleMoveSelected,
+    onTempoChange,
+    onShowHelp,
+    onTogglePlay,
+  });
+
+  // Handle chord click for selection
+  const handleChordClick = useCallback((chord: Chord, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (e.metaKey || e.ctrlKey) {
+      onToggleChordSelection(chord.id);
+    } else if (e.shiftKey) {
+      const lastSelected = selectedChordIds[selectedChordIds.length - 1];
+      if (lastSelected) {
+        onSelectRange(lastSelected, chord.id);
+      } else {
+        onSelectChord(chord.id);
+      }
+    } else {
+      onSelectChord(chord.id);
+    }
+  }, [selectedChordIds, onSelectChord, onToggleChordSelection, onSelectRange]);
+
+  // Clear selection when clicking empty space
+  const handleCanvasClick = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('[data-chord]')) {
+      onClearSelection();
+    }
+  }, [onClearSelection]);
+
+  // Selection box handlers
+  const handleSelectionStart = useCallback((e: React.MouseEvent) => {
+    // Only start selection if Shift is held and clicking empty space (not a chord)
+    if (!e.shiftKey) return;
+
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-chord]')) return;
+
+    const rect = canvasContainerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setSelectionBox({
+      isSelecting: true,
+      start: { x, y },
+      current: { x, y },
+    });
+  }, []);
+
+  const handleSelectionMove = useCallback((e: React.MouseEvent) => {
+    if (!selectionBox?.isSelecting) return;
+
+    const rect = canvasContainerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setSelectionBox(prev => prev ? { ...prev, current: { x, y } } : null);
+  }, [selectionBox?.isSelecting]);
+
+  const handleSelectionEnd = useCallback(() => {
+    if (!selectionBox?.isSelecting) return;
+
+    // Calculate selection bounds
+    const minX = Math.min(selectionBox.start.x, selectionBox.current.x);
+    const maxX = Math.max(selectionBox.start.x, selectionBox.current.x);
+    const minY = Math.min(selectionBox.start.y, selectionBox.current.y);
+    const maxY = Math.max(selectionBox.start.y, selectionBox.current.y);
+
+    // Find chords within the selection box
+    const selectedIds = chords.filter(chord => {
+      const chordX = chord.startBeat * beatWidth;
+      const chordSize = chord.size * zoom;
+      const chordCenterX = chordX + chordSize / 2;
+      const chordCenterY = 40 * zoom; // Approximate center Y in chord area
+
+      return chordCenterX >= minX && chordCenterX <= maxX &&
+             chordCenterY >= minY - 100 && chordCenterY <= maxY + 100; // More forgiving Y bounds
+    }).map(c => c.id);
+
+    if (selectedIds.length > 0) {
+      onSelectChords(selectedIds);
+    }
+
+    setSelectionBox(null);
+  }, [selectionBox, chords, beatWidth, zoom, onSelectChords]);
+
+  // Drag handlers
+  const handleDragStart = useCallback((event: DragStartEvent) => {
     const { active } = event;
     const chord = chords.find(c => c.id === active.id);
     if (chord) {
       setActiveChord(chord);
     }
-  };
+  }, [chords]);
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, delta } = event;
 
     if (!delta) {
@@ -66,103 +216,30 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
       return;
     }
 
-    const chord = chords.find(c => c.id === active.id);
-    if (!chord) {
-      setActiveChord(null);
-      return;
-    }
+    const isSelected = selectedChordIds.includes(active.id as string);
+    const chordsToMove = isSelected && selectedChordIds.length > 1
+      ? selectedChordIds
+      : [active.id as string];
 
-    // Calculate new position with delta
-    const newX = chord.position.x + delta.x;
-    const newY = chord.position.y + delta.y;
+    // Move chords horizontally
+    chordsToMove.forEach((id) => {
+      const chord = chords.find(c => c.id === id);
+      if (!chord) return;
 
-    // Snap to nearest beat
-    const snappedBeat = Math.max(0, Math.round(newX / beatWidth));
-    const snappedX = snappedBeat * beatWidth;
+      // Calculate new X position and snap to beat
+      const currentX = chord.startBeat * beatWidth;
+      const newX = currentX + delta.x;
+      const snappedBeat = Math.max(0, Math.round(newX / beatWidth));
 
-    // Constrain Y position (keep within canvas bounds)
-    const constrainedY = Math.max(50, Math.min(550, newY));
-
-    // Update chord position
-    onUpdateChordPosition(
-      chord.id,
-      { x: snappedX, y: constrainedY },
-      snappedBeat
-    );
+      onUpdateChordPosition(id, snappedBeat);
+    });
 
     setActiveChord(null);
-  };
+  }, [chords, beatWidth, selectedChordIds, onUpdateChordPosition]);
 
-  const handleDragCancel = () => {
+  const handleDragCancel = useCallback(() => {
     setActiveChord(null);
-  };
-
-  // Rectangular selection handlers
-  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only start selection on empty canvas (not on chords)
-    if ((e.target as HTMLElement).closest('[role="button"]')) {
-      return;
-    }
-
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    setIsSelecting(true);
-    setSelectionStart({ x, y });
-    setSelectionCurrent({ x, y });
-
-    // Clear selection if not holding Shift
-    if (!e.shiftKey) {
-      onClearSelection?.();
-    }
-  };
-
-  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isSelecting || !selectionStart) return;
-
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    setSelectionCurrent({ x, y });
-  };
-
-  const handleCanvasMouseUp = () => {
-    if (!isSelecting || !selectionStart || !selectionCurrent) {
-      setIsSelecting(false);
-      return;
-    }
-
-    // Calculate selection rectangle
-    const minX = Math.min(selectionStart.x, selectionCurrent.x);
-    const maxX = Math.max(selectionStart.x, selectionCurrent.x);
-    const minY = Math.min(selectionStart.y, selectionCurrent.y);
-    const maxY = Math.max(selectionStart.y, selectionCurrent.y);
-
-    // Find chords within selection rectangle
-    const selectedIds = chords
-      .filter(chord => {
-        const chordCenterX = chord.position.x + (chord.size * zoom) / 2;
-        const chordCenterY = chord.position.y + (chord.size * zoom) / 2;
-
-        return (
-          chordCenterX >= minX &&
-          chordCenterX <= maxX &&
-          chordCenterY >= minY &&
-          chordCenterY <= maxY
-        );
-      })
-      .map(chord => chord.id);
-
-    if (selectedIds.length > 0) {
-      onSelectMultiple?.(selectedIds);
-    }
-
-    setIsSelecting(false);
-    setSelectionStart(null);
-    setSelectionCurrent(null);
-  };
+  }, []);
 
   return (
     <DndContext
@@ -170,62 +247,57 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
+      modifiers={[restrictToHorizontalAxis]}
     >
       <div
-        ref={canvasRef}
-        onMouseDown={handleCanvasMouseDown}
-        onMouseMove={handleCanvasMouseMove}
-        onMouseUp={handleCanvasMouseUp}
-        onMouseLeave={() => {
-          if (isSelecting) {
-            setIsSelecting(false);
-            setSelectionStart(null);
-            setSelectionCurrent(null);
-          }
-        }}
+        ref={canvasContainerRef}
+        className={styles.canvasWrapper}
+        onClick={handleCanvasClick}
+        onMouseDown={handleSelectionStart}
+        onMouseMove={handleSelectionMove}
+        onMouseUp={handleSelectionEnd}
+        onMouseLeave={handleSelectionEnd}
       >
         <Canvas
           currentKey={currentKey}
           currentMode={currentMode}
+          beatsPerMeasure={beatsPerMeasure}
           zoom={zoom}
           isPlaying={isPlaying}
           playheadPosition={playheadPosition}
           totalBeats={totalBeats}
+          phrases={phrases}
           onAddChord={onAddChord}
+          onZoomChange={onZoomChange}
         >
-          {/* Connection Lines */}
-          {showConnectionLines && (
-            <ConnectionLines
-              chords={chords}
-              isPlaying={isPlaying}
-              playheadPosition={playheadPosition}
+          {chords.map(chord => (
+            <DraggableChord
+              key={chord.id}
+              chord={chord}
+              allChords={chords}
+              songContext={songContext}
+              isSelected={selectedChordIds.includes(chord.id)}
+              isPlaying={isPlaying && chord.playing}
+              onClick={(e) => handleChordClick(chord, e)}
               zoom={zoom}
             />
-          )}
-
-          {chords.map(chord => {
-            const isCurrentlyPlaying = isPlaying &&
-              playheadPosition >= chord.startBeat &&
-              playheadPosition < chord.startBeat + chord.duration;
-
-            return (
-              <DraggableChord
-                key={chord.id}
-                chord={chord}
-                isSelected={selectedChordIds.includes(chord.id)}
-                isPlaying={isCurrentlyPlaying}
-                zoom={zoom}
-                beatWidth={beatWidth}
-                onSelect={(e) => onSelectChord?.(chord.id, e)}
-              />
-            );
-          })}
-
-          {/* Rectangular Selection Box */}
-          {isSelecting && selectionStart && selectionCurrent && (
-            <SelectionBox start={selectionStart} current={selectionCurrent} />
-          )}
+          ))}
         </Canvas>
+
+        {/* Selection Info */}
+        {selectedChordIds.length > 1 && (
+          <div className={styles.selectionInfo}>
+            {selectedChordIds.length} chords selected
+          </div>
+        )}
+
+        {/* Selection Box */}
+        {selectionBox?.isSelecting && (
+          <SelectionBox
+            start={selectionBox.start}
+            current={selectionBox.current}
+          />
+        )}
       </div>
 
       {/* Drag Overlay */}
@@ -236,13 +308,11 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
         }}
       >
         {activeChord ? (
-          <div style={{ cursor: 'grabbing' }}>
-            <ChordShape
-              chord={activeChord}
-              zoom={zoom}
-              isDragging
-            />
-          </div>
+          <ChordShape
+            chord={activeChord}
+            zoom={zoom}
+            isDragging
+          />
         ) : null}
       </DragOverlay>
     </DndContext>

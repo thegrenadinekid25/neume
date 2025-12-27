@@ -1,7 +1,7 @@
 # Week 6 Prompt 004: Cross-Browser Testing
 
 ## Objective
-Ensure Harmonic Canvas works perfectly across Chrome, Firefox, Safari, and Edge.
+Ensure Neume works perfectly across Chrome, Firefox, Safari, and Edge.
 
 ## Test Matrix
 

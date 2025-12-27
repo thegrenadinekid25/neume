@@ -1,12 +1,12 @@
 # Week 4: AI Features Part 1
 
-**Transform Harmonic Canvas into an intelligent learning tool by adding AI-powered analysis and educational features**
+**Transform Neume into an intelligent learning tool by adding AI-powered analysis and educational features**
 
 ---
 
 ## Overview
 
-Week 4 adds the first set of AI features that make Harmonic Canvas unique: the ability to learn from real music by analyzing pieces you love and understanding WHY specific chords were chosen.
+Week 4 adds the first set of AI features that make Neume unique: the ability to learn from real music by analyzing pieces you love and understanding WHY specific chords were chosen.
 
 **What You'll Build:**
 - Upload music (YouTube + audio files)
@@ -451,4 +451,4 @@ Week 4 is complete when:
 
 ---
 
-**Ready to make Harmonic Canvas intelligent! Let's teach users about harmony by learning from the masters.** 🎵🤖✨
+**Ready to make Neume intelligent! Let's teach users about harmony by learning from the masters.** 🎵🤖✨

@@ -1,6 +1,6 @@
 # Week 1 Prompt Package - README
 
-## 🎵 Harmonic Canvas - Foundation Complete
+## 🎵 Neume - Foundation Complete
 
 **Version:** 1.0  
 **Week:** 1 of 10  
@@ -11,7 +11,7 @@
 
 ## 📦 What's In This Package
 
-This package contains everything needed to build Week 1 of Harmonic Canvas - the complete visual foundation.
+This package contains everything needed to build Week 1 of Neume - the complete visual foundation.
 
 ### Files Included
 
@@ -397,7 +397,7 @@ You have everything you need to build Week 1:
 
 ## 🎵 Let's Build Something Extraordinary!
 
-This is the foundation of Harmonic Canvas - a tool that will help composers explore and understand harmony in new ways.
+This is the foundation of Neume - a tool that will help composers explore and understand harmony in new ways.
 
 Every shape, color, and interaction has been carefully designed to teach through experience. You're building something that combines:
 - 🎨 Beautiful visual design

@@ -85,7 +85,7 @@ Watch complexity emerge
 
 **Hero Section:**
 ```
-Harmonic Canvas
+Neume
 Explore chord progressions through shapes, colors, and AI
 
 [Try It Free] [Watch Demo]
@@ -106,7 +106,7 @@ Explore chord progressions through shapes, colors, and AI
 
 **Twitter/X:**
 ```
-Excited to launch Harmonic Canvas! 🎵
+Excited to launch Neume! 🎵
 
 Explore chord progressions visually, learn from masters
 with AI, and understand how simple ideas become
@@ -121,7 +121,7 @@ Try it: [link]
 ```
 I built a tool to explore chord progressions visually
 
-After 6 weeks of development, I'm launching Harmonic Canvas:
+After 6 weeks of development, I'm launching Neume:
 - Visual chord progression builder
 - Analyze real music with AI
 - Understand how complexity emerges
@@ -142,14 +142,14 @@ Would love feedback from this community! [link]
 
 **Distribution:**
 ```
-Subject: You're invited to beta test Harmonic Canvas
+Subject: You're invited to beta test Neume
 
 Hi [Name],
 
 I'm launching a new tool for exploring chord progressions
 and I'd love your feedback.
 
-Harmonic Canvas helps composers understand harmony through
+Neume helps composers understand harmony through
 visual shapes, AI analysis, and step-by-step deconstruction.
 
 Beta access: [link]

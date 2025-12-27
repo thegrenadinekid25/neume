@@ -1,9 +1,7 @@
 /**
  * Central export for all types
- * Allows: import { Chord, Progression } from '@types'
  */
 
-// Chord types
 export type {
   Chord,
   ChordInput,
@@ -18,7 +16,6 @@ export type {
   ChordSource,
 } from './chord';
 
-// Progression types
 export type {
   Progression,
   ProgressionInput,
@@ -29,17 +26,14 @@ export type {
   BuildUp,
 } from './progression';
 
-// AI types
 export type {
   AISuggestion,
   SuggestionTechnique,
   SuggestionDifficulty,
   ProposedChange,
   ChordExplanation,
-  AnalysisResult,
 } from './ai';
 
-// Audio types
 export type {
   AudioEngineState,
   VoiceRange,
@@ -48,7 +42,6 @@ export type {
   PlaybackState,
 } from './audio';
 
-// UI types
 export type {
   ModalType,
   PanelType,
@@ -57,3 +50,13 @@ export type {
   ContextMenuItem,
   UserSettings,
 } from './ui';
+
+export type {
+  UploadType,
+  AnalysisInput,
+  AnalysisStage,
+  AnalysisProgress,
+  AnalysisError,
+  AnalysisResult,
+  AnalyzedChord,
+} from './analysis';

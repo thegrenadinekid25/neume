@@ -1,6 +1,6 @@
 # Week 1 Success Criteria
 
-**Objective:** Establish a complete, working visual foundation for Harmonic Canvas
+**Objective:** Establish a complete, working visual foundation for Neume
 
 This document defines the measurable criteria that determine when Week 1 is successfully complete.
 

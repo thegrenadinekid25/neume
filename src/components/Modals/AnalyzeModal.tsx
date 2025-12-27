@@ -1,402 +1,515 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useForm } from 'react-hook-form';
 import { useAnalysisStore } from '@/store/analysis-store';
 import { parseYoutubeUrl, isValidYoutubeUrl } from '@/utils/youtube-parser';
-import { AnalysisInput } from '@/types/analysis';
-import { Spinner } from '@/components/UI/Spinner';
+import type { AnalysisInput } from '@/types/analysis';
 import styles from './AnalyzeModal.module.css';
 
-type TabType = 'youtube' | 'audio';
+// Example YouTube videos for testing chord analysis
+const EXAMPLE_VIDEOS = [
+  {
+    title: 'Never Gonna Give You Up - Rick Astley',
+    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+  },
+  {
+    title: 'Let It Be - The Beatles',
+    url: 'https://www.youtube.com/watch?v=QDYfEBY9NM4',
+  },
+  {
+    title: 'Imagine - John Lennon',
+    url: 'https://www.youtube.com/watch?v=DVg2EJvvlF8',
+  },
+];
 
-interface FormData {
-  youtubeUrl: string;
-  audioFile: FileList | null;
-  startTime: string;
-  endTime: string;
-  keyHint: string;
-  modeHint: string;
-}
+// Supported audio formats and max file size (50MB)
+const SUPPORTED_FORMATS = ['.mp3', '.wav', '.m4a', '.ogg', '.flac'];
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 export const AnalyzeModal: React.FC = () => {
   const {
     isModalOpen,
+    activeTab,
     isAnalyzing,
     progress,
     error,
     closeModal,
+    setActiveTab,
     startAnalysis,
-    cancelAnalysis,
+    setError,
   } = useAnalysisStore();
 
-  const [activeTab, setActiveTab] = useState<TabType>('youtube');
+  // Form state
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [urlError, setUrlError] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [keyHint, setKeyHint] = useState('auto');
+  const [modeHint, setModeHint] = useState<'auto' | 'major' | 'minor'>('auto');
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    watch,
-    setValue,
-    reset,
-  } = useForm<FormData>({
-    defaultValues: {
-      youtubeUrl: '',
-      audioFile: null,
-      startTime: '00:00',
-      endTime: '',
-      keyHint: 'auto',
-      modeHint: 'auto',
-    },
-  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragOverRef = useRef(false);
 
-  const youtubeUrl = watch('youtubeUrl');
+  // Reset form when modal opens
+  useEffect(() => {
+    if (isModalOpen) {
+      setYoutubeUrl('');
+      setAudioFile(null);
+      setUrlError('');
+      setShowAdvanced(false);
+      setStartTime('');
+      setEndTime('');
+      setKeyHint('auto');
+      setModeHint('auto');
+    }
+  }, [isModalOpen]);
 
-  // File validation
-  const validateFile = (file: File): string | null => {
-    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+  // Handle YouTube URL input
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setYoutubeUrl(url);
+
+    if (url && !isValidYoutubeUrl(url)) {
+      setUrlError('Please enter a valid YouTube URL');
+    } else {
+      setUrlError('');
+    }
+  };
+
+  // Handle example link click
+  const handleExampleLinkClick = (url: string) => {
+    setYoutubeUrl(url);
+    setUrlError('');
+  };
+
+  // Handle file selection from input
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.currentTarget.files;
+    if (files && files.length > 0) {
+      validateAndSetFile(files[0]);
+    }
+  };
+
+  // Validate file size and format
+  const validateAndSetFile = (file: File) => {
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+
+    if (!SUPPORTED_FORMATS.includes(fileExtension)) {
+      setError({
+        code: 'INVALID_FORMAT',
+        message: `Unsupported format. Supported formats: ${SUPPORTED_FORMATS.join(', ')}`,
+        retryable: false,
+      });
+      return;
+    }
 
     if (file.size > MAX_FILE_SIZE) {
-      return 'File must be under 50MB';
+      setError({
+        code: 'FILE_TOO_LARGE',
+        message: 'File is too large. Maximum size is 50MB.',
+        retryable: false,
+      });
+      return;
     }
 
-    const validFormats = ['.mp3', '.wav', '.m4a'];
-    const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
-    if (!validFormats.includes(ext)) {
-      return `File must be ${validFormats.join(', ')}`;
-    }
-
-    return null;
+    setAudioFile(file);
   };
 
-  // Drag and drop handlers
-  const handleDragOver = (e: React.DragEvent) => {
+  // Handle drag over
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setIsDragging(true);
+    dragOverRef.current = true;
   };
 
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
+  // Handle drag leave
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setIsDragging(false);
+    dragOverRef.current = false;
+  };
 
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      const error = validateFile(file);
-      if (!error) {
-        setSelectedFile(file);
-      } else {
-        alert(error);
-      }
+  // Handle file drop
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    dragOverRef.current = false;
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      validateAndSetFile(files[0]);
     }
   };
 
-  // File input change
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const error = validateFile(file);
-      if (!error) {
-        setSelectedFile(file);
-      } else {
-        alert(error);
-      }
+  // Remove selected file
+  const handleRemoveFile = () => {
+    setAudioFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
-  // Parse time string (MM:SS) to seconds
-  const parseTime = (timeStr: string): number | undefined => {
-    if (!timeStr) return undefined;
-    const parts = timeStr.split(':');
-    if (parts.length !== 2) return undefined;
-    const minutes = parseInt(parts[0]);
-    const seconds = parseInt(parts[1]);
-    if (isNaN(minutes) || isNaN(seconds)) return undefined;
-    return minutes * 60 + seconds;
+  // Handle analyze button click
+  const handleAnalyze = async () => {
+    if (activeTab === 'youtube') {
+      if (!youtubeUrl || urlError) {
+        setUrlError('Please enter a valid YouTube URL');
+        return;
+      }
+
+      const videoId = parseYoutubeUrl(youtubeUrl);
+      if (!videoId) {
+        setUrlError('Could not extract video ID from URL');
+        return;
+      }
+
+      const input: AnalysisInput = {
+        type: 'youtube',
+        youtubeUrl,
+        videoId,
+        startTime: startTime ? parseInt(startTime) : undefined,
+        endTime: endTime ? parseInt(endTime) : undefined,
+        keyHint: keyHint === 'auto' ? undefined : keyHint,
+        modeHint: modeHint === 'auto' ? undefined : modeHint,
+      };
+
+      await startAnalysis(input);
+    } else {
+      if (!audioFile) {
+        setError({
+          code: 'INVALID_FORMAT',
+          message: 'Please select an audio file',
+          retryable: false,
+        });
+        return;
+      }
+
+      const input: AnalysisInput = {
+        type: 'audio',
+        audioFile,
+        startTime: startTime ? parseInt(startTime) : undefined,
+        endTime: endTime ? parseInt(endTime) : undefined,
+        keyHint: keyHint === 'auto' ? undefined : keyHint,
+        modeHint: modeHint === 'auto' ? undefined : modeHint,
+      };
+
+      await startAnalysis(input);
+    }
   };
 
-  // Form submission
-  const onSubmit = (data: FormData) => {
-    const input: AnalysisInput = {
-      type: activeTab,
-      startTime: parseTime(data.startTime),
-      endTime: parseTime(data.endTime),
-      keyHint: data.keyHint === 'auto' ? undefined : data.keyHint,
-      modeHint: data.modeHint === 'auto' ? undefined : (data.modeHint as 'major' | 'minor'),
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    if (!isModalOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isAnalyzing) {
+        closeModal();
+      }
     };
 
-    if (activeTab === 'youtube') {
-      const videoId = parseYoutubeUrl(data.youtubeUrl);
-      if (!videoId) {
-        alert('Invalid YouTube URL');
-        return;
-      }
-      input.youtubeUrl = data.youtubeUrl;
-      input.videoId = videoId;
-    } else {
-      if (!selectedFile) {
-        alert('Please select an audio file');
-        return;
-      }
-      input.audioFile = selectedFile;
-    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen, isAnalyzing, closeModal]);
 
-    startAnalysis(input);
-  };
-
-  // Handle close
-  const handleClose = () => {
-    if (isAnalyzing) {
-      cancelAnalysis();
-    }
-    closeModal();
-    reset();
-    setSelectedFile(null);
-  };
-
-  // Check if form is valid
-  const isFormValid = () => {
-    if (activeTab === 'youtube') {
-      return youtubeUrl && isValidYoutubeUrl(youtubeUrl);
-    } else {
-      return selectedFile !== null;
-    }
-  };
-
-  if (!isModalOpen) return null;
-
-  return (
+  const content = (
     <AnimatePresence>
-      <div className={styles.backdrop} onClick={handleClose}>
-        <motion.div
-          className={styles.modal}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.3 }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Close button */}
-          <button className={styles.closeButton} onClick={handleClose} aria-label="Close">
-            ×
-          </button>
+      {isModalOpen && (
+        <>
+          {/* Overlay backdrop */}
+          <motion.div
+            className={styles.overlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => !isAnalyzing && closeModal()}
+          />
 
-          {/* Title */}
-          <h2 className={styles.title}>Analyze Music</h2>
-          <p className={styles.subtitle}>Extract chord progressions from YouTube or audio files</p>
+          {/* Modal */}
+          <motion.div
+            className={styles.modal}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="analyze-title"
+          >
+            {/* Header */}
+            <div className={styles.header}>
+              <h2 id="analyze-title">Analyze Chord Progression</h2>
+              <button
+                className={styles.closeButton}
+                onClick={closeModal}
+                disabled={isAnalyzing}
+                aria-label="Close modal"
+                title="Close (Esc)"
+              >
+                ✕
+              </button>
+            </div>
 
-          {/* Tabs */}
-          <div className={styles.tabs}>
-            <button
-              className={`${styles.tab} ${activeTab === 'youtube' ? styles.tabActive : ''}`}
-              onClick={() => setActiveTab('youtube')}
-            >
-              YouTube URL
-            </button>
-            <button
-              className={`${styles.tab} ${activeTab === 'audio' ? styles.tabActive : ''}`}
-              onClick={() => setActiveTab('audio')}
-            >
-              Audio File
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit(onSubmit)}>
-            {/* Tab Content */}
-            <AnimatePresence mode="wait">
-              {activeTab === 'youtube' ? (
-                <motion.div
-                  key="youtube"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ duration: 0.2 }}
-                  className={styles.tabContent}
+            {/* Tab Navigation - outside scrollable content */}
+            {!isAnalyzing && !progress && (
+              <div className={styles.tabNav}>
+                <button
+                  className={`${styles.tabButton} ${activeTab === 'youtube' ? styles.active : ''}`}
+                  onClick={() => setActiveTab('youtube')}
                 >
-                  <label className={styles.label}>YouTube URL</label>
-                  <input
-                    type="text"
-                    className={styles.input}
-                    placeholder="https://youtube.com/watch?v=..."
-                    {...register('youtubeUrl', {
-                      required: activeTab === 'youtube',
-                      validate: (value) => activeTab !== 'youtube' || isValidYoutubeUrl(value) || 'Invalid YouTube URL',
-                    })}
-                  />
-                  {errors.youtubeUrl && (
-                    <span className={styles.error}>{errors.youtubeUrl.message}</span>
+                  YouTube URL
+                </button>
+                <button
+                  className={`${styles.tabButton} ${activeTab === 'audio' ? styles.active : ''}`}
+                  onClick={() => setActiveTab('audio')}
+                >
+                  Audio File
+                </button>
+              </div>
+            )}
+
+            {/* Content */}
+            <div className={styles.content}>
+              {!isAnalyzing && !progress ? (
+                <>
+                  {/* YouTube Tab */}
+                  {activeTab === 'youtube' && (
+                    <>
+                      <div className={styles.inputGroup}>
+                        <label className={styles.inputLabel}>YouTube URL</label>
+                        <input
+                          type="text"
+                          className={`${styles.urlInput} ${urlError ? styles.error : ''}`}
+                          placeholder="https://youtube.com/watch?v=..."
+                          value={youtubeUrl}
+                          onChange={handleUrlChange}
+                          disabled={isAnalyzing}
+                          aria-describedby={urlError ? 'url-error' : undefined}
+                        />
+                        {urlError && (
+                          <div id="url-error" className={styles.errorText}>
+                            {urlError}
+                          </div>
+                        )}
+                        <div className={styles.helpText}>
+                          Paste a YouTube video URL to analyze its chord progression
+                        </div>
+                      </div>
+
+                      {/* Example links */}
+                      <div className={styles.exampleLinks}>
+                        <p className={styles.exampleLinksTitle}>Example Videos</p>
+                        {EXAMPLE_VIDEOS.map((video, idx) => (
+                          <button
+                            key={idx}
+                            className={styles.exampleLink}
+                            onClick={() => handleExampleLinkClick(video.url)}
+                            title={video.title}
+                          >
+                            {video.title}
+                          </button>
+                        ))}
+                      </div>
+                    </>
                   )}
 
-                  {/* Example links */}
-                  <div className={styles.examples}>
-                    <p className={styles.examplesLabel}>Try these examples:</p>
-                    <button
-                      type="button"
-                      className={styles.exampleLink}
-                      onClick={() => setValue('youtubeUrl', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')}
-                    >
-                      Example 1 (Rick Astley - Never Gonna Give You Up)
-                    </button>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="audio"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.2 }}
-                  className={styles.tabContent}
-                >
-                  <div
-                    className={`${styles.dropZone} ${isDragging ? styles.dropZoneDragging : ''}`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    onClick={() => document.getElementById('file-input')?.click()}
+                  {/* Audio Tab */}
+                  {activeTab === 'audio' && (
+                    <>
+                      <div
+                        className={`${styles.dropZone} ${dragOverRef.current ? styles.dragOver : ''}`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        onClick={() => fileInputRef.current?.click()}
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Drop audio file here or click to select"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            fileInputRef.current?.click();
+                          }
+                        }}
+                      >
+                        <div className={styles.dropZoneIcon}>🎵</div>
+                        <div className={styles.dropZoneText}>Drop audio file here</div>
+                        <div className={styles.dropZoneSubtext}>
+                          or click to select
+                        </div>
+                        <button
+                          className={styles.filePickerButton}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            fileInputRef.current?.click();
+                          }}
+                          disabled={isAnalyzing}
+                        >
+                          Choose File
+                        </button>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          hidden
+                          accept={SUPPORTED_FORMATS.join(',')}
+                          onChange={handleFileSelect}
+                          disabled={isAnalyzing}
+                          aria-label="Select audio file"
+                        />
+                      </div>
+
+                      {audioFile && (
+                        <div className={styles.selectedFile}>
+                          <span className={styles.fileName}>
+                            📄 {audioFile.name}
+                          </span>
+                          <button
+                            className={styles.removeFile}
+                            onClick={handleRemoveFile}
+                            disabled={isAnalyzing}
+                            aria-label="Remove file"
+                            title="Remove file"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+
+                      <div className={styles.helpText}>
+                        Supported formats: {SUPPORTED_FORMATS.join(', ')} (Max 50MB)
+                      </div>
+                    </>
+                  )}
+
+                  {/* Advanced Options */}
+                  <button
+                    className={`${styles.advancedToggle} ${showAdvanced ? styles.open : ''}`}
+                    onClick={() => setShowAdvanced(!showAdvanced)}
                   >
-                    <div className={styles.dropZoneIcon}>🎵</div>
-                    {selectedFile ? (
-                      <>
-                        <div className={styles.dropZoneText}>{selectedFile.name}</div>
-                        <div className={styles.dropZoneSubtext}>
-                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className={styles.dropZoneText}>
-                          Drop audio file here or click to browse
-                        </div>
-                        <div className={styles.dropZoneSubtext}>
-                          Supports MP3, WAV, M4A (max 50MB)
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <input
-                    id="file-input"
-                    type="file"
-                    accept=".mp3,.wav,.m4a"
-                    onChange={handleFileChange}
-                    style={{ display: 'none' }}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    <span>{showAdvanced ? '▼' : '▶'}</span>
+                    Advanced Options
+                  </button>
 
-            {/* Advanced Options */}
-            <div className={styles.advanced}>
-              <button
-                type="button"
-                className={styles.advancedToggle}
-                onClick={() => setShowAdvanced(!showAdvanced)}
-              >
-                {showAdvanced ? '▼' : '▶'} Advanced Options
-              </button>
-
-              {showAdvanced && (
-                <div className={styles.advancedOptions}>
-                  <div className={styles.row}>
-                    <div className={styles.field}>
-                      <label className={styles.label}>Start Time (MM:SS)</label>
+                  <div className={`${styles.advancedOptions} ${showAdvanced ? styles.open : ''}`}>
+                    <div className={styles.timeInput}>
+                      <label className={styles.inputLabel}>Start Time (s)</label>
                       <input
-                        type="text"
-                        className={styles.inputSmall}
-                        placeholder="00:00"
-                        {...register('startTime')}
+                        type="number"
+                        className={styles.timeInputField}
+                        placeholder="0"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        disabled={isAnalyzing}
+                        min="0"
                       />
                     </div>
-                    <div className={styles.field}>
-                      <label className={styles.label}>End Time (MM:SS)</label>
+
+                    <div className={styles.timeInput}>
+                      <label className={styles.inputLabel}>End Time (s)</label>
                       <input
-                        type="text"
-                        className={styles.inputSmall}
-                        placeholder="Auto"
-                        {...register('endTime')}
+                        type="number"
+                        className={styles.timeInputField}
+                        placeholder="Duration"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                        disabled={isAnalyzing}
+                        min="0"
                       />
                     </div>
-                  </div>
 
-                  <div className={styles.row}>
-                    <div className={styles.field}>
-                      <label className={styles.label}>Key Hint</label>
-                      <select className={styles.select} {...register('keyHint')}>
+                    <div className={styles.inputGroup}>
+                      <label className={styles.inputLabel} htmlFor="key-select">
+                        Key Hint
+                      </label>
+                      <select
+                        id="key-select"
+                        className={styles.select}
+                        value={keyHint}
+                        onChange={(e) => setKeyHint(e.target.value)}
+                        disabled={isAnalyzing}
+                      >
                         <option value="auto">Auto-detect</option>
                         <option value="C">C</option>
+                        <option value="Db">D♭</option>
                         <option value="D">D</option>
+                        <option value="Eb">E♭</option>
                         <option value="E">E</option>
                         <option value="F">F</option>
+                        <option value="Gb">G♭</option>
                         <option value="G">G</option>
+                        <option value="Ab">A♭</option>
                         <option value="A">A</option>
+                        <option value="Bb">B♭</option>
                         <option value="B">B</option>
                       </select>
                     </div>
-                    <div className={styles.field}>
-                      <label className={styles.label}>Mode Hint</label>
-                      <select className={styles.select} {...register('modeHint')}>
+
+                    <div className={styles.inputGroup}>
+                      <label className={styles.inputLabel} htmlFor="mode-select">
+                        Mode Hint
+                      </label>
+                      <select
+                        id="mode-select"
+                        className={styles.select}
+                        value={modeHint}
+                        onChange={(e) => setModeHint(e.target.value as 'auto' | 'major' | 'minor')}
+                        disabled={isAnalyzing}
+                      >
                         <option value="auto">Auto-detect</option>
                         <option value="major">Major</option>
                         <option value="minor">Minor</option>
                       </select>
                     </div>
                   </div>
+                </>
+              ) : null}
+
+              {/* Error Display */}
+              {error && !isAnalyzing && (
+                <div className={styles.progressSection}>
+                  <div className={styles.errorText}>
+                    Error: {error.message}
+                  </div>
+                </div>
+              )}
+
+              {/* Progress Display */}
+              {isAnalyzing && progress && (
+                <div className={styles.progressSection}>
+                  <div className={styles.progressBar}>
+                    <div
+                      className={styles.progressFill}
+                      style={{ width: `${progress.progress}%` }}
+                    />
+                  </div>
+                  <div className={styles.progressMessage}>
+                    {progress.message}
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Progress */}
-            {isAnalyzing && progress && (
-              <div className={styles.progressContainer}>
-                <div className={styles.progressBar}>
-                  <div
-                    className={styles.progressFill}
-                    style={{ width: `${progress.progress}%` }}
-                  />
-                </div>
-                <div className={styles.progressMessage}>{progress.message}</div>
-              </div>
-            )}
-
-            {/* Error */}
-            {error && (
-              <div className={styles.errorContainer}>
-                <div className={styles.errorMessage}>{error.message}</div>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className={styles.actions}>
+            {/* Footer */}
+            <div className={styles.footer}>
               <button
-                type="button"
-                className={styles.buttonSecondary}
-                onClick={handleClose}
+                className={styles.cancelButton}
+                onClick={closeModal}
+                disabled={isAnalyzing}
               >
                 Cancel
               </button>
               <button
-                type="submit"
-                className={styles.buttonPrimary}
-                disabled={!isFormValid() || isAnalyzing}
+                className={styles.analyzeButton}
+                onClick={handleAnalyze}
+                disabled={isAnalyzing || (activeTab === 'youtube' ? !youtubeUrl || !!urlError : !audioFile)}
               >
-                {isAnalyzing ? (
-                  <>
-                    <Spinner size="sm" />
-                    <span style={{ marginLeft: '8px' }}>Analyzing...</span>
-                  </>
-                ) : (
-                  'Analyze'
-                )}
+                {isAnalyzing && <div className={styles.spinner} />}
+                {isAnalyzing ? 'Analyzing...' : 'Analyze'}
               </button>
             </div>
-          </form>
-        </motion.div>
-      </div>
+          </motion.div>
+        </>
+      )}
     </AnimatePresence>
   );
+
+  return createPortal(content, document.body);
 };

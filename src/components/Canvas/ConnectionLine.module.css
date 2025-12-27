@@ -3,7 +3,3 @@
   transition: opacity var(--duration-fast) var(--ease-apple-smooth);
   stroke-linecap: round;
 }
-
-.connectionLine:hover {
-  opacity: 0.9;
-}

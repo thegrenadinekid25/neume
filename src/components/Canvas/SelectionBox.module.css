@@ -4,4 +4,5 @@
   background-color: rgba(74, 144, 226, 0.1);
   pointer-events: none;
   z-index: 999;
+  border-radius: var(--border-radius-sm);
 }

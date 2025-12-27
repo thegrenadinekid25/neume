@@ -1,7 +1,7 @@
-import type { SATBRanges } from '@types';
+import type { SATBRanges } from '@/types';
 
 /**
- * SATB vocal ranges (from spec)
+ * SATB vocal ranges
  */
 export const SATB_RANGES: SATBRanges = {
   soprano: { low: 'C4', high: 'G5' },
@@ -23,7 +23,7 @@ export const DEFAULT_TEMPO = 120;
 /**
  * Grid snap resolution (beats)
  */
-export const DEFAULT_SNAP_RESOLUTION = 0.25; // Sixteenth note
+export const DEFAULT_SNAP_RESOLUTION = 0.25;
 
 /**
  * Canvas viewport settings
@@ -32,12 +32,12 @@ export const CANVAS_CONFIG = {
   DEFAULT_ZOOM: 1.0,
   MIN_ZOOM: 0.5,
   MAX_ZOOM: 2.0,
-  GRID_BEAT_WIDTH: 80, // pixels per beat
+  GRID_BEAT_WIDTH: 80,
   MEASURES_VISIBLE: 8,
 };
 
 /**
- * Audio settings defaults (from spec)
+ * Audio settings defaults
  */
 export const AUDIO_DEFAULTS = {
   MASTER_VOLUME: 0.7,
@@ -55,4 +55,13 @@ export const ANIMATION_DURATIONS = {
   NORMAL: 300,
   SLOW: 400,
   PULSE: 600,
+};
+
+/**
+ * Tempo range (BPM)
+ */
+export const TEMPO_RANGE = {
+  MIN: 60,
+  MAX: 180,
+  DEFAULT: 120,
 };

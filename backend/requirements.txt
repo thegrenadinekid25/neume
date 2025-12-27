@@ -1,21 +1,20 @@
-# Core dependencies
-fastapi==0.123.0
-uvicorn[standard]==0.38.0
-python-multipart==0.0.20
-pydantic==2.12.5
-python-dotenv==1.2.1
+# FastAPI and server
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+pydantic==2.5.0
 
-# AI and utilities
-anthropic==0.75.0
-yt-dlp==2025.11.12
-
-# Audio processing - install in specific order
-numpy==1.26.4
-scipy==1.14.1
-llvmlite==0.43.0
-numba==0.60.0
-soundfile==0.13.1
-librosa==0.10.2
-
-# Essentia - using stable version
+# Audio processing
 essentia==2.1b6.dev1110
+librosa==0.10.1
+numpy==1.24.3
+scipy==1.11.4
+
+# YouTube
+yt-dlp==2023.11.16
+
+# AI
+anthropic==0.39.0
+
+# Utilities
+python-dotenv==1.0.0

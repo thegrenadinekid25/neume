@@ -4,7 +4,7 @@
 Create the main Canvas component with timeline grid, measure markers, beat indicators, and playhead. This is the workspace where users will build chord progressions.
 
 ## Context
-The Canvas is the central workspace of Harmonic Canvas - 100% of available screen space between the header and controls. It provides a visual timeline grid where chords are placed and arranged.
+The Canvas is the central workspace of Neume - 100% of available screen space between the header and controls. It provides a visual timeline grid where chords are placed and arranged.
 
 **Dependencies:**
 - Requires Prompt 003 (Project Structure & Types)

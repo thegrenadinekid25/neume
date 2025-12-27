@@ -1,53 +1,75 @@
-.initButton {
-  padding: 8px 16px;
-  background-color: var(--primary-action);
-  color: white;
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.buttonDefault,
+.buttonLoading,
+.buttonReady,
+.buttonError {
+  padding: 0.5rem 1rem;
   border: none;
-  border-radius: var(--border-radius-md);
-  font-size: 14px;
+  border-radius: 4px;
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color var(--duration-fast) var(--ease-apple-smooth);
+  transition: all 200ms ease-out;
+  min-width: 120px;
 }
 
-.initButton:hover:not(:disabled) {
-  background-color: #3a7bc8;
+.buttonDefault {
+  background-color: #6b7280;
+  color: white;
 }
 
-.initButton:disabled {
-  opacity: 0.6;
+.buttonDefault:hover:not(:disabled) {
+  background-color: #4b5563;
+  transform: translateY(-1px);
+}
+
+.buttonDefault:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.buttonLoading {
+  background-color: #3b82f6;
+  color: white;
+  opacity: 0.8;
+  cursor: not-allowed;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.buttonReady {
+  background-color: #10b981;
+  color: white;
   cursor: not-allowed;
 }
 
-.status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background-color: var(--background-secondary);
-  border-radius: var(--border-radius-md);
-  font-size: 14px;
-  color: var(--text-primary);
+.buttonError {
+  background-color: #ef4444;
+  color: white;
 }
 
-.indicator {
-  font-size: 16px;
-  animation: pulse 2s ease-in-out infinite;
+.buttonError:hover:not(:disabled) {
+  background-color: #dc2626;
+  transform: translateY(-1px);
+}
+
+.errorMessage {
+  font-size: 0.75rem;
+  color: #ef4444;
+  max-width: 200px;
+  word-break: break-word;
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
     opacity: 0.6;
   }
-}
-
-.error {
-  padding: 8px 16px;
-  background-color: #fee;
-  color: #c33;
-  border-radius: var(--border-radius-md);
-  font-size: 14px;
 }

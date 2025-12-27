@@ -2,7 +2,7 @@ import React from 'react';
 import styles from './Playhead.module.css';
 
 interface PlayheadProps {
-  position: number; // In pixels
+  position: number;
 }
 
 export const Playhead: React.FC<PlayheadProps> = ({ position }) => {

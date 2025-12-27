@@ -7,7 +7,7 @@
 
 ## Overview
 
-Week 2 transforms Harmonic Canvas from a static visual display into a fully interactive chord progression editor. By the end of this week, users will be able to:
+Week 2 transforms Neume from a static visual display into a fully interactive chord progression editor. By the end of this week, users will be able to:
 
 - ✅ Add chords via right-click menu
 - ✅ Drag and reposition chords

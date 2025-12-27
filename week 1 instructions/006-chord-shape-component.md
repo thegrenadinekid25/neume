@@ -4,7 +4,7 @@
 Create the ChordShape component that renders all 7 chord types (I-vii) as SVG shapes with hand-drawn aesthetic, proper colors, extended harmony badges, and interactive states (hover, selected, playing).
 
 ## Context
-The ChordShape is the primary visual element in Harmonic Canvas. Each shape represents a chord's function (tonic, subdominant, dominant) through its geometry, and its scale degree through color. The shapes must have a warm, hand-drawn quality while remaining precise and readable.
+The ChordShape is the primary visual element in Neume. Each shape represents a chord's function (tonic, subdominant, dominant) through its geometry, and its scale degree through color. The shapes must have a warm, hand-drawn quality while remaining precise and readable.
 
 **Dependencies:**
 - Requires Prompt 003 (Project Structure & Types)

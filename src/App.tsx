@@ -1,598 +1,470 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
-import styles from './App.module.css'
-import { DroppableCanvas } from './components/Canvas/DroppableCanvas'
-import { AudioInitButton } from './components/Audio/AudioInitButton'
-import { TempoControl } from './components/Controls/TempoControl'
-import { Spinner } from './components/UI/Spinner'
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { DroppableCanvas } from '@/components/Canvas';
+import { MetadataBanner } from '@/components/Canvas/MetadataBanner';
+import { DeleteConfirmation } from '@/components/UI/DeleteConfirmation';
+import { KeyboardShortcutsGuide } from '@/components/UI/KeyboardShortcutsGuide';
+import { AnalyzeModal } from '@/components/Modals';
+import { WhyThisPanel } from '@/components/Panels';
+import { TempoDial } from '@/components/Controls';
+import { useHistory } from '@/hooks/useHistory';
+import { usePlayback } from '@/hooks/usePlayback';
+import { useAudioEngine } from '@/hooks/useAudioEngine';
+import { useAnalysisStore } from '@/store/analysis-store';
+import { generateSATBVoicing } from '@/audio/VoiceLeading';
+import type { Chord, MusicalKey, Mode, ScaleDegree, ChordQuality, ChordExtensions, Voices } from '@/types';
+import { v4 as uuidv4 } from 'uuid';
+import { CANVAS_CONFIG } from '@/utils/constants';
+import './App.css';
 
-// Lazy load modals and panels for better performance
-const AnalyzeModal = lazy(() => import('./components/Modals/AnalyzeModal').then(m => ({ default: m.AnalyzeModal })))
-const RefineThisModal = lazy(() => import('./components/Modals/RefineThisModal').then(m => ({ default: m.RefineThisModal })))
-const MyProgressionsModal = lazy(() => import('./components/Modals/MyProgressionsModal').then(m => ({ default: m.MyProgressionsModal })))
-const KeyboardShortcutsGuide = lazy(() => import('./components/Modals/KeyboardShortcutsGuide').then(m => ({ default: m.KeyboardShortcutsGuide })))
-const BuildFromBonesPanel = lazy(() => import('./components/Panels/BuildFromBonesPanel').then(m => ({ default: m.BuildFromBonesPanel })))
-const WelcomeTutorial = lazy(() => import('./components/Tutorial/WelcomeTutorial').then(m => ({ default: m.WelcomeTutorial })))
-import { useCanvasStore } from './store/canvas-store'
-import { useAnalysisStore } from './store/analysis-store'
-import { useBuildFromBonesStore } from './store/build-from-bones-store'
-import { useRefineStore } from './store/refine-store'
-import { useProgressionsStore } from './store/progressions-store'
-import { useTutorialStore, checkTutorialStatus } from './store/tutorial-store'
-import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
-import { deconstructProgression } from './services/api-service'
-import { playbackSystem } from './audio/PlaybackSystem'
-import { audioEngine } from './audio/AudioEngine'
-import { normalizeVolume } from './utils/audioUtils'
-import { Chord } from '@types'
-import { v4 as uuidv4 } from 'uuid'
-
-// Create example chords to test all 7 shapes
-const createExampleChords = (key: string, mode: 'major' | 'minor'): Chord[] => {
-  const baseVoices = {
-    soprano: 'E4',
-    alto: 'C4',
-    tenor: 'G3',
-    bass: 'C3',
+function getChordQuality(degree: ScaleDegree, mode: Mode): ChordQuality {
+  if (mode === 'major') {
+    const qualities: Record<ScaleDegree, ChordQuality> = {
+      1: 'major', 2: 'minor', 3: 'minor', 4: 'major', 5: 'major', 6: 'minor', 7: 'diminished',
+    };
+    return qualities[degree];
+  } else {
+    const qualities: Record<ScaleDegree, ChordQuality> = {
+      1: 'minor', 2: 'diminished', 3: 'major', 4: 'minor', 5: 'major', 6: 'major', 7: 'major',
+    };
+    return qualities[degree];
   }
+}
 
-  return [
-    // I - Circle (gold)
-    {
-      id: uuidv4(),
-      scaleDegree: 1,
-      quality: 'major',
-      extensions: {},
+// Create demo chords - only startBeat matters for positioning now
+function createDemoChords(key: MusicalKey, mode: Mode): Chord[] {
+  const chordData = [
+    { scaleDegree: 1 as ScaleDegree, quality: 'major' as ChordQuality, extensions: {}, startBeat: 0 },
+    { scaleDegree: 5 as ScaleDegree, quality: 'major' as ChordQuality, extensions: {}, startBeat: 4 },
+    { scaleDegree: 6 as ScaleDegree, quality: 'minor' as ChordQuality, extensions: {}, startBeat: 8 },
+    { scaleDegree: 4 as ScaleDegree, quality: 'major' as ChordQuality, extensions: {}, startBeat: 12 },
+    { scaleDegree: 2 as ScaleDegree, quality: 'minor' as ChordQuality, extensions: {}, startBeat: 16 },
+    { scaleDegree: 3 as ScaleDegree, quality: 'minor' as ChordQuality, extensions: {}, startBeat: 20 },
+    { scaleDegree: 7 as ScaleDegree, quality: 'diminished' as ChordQuality, extensions: {}, startBeat: 24 },
+    { scaleDegree: 6 as ScaleDegree, quality: 'major' as ChordQuality, extensions: {}, startBeat: 28, isChromatic: true, chromaticType: 'borrowed' as const },
+  ];
+
+  let previousVoicing: Voices | undefined;
+
+  return chordData.map((data, index) => {
+    // First create chord with temporary voices
+    const tempChord: Chord = {
+      id: `demo-chord-${index}`,
+      scaleDegree: data.scaleDegree,
+      quality: data.quality,
+      extensions: data.extensions,
       key,
       mode,
-      isChromatic: false,
-      voices: baseVoices,
-      startBeat: 0,
+      isChromatic: data.isChromatic || false,
+      chromaticType: data.chromaticType,
+      voices: { soprano: 'C4', alto: 'G3', tenor: 'E3', bass: 'C3' }, // Temporary
+      startBeat: data.startBeat,
       duration: 4,
-      position: { x: 100, y: 200 },
-      size: 60,
+      position: { x: 0, y: 0 }, // Not used anymore - kept for type compatibility
+      size: 80,
       selected: false,
       playing: false,
-      source: 'user',
+      source: 'user' as const,
       createdAt: new Date().toISOString(),
-    },
-    // ii - Rounded square (sage green)
-    {
-      id: uuidv4(),
-      scaleDegree: 2,
-      quality: 'minor',
-      extensions: { add9: true },
-      key,
-      mode,
-      isChromatic: false,
-      voices: baseVoices,
-      startBeat: 4,
-      duration: 4,
-      position: { x: 420, y: 200 },
-      size: 60,
-      selected: false,
-      playing: false,
-      source: 'user',
-      createdAt: new Date().toISOString(),
-    },
-    // iii - Triangle (dusty rose)
-    {
-      id: uuidv4(),
-      scaleDegree: 3,
-      quality: 'minor',
-      extensions: {},
-      key,
-      mode,
-      isChromatic: false,
-      voices: baseVoices,
-      startBeat: 8,
-      duration: 4,
-      position: { x: 740, y: 200 },
-      size: 60,
-      selected: false,
-      playing: false,
-      source: 'user',
-      createdAt: new Date().toISOString(),
-    },
-    // IV - Square (periwinkle blue)
-    {
-      id: uuidv4(),
-      scaleDegree: 4,
-      quality: 'major',
-      extensions: { sus4: true },
-      key,
-      mode,
-      isChromatic: false,
-      voices: baseVoices,
-      startBeat: 12,
-      duration: 4,
-      position: { x: 1060, y: 200 },
-      size: 60,
-      selected: false,
-      playing: false,
-      source: 'user',
-      createdAt: new Date().toISOString(),
-    },
-    // V - Pentagon (terracotta)
-    {
-      id: uuidv4(),
-      scaleDegree: 5,
-      quality: 'major',
-      extensions: {},
-      key,
-      mode,
-      isChromatic: false,
-      voices: baseVoices,
-      startBeat: 16,
-      duration: 4,
-      position: { x: 1380, y: 200 },
-      size: 60,
-      selected: false,
-      playing: false,
-      source: 'user',
-      createdAt: new Date().toISOString(),
-    },
-    // vi - Circle (purple)
-    {
-      id: uuidv4(),
-      scaleDegree: 6,
-      quality: 'minor',
-      extensions: {},
-      key,
-      mode,
-      isChromatic: false,
-      voices: baseVoices,
-      startBeat: 20,
-      duration: 4,
-      position: { x: 1700, y: 200 },
-      size: 60,
-      selected: false,
-      playing: false,
-      source: 'user',
-      createdAt: new Date().toISOString(),
-    },
-    // vii° - Pentagon (gray)
-    {
-      id: uuidv4(),
-      scaleDegree: 7,
-      quality: 'diminished',
-      extensions: {},
-      key,
-      mode,
-      isChromatic: false,
-      voices: baseVoices,
-      startBeat: 24,
-      duration: 4,
-      position: { x: 2020, y: 200 },
-      size: 60,
-      selected: false,
-      playing: false,
-      source: 'user',
-      createdAt: new Date().toISOString(),
-    },
-    // Chromatic example (borrowed chord with shimmer)
-    {
-      id: uuidv4(),
-      scaleDegree: 4,
-      quality: 'major',
-      extensions: { add9: true },
-      key,
-      mode,
-      isChromatic: true,
-      chromaticType: 'borrowed',
-      voices: baseVoices,
-      startBeat: 28,
-      duration: 4,
-      position: { x: 2340, y: 200 },
-      size: 60,
-      selected: false,
-      playing: false,
-      source: 'user',
-      createdAt: new Date().toISOString(),
-    },
-  ] as Chord[]
+    };
+
+    // Generate proper SATB voicing with voice leading
+    const voices = generateSATBVoicing(tempChord, previousVoicing);
+    previousVoicing = voices;
+
+    return { ...tempChord, voices };
+  });
 }
 
 function App() {
-  const {
-    chords,
-    selectedChordIds,
-    showConnectionLines,
-    addChord,
-    updateChordPosition,
-    setChords,
-    selectChord,
-    clearSelection,
-    selectChords,
-    toggleChordSelection,
-    selectAll,
-    toggleConnectionLines,
-    deleteSelected,
-    duplicateSelected,
-    undo,
-    redo,
-  } = useCanvasStore()
+  const [currentKey, setCurrentKey] = useState<MusicalKey>('C');
+  const [currentMode, setCurrentMode] = useState<Mode>('major');
+  const [beatsPerMeasure, setBeatsPerMeasure] = useState(4);
+  const [zoom, setZoom] = useState(1.0);
+  const [selectedChordIds, setSelectedChordIds] = useState<string[]>([]);
+  const [chords, setChords] = useState<Chord[]>(() => createDemoChords('C', 'major'));
 
-  const openAnalyzeModal = useAnalysisStore(state => state.openModal)
-  const openBuildFromBones = useBuildFromBonesStore(state => state.openPanel)
-  const openRefineModal = useRefineStore(state => state.openModal)
-  const { openModal: openProgressionsModal, openSaveDialog } = useProgressionsStore()
-  const { startTutorial, currentStep: tutorialStep, isActive: tutorialActive, nextStep: tutorialNextStep } = useTutorialStore()
+  const { pushState, undo, redo } = useHistory();
+  useAudioEngine(); // Hook needed for auto-init on first interaction
+  const openAnalyzeModal = useAnalysisStore(state => state.openModal);
+  const metadata = useAnalysisStore(state => state.metadata);
+  const convertedChords = useAnalysisStore(state => state.convertedChords);
+  const phraseBoundaries = useAnalysisStore(state => state.phraseBoundaries);
+  const analysisResult = useAnalysisStore(state => state.result);
+  const clearAnalyzedProgression = useAnalysisStore(state => state.clearAnalyzedProgression);
 
-  const [currentKey, setCurrentKey] = useState('C')
-  const [currentMode, setCurrentMode] = useState<'major' | 'minor'>('major')
-  const [zoom, setZoom] = useState(1.0)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [playheadPosition, setPlayheadPosition] = useState(0)
-  const [isBuildFromBonesLoading, setIsBuildFromBonesLoading] = useState(false)
+  // Calculate total beats based on chord positions + buffer
+  const totalBeats = useMemo(() => {
+    if (chords.length === 0) return 16; // Minimum empty timeline
+    const maxBeat = Math.max(...chords.map(c => c.startBeat + c.duration));
+    return Math.max(16, maxBeat + 8); // Add 8 beats buffer after last chord
+  }, [chords]);
 
-  // Initialize with example chords
+  const { isPlaying, playheadPosition, togglePlay, tempo, setTempo } = usePlayback(chords, totalBeats);
+
   useEffect(() => {
-    const exampleChords = createExampleChords(currentKey, currentMode)
-    setChords(exampleChords)
-  }, []) // Only run once on mount
+    pushState(chords);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intentionally run only on mount to initialize history
 
-  // Auto-start tutorial for first-time users
+  const saveToHistory = useCallback((newChords: Chord[]) => {
+    pushState(newChords);
+  }, [pushState]);
+
+  // Load converted chords from analysis onto canvas
   useEffect(() => {
-    if (checkTutorialStatus()) {
-      // Small delay to ensure app is fully loaded
-      setTimeout(() => {
-        startTutorial()
-      }, 500)
+    if (convertedChords && convertedChords.length > 0 && analysisResult) {
+      // Replace current chords with analyzed chords
+      setChords(convertedChords);
+
+      // Update key and mode from analysis result
+      if (analysisResult.key) {
+        setCurrentKey(analysisResult.key as MusicalKey);
+      }
+      if (analysisResult.mode) {
+        setCurrentMode(analysisResult.mode as Mode);
+      }
+      // Update tempo from analysis result
+      if (analysisResult.tempo) {
+        setTempo(Math.round(analysisResult.tempo));
+      }
     }
-  }, [])
+  }, [convertedChords, analysisResult, setTempo]);
 
-  // Keyboard shortcuts
-  useKeyboardShortcuts({
-    onDelete: deleteSelected,
-    onSelectAll: selectAll,
-    onUndo: undo,
-    onRedo: redo,
-    onDuplicate: duplicateSelected,
-    onToggleConnectionLines: toggleConnectionLines,
-    onClearSelection: clearSelection,
-    onSave: () => {
-      if (chords.length > 0) {
-        openSaveDialog();
-      }
-    },
-    onExport: () => {
-      // TODO: Implement MIDI export shortcut
-      console.log('Export MIDI shortcut pressed');
-    },
-    onNew: () => {
-      if (confirm('Clear the canvas? This will remove all chords.')) {
-        setChords([]);
-      }
-    },
-    onZoomIn: () => setZoom((z) => Math.min(z + 0.25, 3.0)),
-    onZoomOut: () => setZoom((z) => Math.max(z - 0.25, 0.25)),
-    onResetZoom: () => setZoom(1.0),
-  })
+  // Update all chords when key or mode changes
+  useEffect(() => {
+    if (chords.length === 0) return;
 
-  // Handle chord selection (supports Cmd/Ctrl multi-select)
-  const handleSelectChord = useCallback((chordId: string, event?: React.MouseEvent) => {
-    const isMultiSelect = event?.metaKey || event?.ctrlKey
+    // Check if any chord needs updating
+    const needsUpdate = chords.some(c => c.key !== currentKey || c.mode !== currentMode);
+    if (!needsUpdate) return;
 
-    if (isMultiSelect) {
-      toggleChordSelection(chordId)
+    // Sort chords by position for proper voice leading
+    const sortedChords = [...chords].sort((a, b) => a.startBeat - b.startBeat);
+    let previousVoicing: Voices | undefined;
+
+    const updatedChords = sortedChords.map(chord => {
+      const newQuality = getChordQuality(chord.scaleDegree, currentMode);
+      const updatedChord: Chord = {
+        ...chord,
+        key: currentKey,
+        mode: currentMode,
+        quality: newQuality,
+      };
+      // Regenerate voicing with new key/mode
+      const voices = generateSATBVoicing(updatedChord, previousVoicing);
+      previousVoicing = voices;
+      return { ...updatedChord, voices };
+    });
+
+    setChords(updatedChords);
+    pushState(updatedChords);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentKey, currentMode]); // Only run when key or mode changes
+
+  const handleUndo = useCallback(() => {
+    const previousState = undo();
+    if (previousState) {
+      setChords(previousState);
+      setSelectedChordIds([]);
+    }
+  }, [undo]);
+
+  const handleRedo = useCallback(() => {
+    const nextState = redo();
+    if (nextState) {
+      setChords(nextState);
+      setSelectedChordIds([]);
+    }
+  }, [redo]);
+
+  // Selection handlers
+  const handleSelectChord = useCallback((id: string) => {
+    setSelectedChordIds([id]);
+  }, []);
+
+  const handleSelectChords = useCallback((ids: string[]) => {
+    setSelectedChordIds(ids);
+  }, []);
+
+  const handleToggleChordSelection = useCallback((id: string) => {
+    setSelectedChordIds((prev) =>
+      prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id]
+    );
+  }, []);
+
+  const handleSelectRange = useCallback((fromId: string, toId: string) => {
+    const sortedChords = [...chords].sort((a, b) => a.startBeat - b.startBeat);
+    const fromIndex = sortedChords.findIndex((c) => c.id === fromId);
+    const toIndex = sortedChords.findIndex((c) => c.id === toId);
+
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    const start = Math.min(fromIndex, toIndex);
+    const end = Math.max(fromIndex, toIndex);
+    const rangeIds = sortedChords.slice(start, end + 1).map((c) => c.id);
+
+    setSelectedChordIds(rangeIds);
+  }, [chords]);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedChordIds([]);
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    setSelectedChordIds(chords.map((c) => c.id));
+  }, [chords]);
+
+  // Delete state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  const performDelete = useCallback(() => {
+    const newChords = chords.filter((c) => !selectedChordIds.includes(c.id));
+    setChords(newChords);
+    saveToHistory(newChords);
+    setSelectedChordIds([]);
+    setShowDeleteConfirm(false);
+  }, [selectedChordIds, chords, saveToHistory]);
+
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedChordIds.length === 0) return;
+    if (selectedChordIds.length >= 5) {
+      setShowDeleteConfirm(true);
     } else {
-      clearSelection()
-      selectChord(chordId)
+      performDelete();
     }
-  }, [toggleChordSelection, clearSelection, selectChord])
+  }, [selectedChordIds, performDelete]);
 
-  // Handle multiple chord selection (from rectangular selection)
-  const handleSelectMultiple = useCallback((chordIds: string[]) => {
-    selectChords(chordIds)
-  }, [selectChords])
+  const handleDuplicateSelected = useCallback(() => {
+    if (selectedChordIds.length === 0) return;
 
-  // Setup playback callbacks and cleanup
-  useEffect(() => {
-    playbackSystem.setPlayheadCallback((beat) => {
-      setPlayheadPosition(beat)
-    })
+    const chordsToDuplicate = chords.filter((c) => selectedChordIds.includes(c.id));
+    const duplicates = chordsToDuplicate.map((chord) => ({
+      ...chord,
+      id: uuidv4(),
+      startBeat: chord.startBeat + 4,
+      createdAt: new Date().toISOString(),
+    }));
 
-    return () => {
-      playbackSystem.dispose()
-      audioEngine.dispose()
-    }
-  }, [])
+    const newChords = [...chords, ...duplicates];
+    setChords(newChords);
+    saveToHistory(newChords);
+    setSelectedChordIds(duplicates.map((c) => c.id));
+  }, [selectedChordIds, chords, saveToHistory]);
 
-  // Update playback schedule when chords change
-  useEffect(() => {
-    if (chords.length > 0) {
-      playbackSystem.scheduleProgression(chords)
-    }
-  }, [chords])
+  const chordsWithPlayState = useMemo(() => {
+    return chords.map(chord => ({
+      ...chord,
+      playing: isPlaying && playheadPosition >= chord.startBeat && playheadPosition < chord.startBeat + chord.duration,
+    }));
+  }, [chords, isPlaying, playheadPosition]);
 
-  // Auto-adjust volume based on chord count (prevent clipping)
-  useEffect(() => {
-    const normalizedVolume = normalizeVolume(chords.length)
-    audioEngine.setMasterVolume(normalizedVolume)
-  }, [chords.length])
+  // Add chord - now just needs x position to calculate startBeat
+  const handleAddChord = useCallback((
+    scaleDegree: ScaleDegree,
+    position: { x: number },
+    options?: { quality?: ChordQuality; extensions?: ChordExtensions }
+  ) => {
+    const beatWidth = CANVAS_CONFIG.GRID_BEAT_WIDTH * zoom;
+    const startBeat = Math.max(0, Math.round(position.x / beatWidth));
 
-  // Handle play/pause
-  const handlePlayback = useCallback(() => {
-    if (playbackSystem.isPlaying) {
-      playbackSystem.pause()
-      setIsPlaying(false)
-    } else {
-      playbackSystem.play()
-      setIsPlaying(true)
+    const newChord: Chord = {
+      id: uuidv4(),
+      scaleDegree,
+      quality: options?.quality || getChordQuality(scaleDegree, currentMode),
+      extensions: options?.extensions || {},
+      key: currentKey,
+      mode: currentMode,
+      isChromatic: false,
+      voices: { soprano: 'C4', alto: 'G3', tenor: 'E3', bass: 'C3' }, // Temporary
+      startBeat,
+      duration: 4,
+      position: { x: 0, y: 0 }, // Not used
+      size: 80,
+      selected: false,
+      playing: false,
+      source: 'user',
+      createdAt: new Date().toISOString(),
+    };
 
-      // Advance tutorial if on step 1 (Play Your First Progression)
-      if (tutorialActive && tutorialStep === 1) {
-        tutorialNextStep()
-      }
-    }
-  }, [tutorialActive, tutorialStep, tutorialNextStep])
+    // Find previous chord for voice leading
+    const sortedChords = [...chords].sort((a, b) => a.startBeat - b.startBeat);
+    const previousChord = sortedChords.filter(c => c.startBeat < startBeat).pop();
 
-  // Handle stop
-  const handleStop = useCallback(() => {
-    playbackSystem.stop()
-    setIsPlaying(false)
-    setPlayheadPosition(0)
-  }, [])
+    // Generate proper SATB voicing
+    const voices = generateSATBVoicing(newChord, previousChord?.voices);
+    const chordWithVoices = { ...newChord, voices };
 
-  // Space bar for play/pause
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && e.target === document.body) {
-        e.preventDefault()
-        handlePlayback()
-      }
-    }
+    const newChords = [...chords, chordWithVoices];
+    setChords(newChords);
+    saveToHistory(newChords);
+  }, [zoom, currentKey, currentMode, chords, saveToHistory]);
 
-    window.addEventListener('keydown', handleKeyPress)
-    return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [handlePlayback])
+  // Update chord position - now just updates startBeat
+  const handleUpdateChordPosition = useCallback((chordId: string, startBeat: number) => {
+    setChords((prevChords) =>
+      prevChords.map((chord) =>
+        chord.id === chordId ? { ...chord, startBeat } : chord
+      )
+    );
+  }, []);
 
   return (
-    <div className={styles.app}>
-      <header className={styles.appHeader}>
-        <div>
-          <h1>Harmonic Canvas</h1>
-          <p>Week 6: Polish & Launch Prep</p>
-        </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <button
-            onClick={openAnalyzeModal}
-            style={{
-              padding: '8px 16px',
-              background: '#4A90E2',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: '500'
-            }}
-          >
-            🔍 Analyze
-          </button>
-          <button
-            onClick={async () => {
-              if (chords.length === 0) {
-                alert('Please add some chords to the canvas first!');
-                return;
-              }
-
-              setIsBuildFromBonesLoading(true);
-
-              try {
-                // Call real API to deconstruct progression
-                const steps = await deconstructProgression(
-                  chords,
-                  currentKey,
-                  currentMode,
-                  'Modern sacred choral'
-                );
-                openBuildFromBones(steps);
-              } catch (error) {
-                console.error('Deconstruction failed:', error);
-                alert('Failed to deconstruct progression. Using sample data instead.');
-
-                // Fallback to sample steps if API fails
-                const sampleSteps = [
-                  {
-                    stepNumber: 0,
-                    stepName: 'Skeleton',
-                    description: 'The harmonic foundation - simple diatonic progression with basic triads.',
-                    chords: chords.map(c => ({ ...c, extensions: {} }))
-                  },
-                  {
-                    stepNumber: 1,
-                    stepName: 'Final Version',
-                    description: 'The complete progression with all extensions.',
-                    chords
-                  }
-                ];
-                openBuildFromBones(sampleSteps);
-              } finally {
-                setIsBuildFromBonesLoading(false);
-              }
-            }}
-            disabled={isBuildFromBonesLoading}
-            style={{
-              padding: '8px 16px',
-              background: '#9b59b6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: isBuildFromBonesLoading ? 'not-allowed' : 'pointer',
-              fontWeight: '500',
-              opacity: isBuildFromBonesLoading ? 0.7 : 1,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-            {isBuildFromBonesLoading ? (
-              <>
-                <Spinner size="sm" />
-                Deconstructing...
-              </>
-            ) : (
-              <>🦴 Build From Bones</>
-            )}
-          </button>
-          <button
-            onClick={() => {
-              if (selectedChordIds.length === 0) {
-                alert('Please select a chord first!');
-                return;
-              }
-              openRefineModal(selectedChordIds);
-            }}
-            style={{
-              padding: '8px 16px',
-              background: '#e67e22',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: '500'
-            }}
-          >
-            ✨ Refine This
-          </button>
-          <button
-            onClick={() => {
-              if (chords.length === 0) {
-                alert('Please add some chords first!');
-                return;
-              }
-              openSaveDialog();
-            }}
-            style={{
-              padding: '8px 16px',
-              background: '#27ae60',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: '500'
-            }}
-          >
-            💾 Save
-          </button>
-          <button
-            onClick={openProgressionsModal}
-            style={{
-              padding: '8px 16px',
-              background: '#3498db',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: '500'
-            }}
-          >
-            📂 My Progressions
-          </button>
-          <AudioInitButton />
-        </div>
+    <div className="app">
+      <header className="app-header">
+        <h1>Neume</h1>
+        <p>Right-click to add chords, drag to reorder</p>
       </header>
 
-      {/* Controls */}
-      <div className={styles.controls}>
-        <div className={styles.controlGroup}>
+      <div className="demo-controls">
+        <div className="control-group">
           <label>Key:</label>
-          <select
-            value={currentKey}
-            onChange={(e) => setCurrentKey(e.target.value)}
-            style={{ marginLeft: '8px', padding: '4px 8px' }}
-          >
+          <select value={currentKey} onChange={(e) => setCurrentKey(e.target.value as MusicalKey)}>
             <option value="C">C</option>
+            <option value="Db">Db</option>
             <option value="D">D</option>
+            <option value="Eb">Eb</option>
             <option value="E">E</option>
             <option value="F">F</option>
+            <option value="Gb">Gb</option>
             <option value="G">G</option>
+            <option value="Ab">Ab</option>
             <option value="A">A</option>
+            <option value="Bb">Bb</option>
+            <option value="B">B</option>
           </select>
-        </div>
 
-        <div className={styles.controlGroup}>
           <label>Mode:</label>
-          <select
-            value={currentMode}
-            onChange={(e) => setCurrentMode(e.target.value as 'major' | 'minor')}
-            style={{ marginLeft: '8px', padding: '4px 8px' }}
-          >
+          <select value={currentMode} onChange={(e) => setCurrentMode(e.target.value as Mode)}>
             <option value="major">Major</option>
             <option value="minor">Minor</option>
           </select>
+
+          <label>Beats:</label>
+          <select value={beatsPerMeasure} onChange={(e) => setBeatsPerMeasure(Number(e.target.value))}>
+            <option value={2}>2</option>
+            <option value={3}>3</option>
+            <option value={4}>4</option>
+            <option value={6}>6</option>
+          </select>
         </div>
 
-        <div className={styles.controlGroup}>
+        <div className="control-group">
           <label>Zoom:</label>
-          <button onClick={() => setZoom(0.5)} style={{ marginLeft: '8px', padding: '4px 12px' }}>
-            0.5x
-          </button>
-          <button onClick={() => setZoom(1.0)} style={{ padding: '4px 12px' }}>
-            1x
-          </button>
-          <button onClick={() => setZoom(2.0)} style={{ padding: '4px 12px' }}>
-            2x
-          </button>
+          <button onClick={() => setZoom(0.5)} className={zoom === 0.5 ? 'active' : ''}>0.5x</button>
+          <button onClick={() => setZoom(1.0)} className={zoom === 1.0 ? 'active' : ''}>1x</button>
+          <button onClick={() => setZoom(2.0)} className={zoom === 2.0 ? 'active' : ''}>2x</button>
         </div>
 
-        <TempoControl defaultTempo={120} />
-
-        <div className={styles.controlGroup}>
-          <button
-            onClick={handlePlayback}
-            disabled={chords.length === 0}
-            style={{ padding: '4px 16px', fontWeight: 'bold' }}
-            title={chords.length === 0 ? 'Add chords to play' : ''}
-          >
-            {isPlaying ? '⏸ Pause' : '▶ Play'}
+        <div className="control-group">
+          <button onClick={togglePlay} disabled={chords.length === 0} className="play-button">
+            {isPlaying ? 'Stop' : 'Play'}
           </button>
-          <button
-            onClick={handleStop}
-            disabled={!isPlaying && playheadPosition === 0}
-            style={{ padding: '4px 16px' }}
-          >
-            ⏹ Stop
+          <button onClick={openAnalyzeModal} disabled={chords.length === 0} className="analyze-button">
+            Analyze
           </button>
         </div>
       </div>
 
-      {/* Canvas */}
+      {metadata && (
+        <MetadataBanner
+          title={metadata.title}
+          composer={metadata.composer}
+          sourceUrl={metadata.sourceUrl}
+          onClear={() => {
+            clearAnalyzedProgression();
+            setChords([]); // Clear the canvas
+          }}
+        />
+      )}
+
       <DroppableCanvas
-        chords={chords}
+        chords={chordsWithPlayState}
+        phrases={phraseBoundaries || []}
+        songContext={metadata ? { title: metadata.title, composer: metadata.composer, sourceUrl: metadata.sourceUrl } : undefined}
         currentKey={currentKey}
         currentMode={currentMode}
+        beatsPerMeasure={beatsPerMeasure}
         zoom={zoom}
         isPlaying={isPlaying}
         playheadPosition={playheadPosition}
+        totalBeats={totalBeats}
         selectedChordIds={selectedChordIds}
-        showConnectionLines={showConnectionLines}
-        onUpdateChordPosition={updateChordPosition}
-        onAddChord={addChord}
+        onUpdateChordPosition={handleUpdateChordPosition}
+        onAddChord={handleAddChord}
         onSelectChord={handleSelectChord}
-        onSelectMultiple={handleSelectMultiple}
-        onClearSelection={clearSelection}
+        onSelectChords={handleSelectChords}
+        onToggleChordSelection={handleToggleChordSelection}
+        onSelectRange={handleSelectRange}
+        onClearSelection={handleClearSelection}
+        onSelectAll={handleSelectAll}
+        onDeleteSelected={handleDeleteSelected}
+        onDuplicateSelected={handleDuplicateSelected}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onZoomChange={setZoom}
+        onShowHelp={() => setShowShortcuts(true)}
+        onTogglePlay={togglePlay}
+        onTempoChange={(delta) => setTempo(Math.max(60, Math.min(220, tempo + delta)))}
       />
 
-      {/* Modals */}
-      <Suspense fallback={<div />}>
-        <AnalyzeModal />
-        <RefineThisModal />
-        <MyProgressionsModal />
-        <KeyboardShortcutsGuide />
-      </Suspense>
+      <button className="help-button" onClick={() => setShowHelp(!showHelp)} title="Help">
+        ?
+      </button>
 
-      {/* Build From Bones Panel */}
-      <Suspense fallback={<div />}>
-        <BuildFromBonesPanel />
-      </Suspense>
+      {showHelp && (
+        <div className="help-panel">
+          <div className="help-panel-header">
+            <h3>Help</h3>
+            <button onClick={() => setShowHelp(false)} className="help-close">×</button>
+          </div>
 
-      {/* Welcome Tutorial */}
-      <Suspense fallback={<div />}>
-        <WelcomeTutorial />
-      </Suspense>
+          <h4>Chord Shapes</h4>
+          <div className="legend-grid">
+            <div className="legend-item"><div className="legend-shape circle gold" /><span>I - Tonic</span></div>
+            <div className="legend-item"><div className="legend-shape rounded-square sage" /><span>ii - Supertonic</span></div>
+            <div className="legend-item"><div className="legend-shape triangle rose" /><span>iii - Mediant</span></div>
+            <div className="legend-item"><div className="legend-shape square blue" /><span>IV - Subdominant</span></div>
+            <div className="legend-item"><div className="legend-shape pentagon terracotta" /><span>V - Dominant</span></div>
+            <div className="legend-item"><div className="legend-shape circle purple" /><span>vi - Submediant</span></div>
+            <div className="legend-item"><div className="legend-shape pentagon gray" /><span>vii° - Leading</span></div>
+          </div>
+
+          <h4>Shortcuts</h4>
+          <div className="shortcuts-grid">
+            <div><kbd>Click</kbd> Select</div>
+            <div><kbd>⌘+Click</kbd> Multi-select</div>
+            <div><kbd>⌘+A</kbd> Select all</div>
+            <div><kbd>Delete</kbd> Delete</div>
+            <div><kbd>⌘+D</kbd> Duplicate</div>
+            <div><kbd>⌘+Z</kbd> Undo</div>
+            <div><kbd>Escape</kbd> Deselect</div>
+          </div>
+        </div>
+      )}
+
+      <DeleteConfirmation
+        isOpen={showDeleteConfirm}
+        chordCount={selectedChordIds.length}
+        onConfirm={performDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      <KeyboardShortcutsGuide
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
+
+      <TempoDial
+        tempo={tempo}
+        onTempoChange={setTempo}
+      />
+
+      <AnalyzeModal />
+      <WhyThisPanel />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

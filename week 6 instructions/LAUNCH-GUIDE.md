@@ -1,4 +1,4 @@
-# Launch Guide - Going Live with Harmonic Canvas
+# Launch Guide - Going Live with Neume
 
 **Step-by-step guide to launching your product successfully**
 
@@ -68,7 +68,7 @@
 
 **Sample Post:**
 ```
-Excited to launch Harmonic Canvas! 🎵
+Excited to launch Neume! 🎵
 
 A visual tool for exploring chord progressions with AI.
 - Analyze real music

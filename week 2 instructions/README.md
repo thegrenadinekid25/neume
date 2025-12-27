@@ -1,6 +1,6 @@
 # Week 2 Prompt Package - Core Interactions
 
-**Harmonic Canvas Development - Phase 1, Week 2**
+**Neume Development - Phase 1, Week 2**
 
 Transform the static visual foundation from Week 1 into a fully interactive chord progression builder.
 
@@ -317,9 +317,9 @@ If you haven't completed Week 1, go back and execute those 8 prompts first:
 - Integration demo
 
 ### Documentation
-- Main spec: `harmonic-canvas-final-spec.md`
-- Research: `harmonic-canvas-open-source-research.md`
-- Project management: `harmonic-canvas-pm-prompt.md`
+- Main spec: `neume-final-spec.md`
+- Research: `neume-open-source-research.md`
+- Project management: `neume-pm-prompt.md`
 
 ---
 
@@ -329,4 +329,4 @@ If you haven't completed Week 1, go back and execute those 8 prompts first:
 2. Start with Prompt 001
 3. Build something extraordinary
 
-**Let's make Harmonic Canvas fully interactive!** 🎵🎹✨
+**Let's make Neume fully interactive!** 🎵🎹✨

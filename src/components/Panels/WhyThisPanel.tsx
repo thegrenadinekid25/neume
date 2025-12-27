@@ -1,189 +1,313 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Chord } from '@types';
-import { getChordExplanation } from '@/services/api-service';
-import { ChordExplanation } from '@/types/explanation';
+import { useWhyThisStore, type ChordExplanation } from '@/store/why-this-store';
+import { getChordExplanation } from '@/services/explanation-service';
 import styles from './WhyThisPanel.module.css';
 
-interface WhyThisPanelProps {
-  chord: Chord;
-  previousChord: Chord | null;
-  nextChord: Chord | null;
-  onClose: () => void;
+/**
+ * Get display name for a chord based on scale degree and quality
+ */
+function getChordDisplayName(scaleDegree: number, quality: string): string {
+  const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+  const numeral = romanNumerals[scaleDegree - 1] || 'I';
+
+  // Minor quality uses lowercase
+  if (quality === 'minor' || quality === 'min7') {
+    return numeral.toLowerCase();
+  }
+
+  // Add quality suffixes
+  if (quality === 'dom7') return `${numeral}7`;
+  if (quality === 'maj7') return `${numeral}maj7`;
+  if (quality === 'min7') return `${numeral.toLowerCase()}7`;
+  if (quality === 'diminished') return `${numeral.toLowerCase()}°`;
+  if (quality === 'augmented') return `${numeral}+`;
+
+  return numeral;
 }
 
-export const WhyThisPanel: React.FC<WhyThisPanelProps> = ({
-  chord,
-  previousChord,
-  nextChord,
-  onClose,
-}) => {
-  const [explanation, setExplanation] = useState<ChordExplanation | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+/**
+ * WhyThisPanel Component
+ * Side panel that explains chord choices with AI insights, evolution chains, and playback controls
+ * Slides in from the right side with semi-transparent overlay
+ */
+export const WhyThisPanel: React.FC = () => {
+  const {
+    isOpen,
+    selectedChord,
+    previousChord,
+    nextChord,
+    fullProgression,
+    songContext,
+    explanation,
+    isLoading,
+    error,
+    isPlayingIsolated,
+    isPlayingInProgression,
+    isPlayingEvolution,
+    closePanel,
+    setExplanation,
+    setLoading,
+    setError,
+    setPlayingIsolated,
+    setPlayingInProgression,
+    setPlayingEvolution,
+  } = useWhyThisStore();
 
+  // Fetch explanation when panel opens with a new chord
   useEffect(() => {
-    loadExplanation();
-  }, [chord.id]);
-
-  const loadExplanation = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const result = await getChordExplanation(
-        chord,
-        previousChord,
-        nextChord,
-        chord.key,
-        chord.mode
-      );
-
-      setExplanation(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load explanation');
-    } finally {
-      setIsLoading(false);
+    if (isOpen && selectedChord && !explanation && !error) {
+      const fetchExplanation = async () => {
+        setLoading(true);
+        try {
+          const result = await getChordExplanation(
+            selectedChord,
+            previousChord || undefined,
+            nextChord || undefined,
+            fullProgression,
+            songContext || undefined
+          );
+          setExplanation(result);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Failed to get explanation');
+        }
+      };
+      fetchExplanation();
     }
-  };
+  }, [isOpen, selectedChord, explanation, error, previousChord, nextChord, fullProgression, songContext, setExplanation, setLoading, setError]);
 
-  const getRomanNumeral = () => {
-    const numerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
-    let numeral = numerals[chord.scaleDegree - 1];
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    if (!isOpen) return;
 
-    if (chord.quality.includes('minor') || chord.quality.includes('dim')) {
-      numeral = numeral.toLowerCase();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closePanel();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, closePanel]);
+
+  // Retry handler
+  const handleRetry = useCallback(() => {
+    if (selectedChord) {
+      setError(null);
+      setLoading(true);
+      getChordExplanation(
+        selectedChord,
+        previousChord || undefined,
+        nextChord || undefined,
+        fullProgression,
+        songContext || undefined
+      )
+        .then(setExplanation)
+        .catch((err) => setError(err instanceof Error ? err.message : 'Failed to get explanation'));
     }
+  }, [selectedChord, previousChord, nextChord, fullProgression, songContext, setExplanation, setLoading, setError]);
 
-    if (chord.quality === 'diminished') {
-      numeral += '°';
-    } else if (chord.quality === 'augmented') {
-      numeral += '+';
-    } else if (chord.quality === 'dom7') {
-      numeral += '7';
-    } else if (chord.quality === 'maj7') {
-      numeral += 'maj7';
-    }
+  // Playback handlers (placeholder - will integrate with audio engine)
+  const handlePlayIsolated = useCallback(() => {
+    setPlayingIsolated(!isPlayingIsolated);
+    // TODO: Integrate with audio engine
+  }, [isPlayingIsolated, setPlayingIsolated]);
 
-    return numeral;
-  };
+  const handlePlayInProgression = useCallback(() => {
+    setPlayingInProgression(!isPlayingInProgression);
+    // TODO: Integrate with audio engine
+  }, [isPlayingInProgression, setPlayingInProgression]);
 
-  return (
+  const handlePlayEvolution = useCallback(() => {
+    setPlayingEvolution(!isPlayingEvolution);
+    // TODO: Integrate with audio engine
+  }, [isPlayingEvolution, setPlayingEvolution]);
+
+  // Get chord display name
+  const chordName = selectedChord
+    ? getChordDisplayName(selectedChord.scaleDegree, selectedChord.quality)
+    : '';
+
+  const content = (
     <AnimatePresence>
-      <motion.div
-        className={styles.panel}
-        initial={{ x: '100%' }}
-        animate={{ x: 0 }}
-        exit={{ x: '100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-      >
-        {/* Header */}
-        <div className={styles.header}>
-          <h2 className={styles.title}>Why This Chord?</h2>
-          <button className={styles.closeButton} onClick={onClose}>
-            ×
-          </button>
-        </div>
+      {isOpen && (
+        <>
+          {/* Overlay backdrop */}
+          <motion.div
+            className={styles.overlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={closePanel}
+            aria-hidden="true"
+          />
 
-        {/* Chord Info */}
-        <div className={styles.chordInfo}>
-          <div className={styles.romanNumeral}>{getRomanNumeral()}</div>
-          <div className={styles.chordDetails}>
-            <div>{chord.quality} chord</div>
-            <div className={styles.chordKey}>
-              in {chord.key} {chord.mode}
-            </div>
-          </div>
-        </div>
-
-        {/* Explanation */}
-        <div className={styles.explanation}>
-          {isLoading ? (
-            <div className={styles.loading}>
-              <div className={styles.spinner} />
-              <p>Generating explanation...</p>
-            </div>
-          ) : error ? (
-            <div className={styles.error}>
-              <p>{error}</p>
-              <button className={styles.retryButton} onClick={loadExplanation}>
-                Retry
+          {/* Panel */}
+          <motion.div
+            className={styles.panel}
+            initial={{ x: '100%', opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: '100%', opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            role="complementary"
+            aria-modal="false"
+            aria-labelledby="why-this-title"
+          >
+            {/* Header */}
+            <div className={styles.header}>
+              <div className={styles.headerContent}>
+                <h2 id="why-this-title" className={styles.title}>
+                  Why This {chordName}?
+                </h2>
+                <p className={styles.subtitle}>
+                  Understanding this chord choice
+                </p>
+              </div>
+              <button
+                className={styles.closeButton}
+                onClick={closePanel}
+                aria-label="Close panel"
+                title="Close (Esc)"
+              >
+                ✕
               </button>
             </div>
-          ) : explanation ? (
-            <>
-              <div className={styles.section}>
-                <h3>Why This Chord?</h3>
-                <p>{explanation.context}</p>
-              </div>
 
-              {explanation.evolutionSteps && explanation.evolutionSteps.length > 0 && (
-                <div className={styles.section}>
-                  <h3>Evolution Chain</h3>
-                  <div className={styles.evolutionSteps}>
-                    {explanation.evolutionSteps.map((step, index) => (
-                      <div key={index} className={styles.evolutionStep}>
-                        <div className={styles.stepNumber}>{index + 1}</div>
-                        <div className={styles.stepContent}>
-                          <div className={styles.stepChord}>{step.chord}</div>
-                          <div className={styles.stepDescription}>{step.description}</div>
-                        </div>
+            {/* Main content */}
+            <div className={styles.content}>
+              {/* Loading State */}
+              {isLoading && (
+                <div className={styles.loadingContainer}>
+                  <div className={styles.spinner} />
+                  <p className={styles.loadingText}>
+                    Analyzing chord choice...
+                  </p>
+                </div>
+              )}
+
+              {/* Error State */}
+              {error && !isLoading && (
+                <div className={styles.errorContainer}>
+                  <div className={styles.errorIcon}>⚠</div>
+                  <p className={styles.errorMessage}>{error}</p>
+                  <button
+                    className={styles.retryButton}
+                    onClick={handleRetry}
+                  >
+                    Try Again
+                  </button>
+                </div>
+              )}
+
+              {/* Content State */}
+              {!isLoading && !error && explanation && (
+                <>
+                  {/* Contextual Explanation Section */}
+                  <section className={styles.section}>
+                    <h3 className={styles.sectionTitle}>Context</h3>
+                    <div className={styles.explanationBox}>
+                      <p className={styles.explanationText}>
+                        {explanation.contextual}
+                      </p>
+                    </div>
+                  </section>
+
+                  {/* Technical Analysis Section */}
+                  {explanation.technical && (
+                    <section className={styles.section}>
+                      <h3 className={styles.sectionTitle}>Technical Analysis</h3>
+                      <div className={styles.explanationBox}>
+                        <p className={styles.explanationText}>
+                          {explanation.technical}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                </div>
+                    </section>
+                  )}
+
+                  {/* Historical Context Section */}
+                  {explanation.historical && (
+                    <section className={styles.section}>
+                      <h3 className={styles.sectionTitle}>Historical Context</h3>
+                      <div className={styles.explanationBox}>
+                        <p className={styles.explanationText}>
+                          {explanation.historical}
+                        </p>
+                      </div>
+                    </section>
+                  )}
+
+                  {/* Evolution Chain Section */}
+                  {explanation.evolutionSteps && explanation.evolutionSteps.length > 0 && (
+                    <section className={styles.section}>
+                      <h3 className={styles.sectionTitle}>Evolution Chain</h3>
+                      <div className={styles.evolutionChain}>
+                        {explanation.evolutionSteps.map((step: ChordExplanation['evolutionSteps'][0], index: number) => (
+                          <div key={index} className={styles.evolutionStep}>
+                            <div className={styles.stepNumber}>{index + 1}</div>
+                            <div className={styles.stepContent}>
+                              <div className={styles.stepChord}>
+                                {step.name}
+                              </div>
+                              <div className={styles.stepDescription}>
+                                {step.description}
+                              </div>
+                            </div>
+                            {index < explanation.evolutionSteps.length - 1 && (
+                              <div className={styles.stepArrow}>→</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* Play Controls Section */}
+                  <section className={styles.section}>
+                    <h3 className={styles.sectionTitle}>Listen</h3>
+                    <div className={styles.playControls}>
+                      <button
+                        className={`${styles.playButton} ${styles.primary} ${isPlayingIsolated ? styles.playing : ''}`}
+                        onClick={handlePlayIsolated}
+                        title="Play this chord in isolation"
+                      >
+                        <span className={styles.playIcon}>{isPlayingIsolated ? '■' : '▶'}</span>
+                        Play Isolated
+                      </button>
+                      <button
+                        className={`${styles.playButton} ${styles.secondary} ${isPlayingInProgression ? styles.playing : ''}`}
+                        onClick={handlePlayInProgression}
+                        title="Play this chord in the progression context"
+                      >
+                        <span className={styles.playIcon}>{isPlayingInProgression ? '■' : '▶'}</span>
+                        In Progression
+                      </button>
+                      <button
+                        className={`${styles.playButton} ${styles.secondary} ${isPlayingEvolution ? styles.playing : ''}`}
+                        onClick={handlePlayEvolution}
+                        title="Play the evolution chain"
+                      >
+                        <span className={styles.playIcon}>{isPlayingEvolution ? '■' : '▶'}</span>
+                        Evolution
+                      </button>
+                    </div>
+                  </section>
+                </>
               )}
 
-              {explanation.emotion && (
-                <div className={styles.section}>
-                  <h3>Emotional Effect</h3>
-                  <p>{explanation.emotion}</p>
-                </div>
-              )}
-
-              {explanation.examples && explanation.examples.length > 0 && (
-                <div className={styles.section}>
-                  <h3>Used By</h3>
-                  <div className={styles.examples}>
-                    {explanation.examples.map((example, index) => (
-                      <span key={index} className={styles.exampleTag}>
-                        {example}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : null}
-        </div>
-
-        {/* Context */}
-        {(previousChord || nextChord) && (
-          <div className={styles.context}>
-            <h3>Context</h3>
-            <div className={styles.contextChords}>
-              {previousChord && (
-                <div className={styles.contextChord}>
-                  <span className={styles.contextLabel}>Previous:</span>
-                  <span className={styles.contextValue}>
-                    {['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'][
-                      previousChord.scaleDegree - 1
-                    ]}
-                  </span>
-                </div>
-              )}
-              {nextChord && (
-                <div className={styles.contextChord}>
-                  <span className={styles.contextLabel}>Next:</span>
-                  <span className={styles.contextValue}>
-                    {['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'][nextChord.scaleDegree - 1]}
-                  </span>
+              {/* Empty State */}
+              {!isLoading && !error && !explanation && (
+                <div className={styles.emptyState}>
+                  <p>Select a chord and click "Why This?" to see an explanation.</p>
                 </div>
               )}
             </div>
-          </div>
-        )}
-      </motion.div>
+          </motion.div>
+        </>
+      )}
     </AnimatePresence>
   );
+
+  return createPortal(content, document.body);
 };

@@ -6,7 +6,7 @@
 
 ## Objective
 
-Create a modal interface that allows users to upload music (YouTube URLs or audio files) for AI-powered chord progression extraction. This is the entry point for one of Harmonic Canvas's most powerful features: learning from real pieces.
+Create a modal interface that allows users to upload music (YouTube URLs or audio files) for AI-powered chord progression extraction. This is the entry point for one of Neume's most powerful features: learning from real pieces.
 
 ---
 

@@ -6,7 +6,7 @@
 
 ## Overview
 
-Week 3 is complete when Harmonic Canvas produces professional-quality choral sound with perfect timing and visual synchronization. Every criterion below must pass before moving to Week 4.
+Week 3 is complete when Neume produces professional-quality choral sound with perfect timing and visual synchronization. Every criterion below must pass before moving to Week 4.
 
 **Philosophy:** If it doesn't sound professional, it's not done.
 

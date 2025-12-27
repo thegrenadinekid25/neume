@@ -26,7 +26,7 @@ export interface Toast {
   id: string;
   type: ToastType;
   message: string;
-  duration?: number; // ms, undefined = persistent
+  duration?: number;
 }
 
 /**
@@ -35,30 +35,23 @@ export interface Toast {
 export interface ContextMenuItem {
   id: string;
   label: string;
-  icon?: React.ReactNode;
+  icon?: string;
   action: () => void;
   disabled?: boolean;
-  divider?: boolean; // Show divider after this item
+  divider?: boolean;
 }
 
 /**
- * User settings (from spec)
+ * User settings
  */
 export interface UserSettings {
-  // Audio
-  masterVolume: number; // 0.0-1.0
-  tempo: number; // BPM
-
-  // Display
+  masterVolume: number;
+  tempo: number;
   showConnectionLines: boolean;
   gridSnapping: boolean;
-  snapResolution: number; // Fraction of beat (0.25 = sixteenth)
-
-  // Interface
+  snapResolution: number;
   hasSeenWelcome: boolean;
   keyboardShortcutsEnabled: boolean;
-
-  // Preferences
   defaultKey: string;
   defaultMode: 'major' | 'minor';
   defaultTempo: number;

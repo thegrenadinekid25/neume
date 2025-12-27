@@ -1,10 +1,10 @@
 # Prompt 002: Install Dependencies - Core Libraries
 
 ## Objective
-Install all core dependencies required for Harmonic Canvas development, based on the open-source research document. This includes music theory, audio synthesis, UI libraries, and development tools.
+Install all core dependencies required for Neume development, based on the open-source research document. This includes music theory, audio synthesis, UI libraries, and development tools.
 
 ## Context
-Following the project setup (Prompt 001), we now need to install the battle-tested open-source libraries that will power Harmonic Canvas. These libraries were carefully researched and selected for their quality, licensing, and fit with our requirements.
+Following the project setup (Prompt 001), we now need to install the battle-tested open-source libraries that will power Neume. These libraries were carefully researched and selected for their quality, licensing, and fit with our requirements.
 
 **Dependencies:** Requires Prompt 001 (Project Setup) to be complete
 **Related Components:** All future components will use these libraries

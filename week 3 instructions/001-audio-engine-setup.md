@@ -1,7 +1,7 @@
 # Prompt 001: Audio Engine Setup
 
 ## Objective
-Set up the audio engine using Tone.js, creating a warm, choral-focused sound with proper signal chain (synth → reverb → compression → output). This is the foundation for all playback in Harmonic Canvas.
+Set up the audio engine using Tone.js, creating a warm, choral-focused sound with proper signal chain (synth → reverb → compression → output). This is the foundation for all playback in Neume.
 
 ## Context
 Users can now build chord progressions visually (Weeks 1-2), but can't hear them. Week 3 adds audio capabilities, starting with the audio engine.

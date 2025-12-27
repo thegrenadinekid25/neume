@@ -163,4 +163,4 @@ Before Week 5:
 
 ---
 
-**Week 4 transforms Harmonic Canvas from a tool into a teacher. This feature set must be exceptional.**
+**Week 4 transforms Neume from a tool into a teacher. This feature set must be exceptional.**

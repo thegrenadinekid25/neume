@@ -8,61 +8,38 @@
 }
 
 .appHeader {
-  height: var(--header-height);
-  padding: 0 2rem;
-  background-color: var(--background-secondary);
-  border-bottom: 1px solid var(--border-light);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  padding: 2rem;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .appHeader h1 {
-  font-size: 20px;
-  margin: 0;
+  margin: 0 0 0.5rem 0;
+  font-size: 24px;
 }
 
 .appHeader p {
   margin: 0;
-  color: var(--text-secondary);
+  color: #666;
+}
+
+.appMain {
+  flex: 1;
+  padding: 2rem;
+}
+
+.analyzeButton {
+  padding: 8px 16px;
   font-size: 13px;
-}
-
-.controls {
-  height: var(--controls-height);
-  padding: 0 2rem;
-  background-color: var(--background-primary);
-  border-bottom: 1px solid var(--border-light);
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-}
-
-.controlGroup {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.controlGroup label {
-  font-size: 13px;
-  color: var(--text-primary);
   font-weight: 500;
-}
-
-.controlGroup button {
-  background-color: var(--background-secondary);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--border-radius-sm);
+  background: var(--primary-action, #4A90E2);
+  color: white;
+  border: none;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  transition: background 150ms ease;
 }
 
-.controlGroup button:hover:not(:disabled) {
-  background-color: var(--border-light);
-}
-
-.controlGroup button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.analyzeButton:hover {
+  background: #3a7bc8;
 }

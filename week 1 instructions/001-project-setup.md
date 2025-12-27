@@ -1,10 +1,10 @@
 # Prompt 001: Project Setup - Vite + React + TypeScript
 
 ## Objective
-Create a modern, production-ready React project with TypeScript using Vite as the build tool. This will serve as the foundation for the Harmonic Canvas application.
+Create a modern, production-ready React project with TypeScript using Vite as the build tool. This will serve as the foundation for the Neume application.
 
 ## Context
-This is the first step in building Harmonic Canvas, an interactive chord progression generator for classical choral composers. We need a fast, modern development environment with full TypeScript support and optimal developer experience.
+This is the first step in building Neume, an interactive chord progression generator for classical choral composers. We need a fast, modern development environment with full TypeScript support and optimal developer experience.
 
 **Related Components:** None yet - this is the foundation
 **Current State:** Starting from scratch
@@ -35,7 +35,7 @@ This is the first step in building Harmonic Canvas, an interactive chord progres
 ## Code Structure
 
 ```
-harmonic-canvas/
+neume/
 ├── public/
 │   └── (empty for now - will add assets later)
 ├── src/
@@ -173,7 +173,7 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Harmonic Canvas</h1>
+        <h1>Neume</h1>
         <p>Foundation Setup Complete</p>
       </header>
       <main className="app-main">
@@ -273,7 +273,7 @@ dist-ssr
 ## README.md
 
 ```markdown
-# Harmonic Canvas
+# Neume
 
 An interactive chord progression generator for classical choral composers.
 
@@ -315,10 +315,10 @@ Week 1: Foundation - IN PROGRESS
 
 ```bash
 # Create project
-npm create vite@latest harmonic-canvas -- --template react-ts
+npm create vite@latest neume -- --template react-ts
 
 # Navigate to project
-cd harmonic-canvas
+cd neume
 
 # Install ESLint dependencies
 npm install -D eslint @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint-plugin-react-hooks eslint-plugin-react-refresh
@@ -357,7 +357,7 @@ After setup, verify:
    ```bash
    npm run dev
    # Should open browser at http://localhost:3000
-   # Should show "Harmonic Canvas" header
+   # Should show "Neume" header
    ```
 
 2. **Hot reload works:**

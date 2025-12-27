@@ -1,0 +1,10 @@
+.draggableChord {
+  touch-action: none;
+  user-select: none;
+}
+
+.draggableChord:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 4px;
+  border-radius: var(--border-radius-md);
+}

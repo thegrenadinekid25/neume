@@ -338,4 +338,4 @@ Before Week 6:
 
 ---
 
-**This is where Harmonic Canvas becomes a complete, intelligent composition partner. Make it count!** 🎵🤖✨
+**This is where Neume becomes a complete, intelligent composition partner. Make it count!** 🎵🤖✨

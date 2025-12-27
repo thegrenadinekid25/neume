@@ -1,9 +1,9 @@
 .timelineRuler {
   position: relative;
   height: 30px;
+  width: 100%;
   background-color: var(--background-secondary);
   border-bottom: 1px solid var(--border-light);
-  overflow: hidden;
 }
 
 .measureMarker {

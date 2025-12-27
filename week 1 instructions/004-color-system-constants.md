@@ -1,7 +1,7 @@
 # Prompt 004: Color System Constants
 
 ## Objective
-Create a comprehensive color system with all colors from the design specification, organized by function (scale degrees, key backgrounds, UI chrome, etc.). This establishes the complete visual palette for Harmonic Canvas.
+Create a comprehensive color system with all colors from the design specification, organized by function (scale degrees, key backgrounds, UI chrome, etc.). This establishes the complete visual palette for Neume.
 
 ## Context
 The spec defines a sophisticated color system with scale degree colors (different for major/minor), key-specific backgrounds, chromatic chord indicators, and UI chrome colors. All components will reference these constants for consistent visual design.
@@ -39,7 +39,7 @@ The spec defines a sophisticated color system with scale degree colors (differen
 
 ```typescript
 /**
- * Color System for Harmonic Canvas
+ * Color System for Neume
  * All values from the design specification
  */
 
@@ -362,7 +362,7 @@ Add CSS custom properties for use in stylesheets:
 
 ```css
 /**
- * CSS Variables for Harmonic Canvas
+ * CSS Variables for Neume
  * Colors from TypeScript constants exported as CSS custom properties
  */
 

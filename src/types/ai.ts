@@ -30,40 +30,29 @@ export interface ProposedChange {
 }
 
 /**
- * AI suggestion object (from spec)
+ * AI suggestion object
  */
 export interface AISuggestion {
   id: string;
-
-  // Original Request
-  userIntent: string; // e.g., "more ethereal"
-  selectedChords: string[]; // Chord IDs
-
-  // Suggestion Details
+  userIntent: string;
+  selectedChords: string[];
   technique: SuggestionTechnique;
-  targetChord: string; // Chord ID to modify
+  targetChord: string;
   proposedChange: ProposedChange;
-
-  // Explanation
-  rationale: string; // "The added 9th creates shimmer..."
-  examples: string[]; // ["Lauridsen", "Whitacre"]
+  rationale: string;
+  examples: string[];
   difficulty: SuggestionDifficulty;
-
-  // Ranking
-  relevanceScore: number; // 0-100
-  impactScore: number; // 0-100 (how much it changes sound)
+  relevanceScore: number;
+  impactScore: number;
 }
 
 /**
  * Chord explanation (for "Why This?" feature)
  */
 export interface ChordExplanation {
-  // Context
-  contextual: string; // Why this chord here?
-  technical: string; // What is it doing?
-  historical: string; // Who else uses this?
-
-  // Evolution chain
+  contextual: string;
+  technical: string;
+  historical: string;
   evolutionSteps: {
     name: string;
     description: string;
@@ -81,5 +70,5 @@ export interface AnalysisResult {
   mode: 'major' | 'minor';
   tempo: number;
   chords: Chord[];
-  confidence: number; // 0-1
+  confidence: number;
 }

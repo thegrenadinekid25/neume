@@ -1,8 +1,8 @@
 # Week 1 Execution Guide
 
-**Welcome to Harmonic Canvas development!** 🎵
+**Welcome to Neume development!** 🎵
 
-This guide will walk you through executing the 8 Week 1 prompts in order. By the end of Week 1, you'll have a beautiful, functional visual foundation for Harmonic Canvas.
+This guide will walk you through executing the 8 Week 1 prompts in order. By the end of Week 1, you'll have a beautiful, functional visual foundation for Neume.
 
 ---
 
@@ -64,7 +64,7 @@ Each prompt is a **complete, self-contained instruction** that you paste into a 
 - All dependencies installed
 - No TypeScript errors
 
-**Checkpoint:** Run `npm run dev` → See "Harmonic Canvas" header
+**Checkpoint:** Run `npm run dev` → See "Neume" header
 
 ---
 
@@ -508,6 +508,6 @@ You'll know Week 1 is complete when:
 
 You're ready to start. Open the first prompt (001-project-setup.md), start a new Claude conversation, and paste it in.
 
-**Remember:** This is a marathon, not a sprint. Take your time, test thoroughly, and enjoy watching Harmonic Canvas come to life!
+**Remember:** This is a marathon, not a sprint. Take your time, test thoroughly, and enjoy watching Neume come to life!
 
 Good luck! 🎵✨

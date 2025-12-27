@@ -155,5 +155,5 @@ Week 6 is different from 1-5:
 ---
 
 🎯 **Goal:** Ship something you're proud of
-🚀 **Outcome:** Harmonic Canvas live and ready for users
+🚀 **Outcome:** Neume live and ready for users
 ✨ **Feeling:** Accomplished and excited to share

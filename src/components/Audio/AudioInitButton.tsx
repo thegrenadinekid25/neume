@@ -1,41 +1,56 @@
-import React, { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import styles from './AudioInitButton.module.css';
 
-export const AudioInitButton: React.FC = () => {
+export interface AudioInitButtonProps {
+  className?: string;
+}
+
+/**
+ * AudioInitButton - Button to initialize audio engine
+ * Shows loading state during initialization and success/error states
+ */
+export function AudioInitButton({ className = '' }: AudioInitButtonProps) {
   const { isReady, error, initialize } = useAudioEngine();
-  const [isInitializing, setIsInitializing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleClick = async () => {
-    setIsInitializing(true);
-    await initialize();
-    setIsInitializing(false);
-  };
+  const handleClick = useCallback(async () => {
+    if (isReady || isLoading) return;
 
-  if (isReady) {
-    return (
-      <div className={styles.status}>
-        <span className={styles.indicator}>🔊</span>
-        Audio Ready
-      </div>
-    );
-  }
+    setIsLoading(true);
+    try {
+      await initialize();
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isReady, isLoading, initialize]);
 
-  if (error) {
-    return (
-      <div className={styles.error}>
-        Audio failed to load. Please refresh.
-      </div>
-    );
+  // Determine button text and state
+  let buttonText = 'Enable Audio';
+  let buttonClassName = styles.buttonDefault;
+
+  if (isLoading) {
+    buttonText = 'Initializing...';
+    buttonClassName = styles.buttonLoading;
+  } else if (isReady) {
+    buttonText = 'Audio Ready';
+    buttonClassName = styles.buttonReady;
+  } else if (error) {
+    buttonText = 'Audio Error';
+    buttonClassName = styles.buttonError;
   }
 
   return (
-    <button
-      onClick={handleClick}
-      disabled={isInitializing}
-      className={styles.initButton}
-    >
-      {isInitializing ? 'Initializing Audio...' : 'Enable Audio'}
-    </button>
+    <div className={`${styles.container} ${className}`}>
+      <button
+        onClick={handleClick}
+        disabled={isReady || isLoading}
+        className={buttonClassName}
+        title={error ? error : undefined}
+      >
+        {buttonText}
+      </button>
+      {error && <div className={styles.errorMessage}>{error}</div>}
+    </div>
   );
-};
+}

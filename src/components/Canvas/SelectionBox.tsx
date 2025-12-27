@@ -13,6 +13,9 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({ start, current }) =>
   const width = Math.abs(current.x - start.x);
   const height = Math.abs(current.y - start.y);
 
+  // Don't render if selection is too small
+  if (width < 5 && height < 5) return null;
+
   return (
     <motion.div
       className={styles.selectionBox}

@@ -76,7 +76,7 @@ function App() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showWelcome, setShowWelcome] = useState(() => {
-    return !localStorage.getItem('harmonic-canvas-welcome-seen');
+    return !localStorage.getItem('neume-welcome-seen');
   });
 
   // Enable keyboard shortcuts
@@ -142,7 +142,7 @@ function App() {
 
   const handleWelcomeClose = () => {
     setShowWelcome(false);
-    localStorage.setItem('harmonic-canvas-welcome-seen', 'true');
+    localStorage.setItem('neume-welcome-seen', 'true');
   };
 
   const handleDelete = () => {
@@ -296,7 +296,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className={styles.center}>
-        <h1 className={styles.title}>Harmonic Canvas</h1>
+        <h1 className={styles.title}>Neume</h1>
       </div>
 
       <div className={styles.right}>

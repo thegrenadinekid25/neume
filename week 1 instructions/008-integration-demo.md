@@ -252,7 +252,7 @@ function App() {
     <div className="app">
       {/* Header */}
       <header className="app-header">
-        <h1>Harmonic Canvas - Week 1 Demo</h1>
+        <h1>Neume - Week 1 Demo</h1>
         <p>Foundation Complete: Visual System</p>
       </header>
 

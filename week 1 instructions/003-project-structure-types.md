@@ -1,7 +1,7 @@
 # Prompt 003: Project Structure & TypeScript Types
 
 ## Objective
-Establish the complete folder structure for Harmonic Canvas and define all core TypeScript interfaces and types. This creates the organizational foundation and type system that all future code will build upon.
+Establish the complete folder structure for Neume and define all core TypeScript interfaces and types. This creates the organizational foundation and type system that all future code will build upon.
 
 ## Context
 With the project initialized (Prompt 001) and dependencies installed (Prompt 002), we now need to create a logical folder structure and define the TypeScript types that will ensure type safety throughout the application.
@@ -568,7 +568,7 @@ export type {
 
 ```css
 /**
- * Global styles for Harmonic Canvas
+ * Global styles for Neume
  * Follows design system from spec
  */
 
@@ -730,7 +730,7 @@ a:hover {
 
 ```css
 /**
- * CSS Variables for Harmonic Canvas
+ * CSS Variables for Neume
  * Color values will be populated in Prompt 004 (Color System)
  */
 

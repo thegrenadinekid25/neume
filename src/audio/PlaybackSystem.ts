@@ -1,17 +1,15 @@
 import * as Tone from 'tone';
-import { Chord } from '@types';
+import type { Chord } from '@/types';
 import { audioEngine } from './AudioEngine';
 
-/**
- * PlaybackSystem manages chord progression playback
- */
 export class PlaybackSystem {
   private scheduledEvents: number[] = [];
-  private currentBeat: number = 0;
-  private totalBeats: number = 0;
+  private isPlaying: boolean = false;
   private onPlayheadUpdate?: (beat: number) => void;
   private onChordTrigger?: (chordId: string) => void;
-  private updateInterval?: number;
+  private onPlaybackEnd?: () => void;
+  private animationFrameId?: number;
+  private totalBeats: number = 16;
 
   constructor() {
     // Set default tempo
@@ -19,126 +17,117 @@ export class PlaybackSystem {
   }
 
   /**
+   * Convert beat number to Tone.js time format (bars:beats:sixteenths)
+   */
+  private beatToTransportTime(beat: number): string {
+    const bars = Math.floor(beat / 4);
+    const beats = beat % 4;
+    return `${bars}:${beats}:0`;
+  }
+
+  /**
    * Schedule a chord progression for playback
    */
   scheduleProgression(chords: Chord[]): void {
-    // Clear existing schedule
     this.clearSchedule();
-
+    // Release any currently playing notes
+    audioEngine.stopAll();
     if (chords.length === 0) return;
 
-    // Sort chords by startBeat
     const sortedChords = [...chords].sort((a, b) => a.startBeat - b.startBeat);
+    const synth = audioEngine.getSynth();
 
-    // Calculate total beats
-    const lastChord = sortedChords[sortedChords.length - 1];
-    this.totalBeats = lastChord.startBeat + lastChord.duration;
+    sortedChords.forEach((chord, index) => {
+      // Convert startBeat to Tone.js transport time
+      const startTime = this.beatToTransportTime(chord.startBeat);
 
-    // Schedule each chord
-    sortedChords.forEach(chord => {
-      // Convert startBeat to Tone.js time notation (measures:beats:sixteenths)
-      const measures = Math.floor(chord.startBeat / 4);
-      const beats = chord.startBeat % 4;
-      const beatTime = `${measures}:${beats}:0`;
+      // Calculate duration: until next chord starts, or use default for last chord
+      const nextChord = sortedChords[index + 1];
+      const durationBeats = nextChord
+        ? nextChord.startBeat - chord.startBeat
+        : chord.duration;
 
-      // Schedule chord attack
-      const eventId = Tone.Transport.schedule((_time) => {
-        // Get SATB voicing
+      // Schedule chord
+      const eventId = Tone.Transport.schedule((time) => {
         const notes = [
           chord.voices.bass,
           chord.voices.tenor,
           chord.voices.alto,
           chord.voices.soprano,
-        ];
+        ].filter(Boolean);
 
-        // Trigger chord in audio engine
-        audioEngine.playChord(notes, chord.duration);
+        if (notes.length > 0) {
+          // Calculate duration in seconds
+          const durationSeconds = (durationBeats / Tone.Transport.bpm.value) * 60;
 
-        // Notify visual system (on main thread)
-        if (this.onChordTrigger) {
-          requestAnimationFrame(() => {
-            this.onChordTrigger!(chord.id);
-          });
+          // Use triggerAttackRelease for clean attack and release
+          synth.triggerAttackRelease(notes, durationSeconds, time);
         }
-      }, beatTime);
+
+        // Notify visual system
+        if (this.onChordTrigger) {
+          this.onChordTrigger(chord.id);
+        }
+      }, startTime);
 
       this.scheduledEvents.push(eventId);
     });
-
-    // Schedule stop at end
-    const endMeasures = Math.floor(this.totalBeats / 4);
-    const endBeats = this.totalBeats % 4;
-    Tone.Transport.schedule(() => {
-      requestAnimationFrame(() => {
-        this.stop();
-      });
-    }, `${endMeasures}:${endBeats}:0`);
   }
 
   /**
    * Start playback
    */
   play(): void {
-    if (!audioEngine.ready) {
+    if (!audioEngine.getIsInitialized()) {
       console.warn('Audio engine not initialized');
       return;
     }
 
+    this.isPlaying = true;
     Tone.Transport.start();
-
-    // Start updating playhead
-    this.updateInterval = window.setInterval(() => {
-      // Get current position in beats
-      const position = Tone.Transport.position as string;
-      const parts = position.split(':');
-      const measures = parseInt(parts[0]);
-      const beats = parseInt(parts[1]);
-      this.currentBeat = measures * 4 + beats;
-
-      if (this.onPlayheadUpdate) {
-        this.onPlayheadUpdate(this.currentBeat);
-      }
-    }, 16); // ~60fps
+    this.startPlayheadAnimation();
   }
 
   /**
-   * Pause playback (can be resumed)
+   * Pause playback
    */
   pause(): void {
+    this.isPlaying = false;
     Tone.Transport.pause();
-    if (this.updateInterval) {
-      clearInterval(this.updateInterval);
-      this.updateInterval = undefined;
-    }
+    this.stopPlayheadAnimation();
   }
 
   /**
-   * Stop playback and reset to beginning
+   * Stop and reset to beginning
    */
   stop(): void {
+    this.isPlaying = false;
     Tone.Transport.stop();
     Tone.Transport.position = 0;
-    this.currentBeat = 0;
-
-    if (this.updateInterval) {
-      clearInterval(this.updateInterval);
-      this.updateInterval = undefined;
-    }
-
-    // Release all notes
     audioEngine.stopAll();
+    this.stopPlayheadAnimation();
 
-    // Update visuals
     if (this.onPlayheadUpdate) {
       this.onPlayheadUpdate(0);
     }
   }
 
   /**
-   * Set playback tempo (BPM)
+   * Toggle play/pause
+   */
+  togglePlay(): void {
+    if (this.isPlaying) {
+      this.pause();
+    } else {
+      this.play();
+    }
+  }
+
+  /**
+   * Set tempo in BPM
    */
   setTempo(bpm: number): void {
-    Tone.Transport.bpm.value = bpm;
+    Tone.Transport.bpm.value = Math.max(60, Math.min(220, bpm));
   }
 
   /**
@@ -149,38 +138,89 @@ export class PlaybackSystem {
   }
 
   /**
+   * Get current beat position (fractional for smooth animation)
+   */
+  getCurrentBeat(): number {
+    const position = Tone.Transport.position;
+    if (typeof position === 'string') {
+      // Position format: "bars:quarters:sixteenths"
+      const [bars, quarters, sixteenths] = position.split(':').map(Number);
+      // Convert to total beats (4 beats per bar)
+      return bars * 4 + quarters + (sixteenths / 4);
+    }
+    return 0;
+  }
+
+  /**
    * Check if playing
    */
-  get isPlaying(): boolean {
-    return Tone.Transport.state === 'started';
+  getIsPlaying(): boolean {
+    return this.isPlaying;
   }
 
   /**
-   * Check if paused
-   */
-  get isPaused(): boolean {
-    return Tone.Transport.state === 'paused';
-  }
-
-  /**
-   * Check if stopped
-   */
-  get isStopped(): boolean {
-    return Tone.Transport.state === 'stopped';
-  }
-
-  /**
-   * Set callback for playhead updates
+   * Set playhead update callback
    */
   setPlayheadCallback(callback: (beat: number) => void): void {
     this.onPlayheadUpdate = callback;
   }
 
   /**
-   * Set callback for chord triggers
+   * Set chord trigger callback
    */
   setChordTriggerCallback(callback: (chordId: string) => void): void {
     this.onChordTrigger = callback;
+  }
+
+  /**
+   * Set playback end callback
+   */
+  setPlaybackEndCallback(callback: () => void): void {
+    this.onPlaybackEnd = callback;
+  }
+
+  /**
+   * Set total beats for end detection
+   */
+  setTotalBeats(beats: number): void {
+    this.totalBeats = beats;
+  }
+
+  /**
+   * Start playhead animation loop
+   */
+  private startPlayheadAnimation(): void {
+    const animate = () => {
+      if (!this.isPlaying) return;
+
+      const currentBeat = this.getCurrentBeat();
+
+      // Check if we've reached the end of the timeline
+      if (currentBeat >= this.totalBeats) {
+        this.stop();
+        if (this.onPlaybackEnd) {
+          this.onPlaybackEnd();
+        }
+        return;
+      }
+
+      if (this.onPlayheadUpdate) {
+        this.onPlayheadUpdate(currentBeat);
+      }
+
+      this.animationFrameId = requestAnimationFrame(animate);
+    };
+    animate();
+  }
+
+  /**
+   * Stop playhead animation
+   */
+  private stopPlayheadAnimation(): void {
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = undefined;
+    }
   }
 
   /**
@@ -194,7 +234,7 @@ export class PlaybackSystem {
   }
 
   /**
-   * Clean up
+   * Dispose resources
    */
   dispose(): void {
     this.stop();

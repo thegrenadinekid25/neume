@@ -1,6 +1,5 @@
 /**
- * CSS Variables for Harmonic Canvas
- * Colors from TypeScript constants exported as CSS custom properties
+ * CSS Variables for Neume
  */
 
 :root {
@@ -54,7 +53,7 @@
   --selection-stroke: #4A90E2;
   --hover-stroke: #7F8C8D;
 
-  /* Animation easing (from spec) */
+  /* Animation easing */
   --ease-apple-smooth: cubic-bezier(0.4, 0.0, 0.2, 1);
   --ease-breathe: cubic-bezier(0.45, 0.05, 0.55, 0.95);
   --ease-smooth-in: cubic-bezier(0.0, 0.0, 0.2, 1);
@@ -70,29 +69,3 @@
   --controls-height: 60px;
   --panel-width: 380px;
 }
-
-/* Dynamic key backgrounds (applied via class) */
-.key-bg-C-major { background-color: #F5F1E8; }
-.key-bg-C-minor { background-color: #F5F1E8; }
-.key-bg-G-major { background-color: #E8F4F0; }
-.key-bg-G-minor { background-color: #E8F4F0; }
-.key-bg-D-major { background-color: #FFF9E5; }
-.key-bg-D-minor { background-color: #FFF9E5; }
-.key-bg-A-major { background-color: #F3EDF7; }
-.key-bg-A-minor { background-color: #F3EDF7; }
-.key-bg-E-major { background-color: #FFF0F0; }
-.key-bg-E-minor { background-color: #FFF0F0; }
-.key-bg-B-major { background-color: #E8F6F8; }
-.key-bg-B-minor { background-color: #E8F6F8; }
-.key-bg-Fs-major { background-color: #EEF4E8; }
-.key-bg-Fs-minor { background-color: #EEF4E8; }
-.key-bg-Db-major { background-color: #FFEEE0; }
-.key-bg-Db-minor { background-color: #FFEEE0; }
-.key-bg-Ab-major { background-color: #EFF0F8; }
-.key-bg-Ab-minor { background-color: #EFF0F8; }
-.key-bg-Eb-major { background-color: #E8F5EC; }
-.key-bg-Eb-minor { background-color: #E8F5EC; }
-.key-bg-Bb-major { background-color: #FFE9E0; }
-.key-bg-Bb-minor { background-color: #FFE9E0; }
-.key-bg-F-major { background-color: #E5F2F8; }
-.key-bg-F-minor { background-color: #E5F2F8; }

@@ -1,7 +1,7 @@
 # Prompt 005: Delete & Keyboard Shortcuts
 
 ## Objective
-Implement delete functionality for removing chords, plus comprehensive keyboard shortcuts for common operations. This makes Harmonic Canvas efficient for power users and accessible via keyboard-only navigation.
+Implement delete functionality for removing chords, plus comprehensive keyboard shortcuts for common operations. This makes Neume efficient for power users and accessible via keyboard-only navigation.
 
 ## Context
 Users can now add, move, and select chords, but can't delete them. This prompt adds deletion and a complete keyboard shortcut system for efficient workflow.

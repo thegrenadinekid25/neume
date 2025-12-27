@@ -63,10 +63,10 @@ export type ChromaticType = 'borrowed' | 'secondary' | 'neapolitan' | 'aug6th';
  * SATB voicing
  */
 export interface Voices {
-  soprano: string; // e.g., "C5"
-  alto: string; // e.g., "E4"
-  tenor: string; // e.g., "G3"
-  bass: string; // e.g., "C3"
+  soprano: string;
+  alto: string;
+  tenor: string;
+  bass: string;
 }
 
 /**
@@ -83,46 +83,27 @@ export interface Position {
 export type ChordSource = 'user' | 'analyzed' | 'library';
 
 /**
- * Complete chord object (from spec)
+ * Complete chord object
  */
 export interface Chord {
-  // Identity
-  id: string; // UUID
-
-  // Musical Properties
+  id: string;
   scaleDegree: ScaleDegree;
   quality: ChordQuality;
-
-  // Extensions
   extensions: ChordExtensions;
-
-  // Key Context
   key: MusicalKey;
   mode: Mode;
-
-  // Chromatic
   isChromatic: boolean;
   chromaticType?: ChromaticType;
-
-  // Voicing (auto-generated)
   voices: Voices;
-
-  // Timeline Position
-  startBeat: number; // 0-indexed
-  duration: number; // In beats
-
-  // Visual
+  startBeat: number;
+  duration: number;
   position: Position;
-  size: number; // Base size in pixels
-
-  // State
+  size: number;
   selected: boolean;
   playing: boolean;
-
-  // Metadata
   source: ChordSource;
-  analyzedFrom?: string; // Piece name if from analysis
-  createdAt: string; // ISO timestamp
+  analyzedFrom?: string;
+  createdAt: string;
 }
 
 /**

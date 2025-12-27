@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Chord } from '@types';
-import { getScaleDegreeColor, CHROMATIC_INDICATORS, ANIMATION_COLORS } from '@/styles/colors';
-import { Tooltip } from '@/components/UI/Tooltip';
+import type { Chord } from '@/types';
+import { getScaleDegreeColor, CHROMATIC_INDICATORS, UI_COLORS } from '@/styles/colors';
+import { getChordBadgeText, hasChordModifications } from '@/utils/chord-helpers';
 import styles from './ChordShape.module.css';
 
 interface ChordShapeProps {
@@ -27,16 +27,22 @@ export const ChordShape: React.FC<ChordShapeProps> = React.memo(({
   const size = chord.size * zoom;
   const baseColor = getScaleDegreeColor(chord.scaleDegree, chord.mode);
 
-  // Get shape path based on scale degree
   const shapePath = useMemo(() => {
     return generateShapePath(chord.scaleDegree, size);
   }, [chord.scaleDegree, size]);
 
-  // Determine stroke color and width
-  const strokeColor = isSelected ? ANIMATION_COLORS.selectionStroke : 'none';
-  const strokeWidth = isSelected ? 3.5 : 2.5;
+  // vi (6) = dotted circle, vii° (7) = outlined pentagon
+  const isOutlinedShape = chord.scaleDegree === 6 || chord.scaleDegree === 7;
+  const isDottedShape = chord.scaleDegree === 6;
 
-  // Animation variants
+  // For outlined shapes: stroke with the color, no fill (or light fill)
+  // For filled shapes: fill with color, stroke only when selected
+  const fillColor = isOutlinedShape ? 'rgba(255,255,255,0.9)' : baseColor;
+  const defaultStrokeColor = isOutlinedShape ? baseColor : 'none';
+  const strokeColor = isSelected ? UI_COLORS.primaryAction : defaultStrokeColor;
+  const strokeWidth = isOutlinedShape ? 2.5 : (isSelected ? 3.5 : 2.5);
+  const strokeDasharray = isDottedShape ? '4,4' : 'none';
+
   const variants = {
     default: {
       scale: 1.0,
@@ -50,10 +56,6 @@ export const ChordShape: React.FC<ChordShapeProps> = React.memo(({
       scale: 1.03,
       filter: 'drop-shadow(0 4px 8px rgba(74,144,226,0.3))',
     },
-    dragging: {
-      scale: 1.15,
-      filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.25))',
-    },
     playing: {
       scale: [1.0, 1.12, 1.0],
       filter: [
@@ -62,9 +64,12 @@ export const ChordShape: React.FC<ChordShapeProps> = React.memo(({
         'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
       ],
     },
+    dragging: {
+      scale: 1.15,
+      filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.25))',
+    },
   };
 
-  // Determine current state
   const currentState = isDragging
     ? 'dragging'
     : isPlaying
@@ -74,31 +79,29 @@ export const ChordShape: React.FC<ChordShapeProps> = React.memo(({
     : 'default';
 
   return (
-    <Tooltip content="Drag to move • Alt+Drag to connect" delay={500}>
-      <motion.div
-        className={styles.chordShapeContainer}
-        initial="default"
-        animate={currentState}
-        whileHover={isDragging ? undefined : "hover"}
-        variants={variants}
-        transition={{
-          duration: isPlaying ? chord.duration : 0.3,
-          ease: isPlaying ? [0.45, 0.05, 0.55, 0.95] : [0.4, 0.0, 0.2, 1],
-          repeat: isPlaying ? Infinity : 0,
-        }}
-        onClick={onSelect}
-        onMouseEnter={onHover}
-        role="button"
-        aria-label={`${chord.quality} chord on scale degree ${chord.scaleDegree}`}
-        tabIndex={0}
-      >
+    <motion.div
+      className={styles.chordShapeContainer}
+      initial="default"
+      animate={currentState}
+      whileHover="hover"
+      variants={variants}
+      transition={{
+        duration: isPlaying ? 0.6 : 0.3,
+        ease: isPlaying ? [0.45, 0.05, 0.55, 0.95] : [0.4, 0.0, 0.2, 1],
+        repeat: isPlaying ? Infinity : 0,
+      }}
+      onClick={onSelect}
+      onMouseEnter={onHover}
+      role="button"
+      aria-label={`${chord.quality} chord on scale degree ${chord.scaleDegree}`}
+      tabIndex={0}
+    >
       <svg
         width={size}
         height={size}
         viewBox={`0 0 ${size} ${size}`}
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Chromatic shimmer (if applicable) */}
         {chord.isChromatic && (
           <defs>
             <linearGradient id={`shimmer-${chord.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -108,16 +111,15 @@ export const ChordShape: React.FC<ChordShapeProps> = React.memo(({
           </defs>
         )}
 
-        {/* Main shape */}
         <path
           d={shapePath}
-          fill={baseColor}
+          fill={fillColor}
           stroke={strokeColor}
           strokeWidth={strokeWidth}
+          strokeDasharray={strokeDasharray}
           className={styles.chordShape}
         />
 
-        {/* Chromatic overlay */}
         {chord.isChromatic && (
           <>
             <path
@@ -131,70 +133,66 @@ export const ChordShape: React.FC<ChordShapeProps> = React.memo(({
               stroke={CHROMATIC_INDICATORS.edgeGlow}
               strokeWidth={1}
               opacity={CHROMATIC_INDICATORS.glowOpacity}
-              filter={`blur(${CHROMATIC_INDICATORS.glowBlur}px)`}
             />
           </>
         )}
       </svg>
 
-      {/* Extension badges */}
-      {hasExtensions(chord.extensions) && (
-        <div className={styles.badge}>
-          {getBadgeText(chord.extensions)}
-        </div>
-      )}
-      </motion.div>
-    </Tooltip>
+      {hasChordModifications(chord.quality, chord.extensions) && (() => {
+        const badgeText = getChordBadgeText(chord.quality, chord.extensions);
+        if (!badgeText) return null;
+
+        const badgeColor = getScaleDegreeColor(chord.scaleDegree, chord.mode);
+        const borderColor = `rgba(${hexToRgb(badgeColor)}, 0.4)`;
+
+        return (
+          <motion.div
+            className={styles.badge}
+            style={{ borderColor }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            {badgeText}
+          </motion.div>
+        );
+      })()}
+    </motion.div>
   );
 });
 
 ChordShape.displayName = 'ChordShape';
 
-/**
- * Generate SVG path for each shape type with hand-drawn wobble
- */
 function generateShapePath(scaleDegree: number, size: number): string {
   const center = size / 2;
-  const radius = (size - 10) / 2; // Leave 5px margin
+  const radius = (size - 10) / 2;
 
   switch (scaleDegree) {
-    case 1: // I - Solid circle (Tonic)
+    case 1:
+    case 6:
       return generateWobblyCircle(center, center, radius);
-
-    case 2: // ii - Rounded square (Supertonic, Subdominant function)
+    case 2:
       return generateRoundedSquare(center, radius);
-
-    case 3: // iii - Triangle (Mediant)
+    case 3:
       return generateTriangle(center, radius);
-
-    case 4: // IV - Solid square (Subdominant)
+    case 4:
       return generateSquare(center, radius);
-
-    case 5: // V - Pentagon (Dominant)
+    case 5:
+    case 7:
       return generatePentagon(center, radius);
-
-    case 6: // vi - Dotted circle (Submediant, relative minor)
-      return generateWobblyCircle(center, center, radius);
-
-    case 7: // vii° - Outlined pentagon (Leading tone)
-      return generatePentagon(center, radius);
-
     default:
       return generateWobblyCircle(center, center, radius);
   }
 }
 
-/**
- * Generate wobbly circle path
- */
 function generateWobblyCircle(cx: number, cy: number, r: number): string {
-  const points = 32; // More points = smoother circle
+  const points = 32;
   const wobbleAmount = 0.5;
 
   let path = '';
   for (let i = 0; i <= points; i++) {
     const angle = (i / points) * 2 * Math.PI;
-    const wobbledR = r + (Math.random() - 0.5) * wobbleAmount;
+    const wobbledR = r + (Math.sin(i * 5) * wobbleAmount);
     const x = cx + Math.cos(angle) * wobbledR;
     const y = cy + Math.sin(angle) * wobbledR;
 
@@ -208,99 +206,65 @@ function generateWobblyCircle(cx: number, cy: number, r: number): string {
   return path + ' Z';
 }
 
-/**
- * Generate square with wobble
- */
 function generateSquare(center: number, radius: number): string {
   const wobble = 1.5;
   const half = radius * 0.8;
+  const w = Math.sin(Date.now() / 1000) * wobble * 0.1;
 
-  const points = [
-    [center - half + (Math.random() - 0.5) * wobble, center - half + (Math.random() - 0.5) * wobble],
-    [center + half + (Math.random() - 0.5) * wobble, center - half + (Math.random() - 0.5) * wobble],
-    [center + half + (Math.random() - 0.5) * wobble, center + half + (Math.random() - 0.5) * wobble],
-    [center - half + (Math.random() - 0.5) * wobble, center + half + (Math.random() - 0.5) * wobble],
-  ];
-
-  return `M ${points[0][0]} ${points[0][1]} L ${points[1][0]} ${points[1][1]} L ${points[2][0]} ${points[2][1]} L ${points[3][0]} ${points[3][1]} Z`;
+  return `M ${center - half + w} ${center - half - w} L ${center + half - w} ${center - half + w} L ${center + half + w} ${center + half - w} L ${center - half - w} ${center + half + w} Z`;
 }
 
-/**
- * Generate rounded square
- */
 function generateRoundedSquare(center: number, radius: number): string {
   const half = radius * 0.8;
   const cornerRadius = 8;
-  const wobble = 1.5;
 
-  const w = (Math.random() - 0.5) * wobble;
-
-  // Use SVG arc commands for rounded corners
   return `
-    M ${center - half + cornerRadius + w} ${center - half + w}
-    L ${center + half - cornerRadius + w} ${center - half + w}
-    Q ${center + half + w} ${center - half + w} ${center + half + w} ${center - half + cornerRadius + w}
-    L ${center + half + w} ${center + half - cornerRadius + w}
-    Q ${center + half + w} ${center + half + w} ${center + half - cornerRadius + w} ${center + half + w}
-    L ${center - half + cornerRadius + w} ${center + half + w}
-    Q ${center - half + w} ${center + half + w} ${center - half + w} ${center + half - cornerRadius + w}
-    L ${center - half + w} ${center - half + cornerRadius + w}
-    Q ${center - half + w} ${center - half + w} ${center - half + cornerRadius + w} ${center - half + w}
+    M ${center - half + cornerRadius} ${center - half}
+    L ${center + half - cornerRadius} ${center - half}
+    Q ${center + half} ${center - half} ${center + half} ${center - half + cornerRadius}
+    L ${center + half} ${center + half - cornerRadius}
+    Q ${center + half} ${center + half} ${center + half - cornerRadius} ${center + half}
+    L ${center - half + cornerRadius} ${center + half}
+    Q ${center - half} ${center + half} ${center - half} ${center + half - cornerRadius}
+    L ${center - half} ${center - half + cornerRadius}
+    Q ${center - half} ${center - half} ${center - half + cornerRadius} ${center - half}
     Z
   `;
 }
 
-/**
- * Generate triangle
- */
 function generateTriangle(center: number, radius: number): string {
-  const wobble = 1.5;
   const height = radius * 1.5;
 
-  const points = [
-    [center + (Math.random() - 0.5) * wobble, center - height * 0.6],
-    [center + radius * 0.9 + (Math.random() - 0.5) * wobble, center + height * 0.4],
-    [center - radius * 0.9 + (Math.random() - 0.5) * wobble, center + height * 0.4],
-  ];
-
-  return `M ${points[0][0]} ${points[0][1]} L ${points[1][0]} ${points[1][1]} L ${points[2][0]} ${points[2][1]} Z`;
+  return `M ${center} ${center - height * 0.6} L ${center + radius * 0.9} ${center + height * 0.4} L ${center - radius * 0.9} ${center + height * 0.4} Z`;
 }
 
-/**
- * Generate pentagon (pointing right for forward motion)
- */
 function generatePentagon(center: number, radius: number): string {
-  const wobble = 1.5;
   const points = [];
 
   for (let i = 0; i < 5; i++) {
-    const angle = (i / 5) * 2 * Math.PI - Math.PI / 2; // Start at top
-    const x = center + Math.cos(angle) * radius + (Math.random() - 0.5) * wobble;
-    const y = center + Math.sin(angle) * radius + (Math.random() - 0.5) * wobble;
+    const angle = (i / 5) * 2 * Math.PI - Math.PI / 2;
+    const x = center + Math.cos(angle) * radius;
+    const y = center + Math.sin(angle) * radius;
     points.push([x, y]);
   }
 
-  return `M ${points[0][0]} ${points[0][1]} ${points.map(p => `L ${p[0]} ${p[1]}`).join(' ')} Z`;
+  return `M ${points[0][0]} ${points[0][1]} ${points.slice(1).map(p => `L ${p[0]} ${p[1]}`).join(' ')} Z`;
 }
 
-/**
- * Check if chord has any extensions
- */
-function hasExtensions(extensions: Chord['extensions']): boolean {
-  return Object.values(extensions).some(val => val === true);
-}
+function hexToRgb(hex: string): string {
+  // Handle formats like #RRGGBB or rgb(r, g, b)
+  if (hex.startsWith('rgb')) {
+    return hex.replace(/[^\d,]/g, '');
+  }
 
-/**
- * Get badge text for extensions
- */
-function getBadgeText(extensions: Chord['extensions']): string {
-  if (extensions.add9) return '+9';
-  if (extensions.add11) return '+11';
-  if (extensions.add13) return '+13';
-  if (extensions.sus2) return 'sus2';
-  if (extensions.sus4) return 'sus4';
-  if (extensions.sharp11) return '#11';
-  if (extensions.flat9) return '♭9';
-  if (extensions.sharp9) return '#9';
-  return '7';
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) {
+    return '0, 0, 0'; // Fallback
+  }
+
+  const r = parseInt(result[1], 16);
+  const g = parseInt(result[2], 16);
+  const b = parseInt(result[3], 16);
+
+  return `${r}, ${g}, ${b}`;
 }

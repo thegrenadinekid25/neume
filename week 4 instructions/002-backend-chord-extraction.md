@@ -457,7 +457,7 @@ from services.youtube_downloader import YouTubeDownloader
 from services.chord_extractor import ChordExtractor
 from utils.roman_numeral import to_roman_numeral
 
-app = FastAPI(title="Harmonic Canvas Chord Extraction API")
+app = FastAPI(title="Neume Chord Extraction API")
 
 # CORS
 app.add_middleware(

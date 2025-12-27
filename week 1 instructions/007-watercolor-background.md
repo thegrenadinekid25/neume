@@ -1,10 +1,10 @@
 # Prompt 007: Watercolor Background Effect
 
 ## Objective
-Create a subtle watercolor wash background effect for the canvas that gives Harmonic Canvas its warm, organic aesthetic. The effect should be atmospheric without being distracting, with slight texture and luminosity variance.
+Create a subtle watercolor wash background effect for the canvas that gives Neume its warm, organic aesthetic. The effect should be atmospheric without being distracting, with slight texture and luminosity variance.
 
 ## Context
-The spec calls for watercolor wash backgrounds that vary by key, with paper grain texture and subtle luminosity variance (±5%). This creates an artistic, hand-crafted feel that distinguishes Harmonic Canvas from typical digital music tools.
+The spec calls for watercolor wash backgrounds that vary by key, with paper grain texture and subtle luminosity variance (±5%). This creates an artistic, hand-crafted feel that distinguishes Neume from typical digital music tools.
 
 **Dependencies:**
 - Requires Prompt 004 (Color System - key backgrounds)
