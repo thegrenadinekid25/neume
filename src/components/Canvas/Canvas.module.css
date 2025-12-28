@@ -65,6 +65,13 @@
   display: flex;
   align-items: flex-end;
   width: 100%;
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+.chordArea.disabled {
+  opacity: 0.4;
+  filter: grayscale(0.5);
+  pointer-events: none;
 }
 
 .track {
@@ -73,6 +80,11 @@
   height: var(--space-md);
   padding-top: var(--space-xs);
   width: 100%;
+  transition: opacity 0.2s ease;
+}
+
+.track.disabled {
+  opacity: 0.4;
 }
 
 .trackStart,

@@ -1,0 +1,19 @@
+.guides {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--duration-fast, 200ms) var(--ease-breathe);
+  z-index: 1;
+}
+
+.guides.visible {
+  opacity: 1;
+}
+
+.guides line {
+  stroke: var(--warm-text-secondary, #7A7067);
+  stroke-width: 1;
+  stroke-opacity: 0.25;
+  stroke-dasharray: 4 4;
+}

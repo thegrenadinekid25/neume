@@ -1,0 +1,42 @@
+.container {
+  display: flex;
+  flex-direction: row;
+  background: transparent;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.labelsColumn {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: 60px;
+  background: transparent;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  border-bottom: 1px solid transparent;
+}
+
+.labelText {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--warm-text-secondary, #7A7067);
+  opacity: 0.7;
+}
+
+.lanesWrapper {
+  position: relative;
+  overflow: visible;
+  flex: 1;
+}
+
+.lanesContent {
+  display: flex;
+  flex-direction: column;
+}

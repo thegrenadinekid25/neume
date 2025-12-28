@@ -1,5 +1,5 @@
 import * as Tone from 'tone';
-import type { Chord } from '@/types';
+import type { Chord, VoiceLine, VoicePart } from '@/types';
 import { audioEngine } from './AudioEngine';
 
 export class PlaybackSystem {
@@ -7,6 +7,7 @@ export class PlaybackSystem {
   private isPlaying: boolean = false;
   private onPlayheadUpdate?: (beat: number) => void;
   private onChordTrigger?: (chordId: string) => void;
+  private onNoteTrigger?: (noteIds: string[]) => void;
   private onPlaybackEnd?: () => void;
   private animationFrameId?: number;
   private totalBeats: number = 16;
@@ -72,6 +73,72 @@ export class PlaybackSystem {
         // Notify visual system
         if (this.onChordTrigger) {
           this.onChordTrigger(chord.id);
+        }
+      }, startTime);
+
+      this.scheduledEvents.push(eventId);
+    });
+  }
+
+  /**
+   * Schedule voice lines for playback (individual melodic notes)
+   */
+  scheduleVoiceLines(voiceLines: Record<VoicePart, VoiceLine>): void {
+    this.clearSchedule();
+    audioEngine.stopAll();
+
+    const sampler = audioEngine.getSampler();
+    if (!sampler) {
+      console.warn('Sampler not available for voice line playback scheduling');
+      return;
+    }
+
+    // Collect all notes from all voice parts, grouped by start beat
+    const notesByBeat: Map<number, { note: typeof voiceLines.soprano.notes[0]; part: VoicePart }[]> = new Map();
+
+    const parts: VoicePart[] = ['soprano', 'alto', 'tenor', 'bass'];
+    parts.forEach(part => {
+      const voiceLine = voiceLines[part];
+      if (!voiceLine.enabled || voiceLine.muted) return;
+
+      voiceLine.notes.forEach(note => {
+        if (note.isRest) return; // Skip rests
+
+        const beat = note.startBeat;
+        if (!notesByBeat.has(beat)) {
+          notesByBeat.set(beat, []);
+        }
+        notesByBeat.get(beat)!.push({ note, part });
+      });
+    });
+
+    // Schedule notes grouped by start beat
+    notesByBeat.forEach((notes, beat) => {
+      const startTime = this.beatToTransportTime(beat);
+
+      const eventId = Tone.Transport.schedule((time) => {
+        // Group notes by duration for efficient scheduling
+        const notesByDuration: Map<number, string[]> = new Map();
+        const noteIds: string[] = [];
+
+        notes.forEach(({ note }) => {
+          noteIds.push(note.id);
+          const duration = note.duration;
+          if (!notesByDuration.has(duration)) {
+            notesByDuration.set(duration, []);
+          }
+          notesByDuration.get(duration)!.push(note.pitch);
+        });
+
+        // Trigger notes grouped by duration
+        notesByDuration.forEach((pitches, duration) => {
+          const durationSeconds = (duration / Tone.Transport.bpm.value) * 60;
+          sampler.triggerAttackRelease(pitches, durationSeconds, time);
+        });
+
+        // Notify visual system which notes are playing
+        if (this.onNoteTrigger) {
+          this.onNoteTrigger(noteIds);
         }
       }, startTime);
 
@@ -175,6 +242,13 @@ export class PlaybackSystem {
    */
   setChordTriggerCallback(callback: (chordId: string) => void): void {
     this.onChordTrigger = callback;
+  }
+
+  /**
+   * Set note trigger callback (for voice lines)
+   */
+  setNoteTriggerCallback(callback: (noteIds: string[]) => void): void {
+    this.onNoteTrigger = callback;
   }
 
   /**

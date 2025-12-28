@@ -33,6 +33,7 @@ import { useProgressionsStore } from '@/store/progressions-store';
 import { useRefineStore } from '@/store/refine-store';
 import { useTutorialStore } from '@/store/tutorial-store';
 import { useVoiceLineStore } from '@/store/voice-line-store';
+import { useCompositionToolsStore } from '@/store/composition-tools-store';
 import { analyzeCounterpoint } from '@/services/counterpoint-analyzer';
 import { downloadMusicXML } from '@/services/musicxml-exporter';
 import { generateSATBVoicing } from '@/audio/VoiceLeading';
@@ -172,6 +173,7 @@ function App() {
   const analysisResult = useAnalysisStore(state => state.result);
   const clearAnalyzedProgression = useAnalysisStore(state => state.clearAnalyzedProgression);
   const openBuildFromBonesPanel = useBuildFromBonesStore(state => state.openPanel);
+  const openCompositionToolsPanel = useCompositionToolsStore(state => state.openPanel);
   const openProgressionsModal = useProgressionsStore(state => state.openModal);
   const openRefineModal = useRefineStore(state => state.openModal);
 
@@ -777,6 +779,27 @@ function App() {
             </button>
           </div>
           {showVoiceLanes && <VoiceToggleBar />}
+          {showVoiceLanes && (
+            <button
+              onClick={() => openCompositionToolsPanel('lyrics')}
+              className="action-button"
+              style={{
+                marginTop: '8px',
+                background: 'transparent',
+                color: 'var(--warm-text-primary)',
+                borderColor: 'var(--warm-sage)',
+                width: '100%',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3v18" />
+                <rect x="4" y="6" width="16" height="12" rx="2" />
+                <path d="M8 10h8" />
+                <path d="M8 14h5" />
+              </svg>
+              <span>Lyrics</span>
+            </button>
+          )}
         </SidebarSection>
 
         <SidebarDivider />

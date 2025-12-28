@@ -1,0 +1,32 @@
+.restCloud {
+  position: absolute;
+  width: 24px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  border-radius: 7px 7px 5px 5px;
+  opacity: 0.6;
+  filter: blur(0.5px);
+  pointer-events: none;
+}
+
+.restCloud::before,
+.restCloud::after {
+  content: '';
+  position: absolute;
+  background: inherit;
+  border-radius: 50%;
+}
+
+.restCloud::before {
+  width: 10px;
+  height: 10px;
+  top: -4px;
+  left: 3px;
+}
+
+.restCloud::after {
+  width: 8px;
+  height: 8px;
+  top: -3px;
+  right: 4px;
+}

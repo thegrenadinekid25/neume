@@ -1,0 +1,24 @@
+.toggleBar {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+}
+
+.toggleButton {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast, 200ms) var(--ease-breathe);
+}
+
+.toggleButton:hover {
+  transform: scale(1.1);
+}
+
+.toggleButton.active {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}

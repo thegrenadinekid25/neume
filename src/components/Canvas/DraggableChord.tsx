@@ -8,6 +8,7 @@ import type { Chord, ChordQuality, ChordExtensions, ChordAnnotation, ChordAnnota
 import styles from './DraggableChord.module.css';
 import { useWhyThisStore, type SongContext } from '@/store/why-this-store';
 import { useCanvasStore } from '@/store/canvas-store';
+import { useVoiceLineStore } from '@/store/voice-line-store';
 import { ContextMenu, type ContextMenuItem } from '@/components/UI/ContextMenu';
 import { useVoiceEditingStore } from '@/store/voice-editing-store';
 import { VoiceHandleGroup } from '@/components/VoiceEditor';
@@ -22,7 +23,9 @@ interface DraggableChordProps {
   isPlaying?: boolean;
   onSelect?: () => void;
   onClick?: (e: React.MouseEvent) => void;
+  onUpdateChord?: (chordId: string, updates: Partial<Chord>) => void;
   zoom?: number;
+  showVoiceLanes?: boolean;
 }
 
 const DraggableChordComponent: React.FC<DraggableChordProps> = ({
@@ -33,7 +36,9 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
   isPlaying,
   onSelect,
   onClick,
+  onUpdateChord: onUpdateChordProp,
   zoom = 1.0,
+  showVoiceLanes = false,
 }) => {
   // Context menu state
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
@@ -46,8 +51,19 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
   // Store hooks
   const openWhyThisPanel = useWhyThisStore(state => state.openPanel);
   const removeChord = useCanvasStore(state => state.removeChord);
-  const updateChord = useCanvasStore(state => state.updateChord);
+  const updateChordStore = useCanvasStore(state => state.updateChord);
   const annotations = useCanvasStore(state => state.annotations);
+  const resetNotesToChord = useVoiceLineStore(state => state.resetNotesToChord);
+  const getNotesAtBeat = useVoiceLineStore(state => state.getNotesAtBeat);
+
+  // Use prop callback if available, otherwise fall back to store
+  const updateChord = useCallback((id: string, updates: Partial<Chord>) => {
+    if (onUpdateChordProp) {
+      onUpdateChordProp(id, updates);
+    } else {
+      updateChordStore(id, updates);
+    }
+  }, [onUpdateChordProp, updateChordStore]);
   const setAnnotation = useCanvasStore(state => state.setAnnotation);
   const removeAnnotation = useCanvasStore(state => state.removeAnnotation);
   const isVoiceEditingMode = useVoiceEditingStore((state) => state.isVoiceEditingMode);
@@ -279,6 +295,39 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
           setContextMenuOpen(false);
         },
       },
+      // Voice Line Actions (only when voice lanes are visible)
+      ...(showVoiceLanes ? [
+        {
+          id: 'divider-voice',
+          label: '',
+          divider: true,
+        },
+        {
+          id: 'reset-voices',
+          label: 'Reset Voices to Chord',
+          action: () => {
+            resetNotesToChord(chord);
+            setContextMenuOpen(false);
+          },
+        },
+        {
+          id: 'update-chord-from-voices',
+          label: 'Update Chord from Voices',
+          action: () => {
+            // Get notes at this chord's beat and infer the chord
+            const notesAtBeat = getNotesAtBeat(chord.startBeat);
+            if (notesAtBeat.length > 0) {
+              // Update the chord's voices based on current voice line notes
+              const newVoices: Partial<typeof chord.voices> = {};
+              notesAtBeat.forEach(({ part, note }) => {
+                newVoices[part] = note.pitch;
+              });
+              updateChord(chord.id, { voices: { ...chord.voices, ...newVoices } });
+            }
+            setContextMenuOpen(false);
+          },
+        },
+      ] : []),
       // Why This?
       {
         id: 'why-this',
@@ -304,7 +353,7 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
       },
     ];
     return items;
-  }, [chord, previousChord, nextChord, sortedChords, songContext, openWhyThisPanel, removeChord, hasExtensions, handleQualityChange, handleExtensionToggle, handleClearExtensions, currentAnnotation, contextMenuPosition, openAnnotationPopover, enterVoiceEditingMode]);
+  }, [chord, previousChord, nextChord, sortedChords, songContext, openWhyThisPanel, removeChord, hasExtensions, handleQualityChange, handleExtensionToggle, handleClearExtensions, currentAnnotation, contextMenuPosition, openAnnotationPopover, enterVoiceEditingMode, showVoiceLanes, resetNotesToChord, getNotesAtBeat, updateChord]);
 
   return (
     <>
@@ -375,7 +424,8 @@ function areDraggableChordPropsEqual(prev: DraggableChordProps, next: DraggableC
     prev.isSelected === next.isSelected &&
     prev.isPlaying === next.isPlaying &&
     prev.zoom === next.zoom &&
-    prev.allChords.length === next.allChords.length
+    prev.allChords.length === next.allChords.length &&
+    prev.showVoiceLanes === next.showVoiceLanes
   );
 }
 

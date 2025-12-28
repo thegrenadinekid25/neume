@@ -75,6 +75,8 @@ export interface MelodicNote {
   midi: number;
   /** Accidental modifier */
   accidental: Accidental;
+  /** Whether this note is a rest (silence) */
+  isRest: boolean;
   /** Beat position in the measure */
   startBeat: number;
   /** Duration in beats */

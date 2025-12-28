@@ -1,0 +1,20 @@
+.lane {
+  position: relative;
+  background: transparent;
+  border-bottom: 1px solid var(--warm-linen, #EDE8E0);
+  transition: background-color var(--duration-fast, 200ms) var(--ease-breathe);
+}
+
+.lane:hover {
+  background-color: color-mix(in srgb, var(--warm-sand, #F5F1E8) 20%, transparent);
+}
+
+.svgContainer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.svgContainer > * {
+  pointer-events: auto;
+}

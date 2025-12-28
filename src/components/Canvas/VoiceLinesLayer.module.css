@@ -1,0 +1,12 @@
+/**
+ * VoiceLinesLayer Styles
+ * Container for all voice line SVG overlays
+ */
+
+.container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  overflow: visible;
+}

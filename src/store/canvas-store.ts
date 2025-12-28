@@ -43,6 +43,9 @@ interface CanvasState {
   // Necklace visualization
   necklaceSettings: NecklaceSettings;
 
+  // Voice lines layer
+  showVoiceLines: boolean;
+
   // Actions - Chords
   addChord: (chord: Partial<Chord> & { scaleDegree: ScaleDegree; position: { x: number; y: number } }) => Chord;
   removeChord: (id: string) => void;
@@ -98,6 +101,10 @@ interface CanvasState {
   setVoiceNecklaceColor: (voice: VoicePart, color: string) => void;
   setVoiceNecklaceOpacity: (voice: VoicePart, opacity: number) => void;
   resetNecklaceSettings: () => void;
+
+  // Actions - Voice Lines
+  setShowVoiceLines: (show: boolean) => void;
+  toggleVoiceLines: () => void;
 }
 
 // Helper to determine chord quality from scale degree and mode
@@ -142,6 +149,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   masterVolume: 0.7,
   audioReady: false,
   necklaceSettings: DEFAULT_NECKLACE_SETTINGS,
+  showVoiceLines: false,
 
   // Chord actions
   addChord: (chordInput) => {
@@ -402,4 +410,11 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
   resetNecklaceSettings: () =>
     set({ necklaceSettings: DEFAULT_NECKLACE_SETTINGS }),
+
+  // Voice Lines actions
+  setShowVoiceLines: (show) =>
+    set({ showVoiceLines: show }),
+
+  toggleVoiceLines: () =>
+    set((state) => ({ showVoiceLines: !state.showVoiceLines })),
 }));
