@@ -3,7 +3,6 @@ import { DndContext, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/
 import { restrictToHorizontalAxis } from '@dnd-kit/modifiers';
 import { useDragDrop } from '@/hooks/useDragDrop';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { useCanvasStore } from '@/store/canvas-store';
 import { Canvas } from './Canvas';
 import { DraggableChord } from './DraggableChord';
 import { ChordShape } from './ChordShape';
@@ -26,7 +25,9 @@ interface DroppableCanvasProps {
   playheadPosition?: number;
   totalBeats?: number;
   selectedChordIds: string[];
+  showVoiceLanes?: boolean;
   onUpdateChordPosition: (chordId: string, startBeat: number) => void;
+  onUpdateChord: (chordId: string, updates: Partial<Chord>) => void;
   onAddChord: (scaleDegree: ScaleDegree, position: { x: number }, options?: { quality?: import('@/types').ChordQuality; extensions?: import('@/types').ChordExtensions }) => void;
   onSelectChord: (id: string) => void;
   onSelectChords: (ids: string[]) => void;
@@ -43,6 +44,8 @@ interface DroppableCanvasProps {
   onTogglePlay?: () => void;
   onStop?: () => void;
   onTempoChange?: (delta: number) => void;
+  onAnalyze?: () => void;
+  onRefine?: () => void;
 }
 
 export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
@@ -57,7 +60,9 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
   playheadPosition = 0,
   totalBeats = 32,
   selectedChordIds,
+  showVoiceLanes = false,
   onUpdateChordPosition,
+  onUpdateChord,
   onAddChord,
   onSelectChord,
   onSelectChords,
@@ -74,9 +79,10 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
   onTogglePlay,
   onStop,
   onTempoChange,
+  onAnalyze,
+  onRefine,
 }) => {
   const { sensors } = useDragDrop();
-  const necklaceSettings = useCanvasStore((state) => state.necklaceSettings);
   const [activeChord, setActiveChord] = useState<Chord | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
@@ -272,10 +278,13 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
           playheadPosition={playheadPosition}
           totalBeats={totalBeats}
           phrases={phrases}
-          chords={chords}
-          necklaceSettings={necklaceSettings}
+          showVoiceLanes={showVoiceLanes}
           onAddChord={onAddChord}
           onZoomChange={onZoomChange}
+          onAnalyze={onAnalyze}
+          onRefine={onRefine}
+          hasChords={chords.length > 0}
+          hasSelection={selectedChordIds.length > 0}
         >
           {chords.map(chord => (
             <DraggableChord
@@ -286,7 +295,9 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
               isSelected={selectedChordIds.includes(chord.id)}
               isPlaying={isPlaying && chord.playing}
               onClick={(e) => handleChordClick(chord, e)}
+              onUpdateChord={onUpdateChord}
               zoom={zoom}
+              showVoiceLanes={showVoiceLanes}
             />
           ))}
         </Canvas>

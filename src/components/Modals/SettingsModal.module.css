@@ -99,3 +99,34 @@
   flex-direction: column;
   gap: var(--space-md);
 }
+
+.exportButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: 1.5px solid var(--warm-gold);
+  border-radius: 20px;
+  color: var(--warm-text-primary);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.exportButton:hover:not(:disabled) {
+  background: var(--warm-sand);
+  border-color: var(--warm-amber);
+}
+
+.exportButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.exportButton svg {
+  color: var(--warm-amber);
+}

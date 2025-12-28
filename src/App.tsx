@@ -4,8 +4,6 @@ import { MetadataBanner } from '@/components/Canvas/MetadataBanner';
 import { DeleteConfirmation } from '@/components/UI/DeleteConfirmation';
 import { HelpTooltip } from '@/components/UI/HelpTooltip';
 import { KeySelector, ModeToggle, BeatsSelector } from '@/components/UI/MusicalSelector';
-import { SegmentedControl } from '@/components/UI/SegmentedControl';
-import { FloatingActionButton, FABIcons } from '@/components/UI/FloatingActionButton';
 import { ChordPalette } from '@/components/Palette';
 import { HELP_CONTENT } from '@/data/help-content';
 import { WhyThisPanel, BuildFromBonesPanel, CompositionToolsPanel } from '@/components/Panels';
@@ -14,6 +12,7 @@ import { WelcomeTutorial } from '@/components/Tutorial/WelcomeTutorial';
 import { Sidebar, SidebarSection, SidebarDivider, SidebarSpacer } from '@/components/Sidebar';
 import { AuthModal, UserMenu } from '@/components/Auth';
 import { AudioLoadingIndicator } from '@/components/Audio';
+import { VoiceToggleBar } from '@/components/VoiceLaneEditor';
 
 // Lazy load modals for code splitting
 const KeyboardShortcutsGuide = lazy(() => import('@/components/UI/KeyboardShortcutsGuide').then(m => ({ default: m.KeyboardShortcutsGuide })));
@@ -28,17 +27,18 @@ import { usePlayback } from '@/hooks/usePlayback';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useAnalysisStore } from '@/store/analysis-store';
 import { useAuthStore } from '@/store/auth-store';
+import { useCounterpointWarningsStore } from '@/store/counterpoint-warnings-store';
 import { useBuildFromBonesStore } from '@/store/build-from-bones-store';
 import { useProgressionsStore } from '@/store/progressions-store';
 import { useRefineStore } from '@/store/refine-store';
 import { useTutorialStore } from '@/store/tutorial-store';
-import { useNarrativeComposerStore } from '@/store/narrative-composer-store';
-import { useCompositionToolsStore } from '@/store/composition-tools-store';
+import { useVoiceLineStore } from '@/store/voice-line-store';
+import { analyzeCounterpoint } from '@/services/counterpoint-analyzer';
+import { downloadMusicXML } from '@/services/musicxml-exporter';
 import { generateSATBVoicing } from '@/audio/VoiceLeading';
 import type { Chord, MusicalKey, Mode, ScaleDegree, ChordQuality, ChordExtensions, Voices, SavedProgression } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { CANVAS_CONFIG } from '@/utils/constants';
-import { progressionHasComplexity } from '@/utils/chord-helpers';
 import './App.css';
 
 function getChordQuality(degree: ScaleDegree, mode: Mode): ChordQuality {
@@ -107,6 +107,8 @@ function App() {
   const [zoom, setZoom] = useState(1.0);
   const [selectedChordIds, setSelectedChordIds] = useState<string[]>([]);
   const [chords, setChords] = useState<Chord[]>(() => createDemoChords('C', 'major'));
+  const [showVoiceLanes, setShowVoiceLanes] = useState(false);
+  const [pieceTitle, setPieceTitle] = useState('Untitled');
 
   const { pushState, undo, redo } = useHistory();
   useAudioEngine(); // Hook needed for auto-init on first interaction
@@ -145,6 +147,24 @@ function App() {
     }
   }, [user, migrateLocalData, loadProgressions]);
 
+  // Listen for loadProgression events from MyProgressionsModal
+  useEffect(() => {
+    const handleLoadProgression = (e: CustomEvent<SavedProgression>) => {
+      const progression = e.detail;
+      setChords(progression.chords);
+      setCurrentKey(progression.key as MusicalKey);
+      setCurrentMode(progression.mode as Mode);
+      setPieceTitle(progression.title);
+      setSelectedChordIds([]);
+      // Convert time signature to beats per measure
+      const beatsMap: Record<string, number> = { '2/2': 2, '3/4': 3, '4/4': 4, '6/8': 6 };
+      setBeatsPerMeasure(beatsMap[progression.timeSignature] || 4);
+    };
+
+    window.addEventListener('loadProgression', handleLoadProgression as EventListener);
+    return () => window.removeEventListener('loadProgression', handleLoadProgression as EventListener);
+  }, []);
+
   const openAnalyzeModal = useAnalysisStore(state => state.openModal);
   const metadata = useAnalysisStore(state => state.metadata);
   const convertedChords = useAnalysisStore(state => state.convertedChords);
@@ -154,8 +174,18 @@ function App() {
   const openBuildFromBonesPanel = useBuildFromBonesStore(state => state.openPanel);
   const openProgressionsModal = useProgressionsStore(state => state.openModal);
   const openRefineModal = useRefineStore(state => state.openModal);
-  const openNarrativeComposerModal = useNarrativeComposerStore(state => state.openModal);
-  const openCompositionTools = useCompositionToolsStore(state => state.openPanel);
+
+  // Voice lines
+  const initializeVoiceLines = useVoiceLineStore(state => state.initializeFromChords);
+  const isVoiceLinesInitialized = useVoiceLineStore(state => state.isInitialized);
+  const voiceLines = useVoiceLineStore(state => state.voiceLines);
+
+
+  // Counterpoint analysis
+  const setCounterpointResult = useCounterpointWarningsStore(state => state.setAnalysisResult);
+  const isCounterpointVisible = useCounterpointWarningsStore(state => state.isOverlayVisible);
+  const toggleCounterpointOverlay = useCounterpointWarningsStore(state => state.toggleOverlay);
+  const counterpointViolations = useCounterpointWarningsStore(state => state.violations);
 
   // Calculate total beats based on chord positions + buffer
   const totalBeats = useMemo(() => {
@@ -164,7 +194,53 @@ function App() {
     return Math.max(16, maxBeat + 8); // Add 8 beats buffer after last chord
   }, [chords]);
 
-  const { isPlaying, playheadPosition, togglePlay, stop, tempo, setTempo } = usePlayback(chords, totalBeats);
+  const { isPlaying, playheadPosition, togglePlay, stop, tempo, setTempo } = usePlayback(chords, totalBeats, {
+    voiceLinesActive: showVoiceLanes,
+    voiceLines: voiceLines,
+  });
+
+  // Run counterpoint analysis
+  const handleAnalyzeCounterpoint = useCallback(() => {
+    // Initialize voice lines from current chords for analysis
+    const voiceLineStore = require('@/store/voice-line-store').useVoiceLineStore.getState();
+    if (!voiceLineStore.isInitialized) {
+      voiceLineStore.initializeFromChords(chords);
+    }
+    // Get fresh voiceLines after initialization
+    const currentVoiceLines = require('@/store/voice-line-store').useVoiceLineStore.getState().voiceLines;
+    const result = analyzeCounterpoint(currentVoiceLines);
+    setCounterpointResult(result);
+    if (!isCounterpointVisible) {
+      toggleCounterpointOverlay();
+    }
+  }, [chords, setCounterpointResult, isCounterpointVisible, toggleCounterpointOverlay]);
+
+  // Handle MusicXML export
+  const handleExportMusicXML = useCallback(() => {
+    // Create a progression object for export
+    const timeSignatureMap: Record<number, SavedProgression['timeSignature']> = {
+      2: '2/2',
+      3: '3/4',
+      4: '4/4',
+      6: '6/8',
+    };
+    const progression: SavedProgression = {
+      id: uuidv4(),
+      title: metadata?.title || 'Untitled Progression',
+      key: currentKey,
+      mode: currentMode,
+      tempo,
+      timeSignature: timeSignatureMap[beatsPerMeasure] || '4/4',
+      chords,
+      tags: [],
+      isFavorite: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    // Get voice lines from store if initialized
+    const voiceLineStore = require('@/store/voice-line-store').useVoiceLineStore.getState();
+    downloadMusicXML(progression, voiceLineStore.isInitialized ? voiceLineStore.voiceLines : undefined);
+  }, [chords, currentKey, currentMode, tempo, beatsPerMeasure, metadata]);
 
   useEffect(() => {
     pushState(chords);
@@ -226,21 +302,39 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentKey, currentMode]); // Only run when key or mode changes
 
+  // Voice line undo/redo from store
+  const voiceLineUndo = useVoiceLineStore((state) => state.undo);
+  const voiceLineRedo = useVoiceLineStore((state) => state.redo);
+  const canUndoVoiceLines = useVoiceLineStore((state) => state.canUndo);
+  const canRedoVoiceLines = useVoiceLineStore((state) => state.canRedo);
+
   const handleUndo = useCallback(() => {
+    // If voice lanes are visible and there's voice line history, undo voice lines first
+    if (showVoiceLanes && canUndoVoiceLines()) {
+      voiceLineUndo();
+      return;
+    }
+    // Otherwise undo chords
     const previousState = undo();
     if (previousState) {
       setChords(previousState);
       setSelectedChordIds([]);
     }
-  }, [undo]);
+  }, [undo, showVoiceLanes, canUndoVoiceLines, voiceLineUndo]);
 
   const handleRedo = useCallback(() => {
+    // If voice lanes are visible and there's voice line redo history, redo voice lines first
+    if (showVoiceLanes && canRedoVoiceLines()) {
+      voiceLineRedo();
+      return;
+    }
+    // Otherwise redo chords
     const nextState = redo();
     if (nextState) {
       setChords(nextState);
       setSelectedChordIds([]);
     }
-  }, [redo]);
+  }, [redo, showVoiceLanes, canRedoVoiceLines, voiceLineRedo]);
 
   // Selection handlers
   const handleSelectChord = useCallback((id: string) => {
@@ -437,7 +531,7 @@ function App() {
 
     return {
       id: uuidv4(),
-      title: metadata?.title || 'Untitled Progression',
+      title: pieceTitle || 'Untitled',
       key: currentKey,
       mode: currentMode,
       tempo,
@@ -453,54 +547,7 @@ function App() {
         url: metadata.sourceUrl,
       } : undefined,
     };
-  }, [currentKey, currentMode, tempo, beatsPerMeasure, chords, metadata]);
-
-  // Check if progression has complex chords (7ths, extensions, etc.)
-  const hasComplexChords = useMemo(() => progressionHasComplexity(chords), [chords]);
-
-  // FAB actions
-  const fabActions = useMemo(() => {
-    const actions = [
-      {
-        id: 'save',
-        icon: FABIcons.save,
-        label: 'Save Progression',
-        onClick: () => setShowSaveDialog(true),
-        disabled: chords.length === 0,
-      },
-      {
-        id: 'library',
-        icon: FABIcons.folder,
-        label: 'My Progressions',
-        onClick: openProgressionsModal,
-      },
-      {
-        id: 'narrative',
-        icon: FABIcons.wand,
-        label: 'Compose from Narrative',
-        onClick: openNarrativeComposerModal,
-      },
-      {
-        id: 'composition-tools',
-        icon: FABIcons.notes,
-        label: 'Lyrics & Voice Lines',
-        onClick: () => openCompositionTools(),
-      },
-    ];
-
-    // Only show Build From Bones if progression has complex chords
-    if (hasComplexChords) {
-      actions.push({
-        id: 'bones',
-        icon: FABIcons.bones,
-        label: 'Build From Bones',
-        onClick: handleBuildFromBones,
-        disabled: false,
-      });
-    }
-
-    return actions;
-  }, [chords.length, hasComplexChords, openProgressionsModal, openNarrativeComposerModal, openCompositionTools, handleBuildFromBones]);
+  }, [currentKey, currentMode, tempo, beatsPerMeasure, chords, metadata, pieceTitle]);
 
   // Add chord - now just needs x position to calculate startBeat
   const handleAddChord = useCallback((
@@ -575,6 +622,33 @@ function App() {
     );
   }, []);
 
+  // Update chord properties (quality, extensions, etc.)
+  const handleUpdateChord = useCallback((chordId: string, updates: Partial<Chord>) => {
+    setChords((prevChords) =>
+      prevChords.map((chord) =>
+        chord.id === chordId ? { ...chord, ...updates } : chord
+      )
+    );
+  }, []);
+
+  // Handle new piece - reset canvas and state
+  const handleNewPiece = useCallback(() => {
+    if (chords.length > 0 && !window.confirm('Start a new piece? Any unsaved changes will be lost.')) {
+      return;
+    }
+    setChords([]);
+    setSelectedChordIds([]);
+    setCurrentKey('C');
+    setCurrentMode('major');
+    setBeatsPerMeasure(4);
+    setShowVoiceLanes(false);
+    setPieceTitle('Untitled');
+    clearAnalyzedProgression();
+    // Reset voice lines
+    const voiceLineStore = require('@/store/voice-line-store').useVoiceLineStore.getState();
+    voiceLineStore.reset();
+  }, [chords.length, clearAnalyzedProgression]);
+
   return (
     <div className="app">
       <header className="app-header">
@@ -582,8 +656,49 @@ function App() {
           <span className="header-accent" aria-hidden="true" />
           <h1>Neume</h1>
         </div>
-        {/* Hint removed - using chord palette instead */}
+        <input
+          type="text"
+          className="piece-title-input"
+          value={pieceTitle}
+          onChange={(e) => setPieceTitle(e.target.value)}
+          placeholder="Untitled"
+          aria-label="Piece title"
+        />
         <div className="header-right">
+          <button
+            className="library-button"
+            onClick={openProgressionsModal}
+            aria-label="My Library"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+          </button>
+          <button
+            className="new-piece-button"
+            onClick={handleNewPiece}
+            aria-label="New piece"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="12" y1="18" x2="12" y2="12" />
+              <line x1="9" y1="15" x2="15" y2="15" />
+            </svg>
+          </button>
+          <button
+            className="save-button"
+            onClick={() => setShowSaveDialog(true)}
+            disabled={chords.length === 0}
+            aria-label="Save progression"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
+          </button>
           <button
             className="settings-button"
             onClick={() => setShowSettingsModal(true)}
@@ -634,17 +749,59 @@ function App() {
 
         <SidebarDivider />
 
-        {/* Zoom */}
+        {/* Voice Lines */}
         <SidebarSection>
-          <SegmentedControl
-            options={[
-              { value: 0.5, label: '\u2212' },
-              { value: 1.0, label: '1:1' },
-              { value: 2.0, label: '+' },
-            ]}
-            value={zoom}
-            onChange={(v) => setZoom(v as number)}
-          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={() => {
+                if (!isVoiceLinesInitialized) {
+                  initializeVoiceLines(chords);
+                }
+                setShowVoiceLanes(!showVoiceLanes);
+              }}
+              className="action-button analyze-button"
+              style={{
+                background: showVoiceLanes ? 'var(--warm-gold)' : 'transparent',
+                color: showVoiceLanes ? 'white' : 'var(--warm-text-primary)',
+                borderColor: 'var(--warm-gold)',
+                flex: 1,
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M2 4h12M2 8h12M2 12h12" />
+                <circle cx="5" cy="4" r="1.5" fill="currentColor" />
+                <circle cx="10" cy="8" r="1.5" fill="currentColor" />
+                <circle cx="7" cy="12" r="1.5" fill="currentColor" />
+              </svg>
+              <span>Voice Lines</span>
+            </button>
+          </div>
+          {showVoiceLanes && <VoiceToggleBar />}
+        </SidebarSection>
+
+        <SidebarDivider />
+
+        {/* Analysis */}
+        <SidebarSection>
+          <button
+            onClick={handleAnalyzeCounterpoint}
+            disabled={chords.length < 2}
+            className="action-button analyze-button"
+            style={{
+              background: counterpointViolations.length > 0 ? 'var(--warm-terracotta)' : 'transparent',
+              color: counterpointViolations.length > 0 ? 'white' : 'var(--warm-text-primary)',
+              borderColor: 'var(--warm-terracotta)',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 1v14M1 8h14" />
+              <circle cx="4" cy="4" r="1.5" fill="currentColor" />
+              <circle cx="12" cy="4" r="1.5" fill="currentColor" />
+              <circle cx="4" cy="12" r="1.5" fill="currentColor" />
+              <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+            </svg>
+            <span>Check Rules{counterpointViolations.length > 0 ? ` (${counterpointViolations.length})` : ''}</span>
+          </button>
         </SidebarSection>
 
         <SidebarDivider />
@@ -700,24 +857,6 @@ function App() {
               )}
             </button>
           </HelpTooltip>
-          <HelpTooltip
-            content={HELP_CONTENT['analyze-button'].content}
-            title={HELP_CONTENT['analyze-button'].title}
-            shortcut={HELP_CONTENT['analyze-button'].shortcut}
-            position="right"
-          >
-            <button
-              onClick={openAnalyzeModal}
-              disabled={chords.length === 0}
-              className="action-button analyze-button"
-            >
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="6.5" cy="6.5" r="4.5" />
-                <line x1="10" y1="10" x2="14" y2="14" />
-              </svg>
-              <span>Analyze</span>
-            </button>
-          </HelpTooltip>
           <button
             onClick={openProgressionsModal}
             className="action-button progressions-button"
@@ -728,29 +867,6 @@ function App() {
             </svg>
             <span>My Progressions</span>
           </button>
-          <HelpTooltip
-            content={HELP_CONTENT['refine-button'].content}
-            title={HELP_CONTENT['refine-button'].title}
-            shortcut={HELP_CONTENT['refine-button'].shortcut}
-            position="right"
-          >
-            <button
-              onClick={() => {
-                if (selectedChordIds.length > 0) {
-                  openRefineModal(selectedChordIds);
-                }
-              }}
-              disabled={selectedChordIds.length === 0}
-              className="action-button refine-button"
-            >
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 2v2M8 12v2M2 8h2M12 8h2" />
-                <path d="M4.5 4.5l1 1M10.5 10.5l1 1M4.5 11.5l1-1M10.5 5.5l1-1" />
-                <circle cx="8" cy="8" r="1.5" fill="currentColor" />
-              </svg>
-              <span>Refine</span>
-            </button>
-          </HelpTooltip>
         </SidebarSection>
 
         <SidebarSpacer />
@@ -791,7 +907,9 @@ function App() {
         playheadPosition={playheadPosition}
         totalBeats={totalBeats}
         selectedChordIds={selectedChordIds}
+        showVoiceLanes={showVoiceLanes}
         onUpdateChordPosition={handleUpdateChordPosition}
+        onUpdateChord={handleUpdateChord}
         onAddChord={handleAddChord}
         onSelectChord={handleSelectChord}
         onSelectChords={handleSelectChords}
@@ -808,6 +926,12 @@ function App() {
         onTogglePlay={togglePlay}
         onStop={stop}
         onTempoChange={(delta) => setTempo(Math.max(60, Math.min(220, tempo + delta)))}
+        onAnalyze={openAnalyzeModal}
+        onRefine={() => {
+          if (selectedChordIds.length > 0) {
+            openRefineModal(selectedChordIds);
+          }
+        }}
       />
       </div>
 
@@ -823,7 +947,12 @@ function App() {
         <MyProgressionsModal />
         <RefineModal />
         <NarrativeComposerModal />
-        <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
+        <SettingsModal
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          onExportMusicXML={handleExportMusicXML}
+          canExport={chords.length > 0}
+        />
       </Suspense>
 
       <WhyThisPanel />
@@ -841,8 +970,6 @@ function App() {
       />
 
       <ChordPalette mode={currentMode} onAddChord={handleAddChordFromPalette} />
-
-      <FloatingActionButton actions={fabActions} />
 
       <AudioLoadingIndicator />
 

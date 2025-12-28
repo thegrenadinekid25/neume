@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import styles from './HelpTooltip.module.css';
 
@@ -45,9 +46,43 @@ export const HelpTooltip: React.FC<HelpTooltipProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [adjustedPosition, setAdjustedPosition] = useState(position);
+  const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const delayTimer = useRef<NodeJS.Timeout>();
+
+  // Calculate absolute screen position for tooltip
+  useEffect(() => {
+    if (!isOpen || !triggerRef.current) return;
+
+    const triggerRect = triggerRef.current.getBoundingClientRect();
+    const padding = 8;
+
+    let top = 0;
+    let left = 0;
+
+    // Calculate position based on adjusted position
+    switch (adjustedPosition) {
+      case 'top':
+        top = triggerRect.top - padding;
+        left = triggerRect.left + triggerRect.width / 2;
+        break;
+      case 'bottom':
+        top = triggerRect.bottom + padding;
+        left = triggerRect.left + triggerRect.width / 2;
+        break;
+      case 'left':
+        top = triggerRect.top + triggerRect.height / 2;
+        left = triggerRect.left - padding;
+        break;
+      case 'right':
+        top = triggerRect.top + triggerRect.height / 2;
+        left = triggerRect.right + padding;
+        break;
+    }
+
+    setTooltipPosition({ top, left });
+  }, [isOpen, adjustedPosition]);
 
   // Calculate and adjust tooltip position to keep it in viewport
   useEffect(() => {
@@ -119,44 +154,54 @@ export const HelpTooltip: React.FC<HelpTooltipProps> = ({
   };
 
   return (
-    <div
-      ref={triggerRef}
-      className={styles.triggerWrapper}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
-    >
-      {children}
+    <>
+      <div
+        ref={triggerRef}
+        className={styles.triggerWrapper}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+      >
+        {children}
+      </div>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            ref={tooltipRef}
-            className={getTooltipClasses()}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            role="tooltip"
-          >
-            {title && <div className={styles.title}>{title}</div>}
-            <div className={styles.content}>{content}</div>
-            {shortcut && <div className={styles.shortcut}>⌨ {shortcut}</div>}
-            {examples && examples.length > 0 && (
-              <div className={styles.examples}>
-                <div className={styles.examplesLabel}>Examples:</div>
-                <ul className={styles.examplesList}>
-                  {examples.map((example, index) => (
-                    <li key={index}>{example}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+      {createPortal(
+        <AnimatePresence>
+          {isOpen && tooltipPosition && (
+            <motion.div
+              ref={tooltipRef}
+              className={getTooltipClasses()}
+              style={{
+                position: 'fixed',
+                top: tooltipPosition.top,
+                left: tooltipPosition.left,
+              }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              role="tooltip"
+            >
+              {title && <div className={styles.title}>{title}</div>}
+              <div className={styles.content}>{content}</div>
+              {shortcut && <div className={styles.shortcut}>⌨ {shortcut}</div>}
+              {examples && examples.length > 0 && (
+                <div className={styles.examples}>
+                  <div className={styles.examplesLabel}>Examples:</div>
+                  <ul className={styles.examplesList}>
+                    {examples.map((example, index) => (
+                      <li key={index}>{example}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+    </>
   );
 };
 

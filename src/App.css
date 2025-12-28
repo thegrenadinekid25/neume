@@ -54,6 +54,60 @@
   opacity: 0.7;
 }
 
+.piece-title-input {
+  flex: 1;
+  max-width: 400px;
+  min-width: 150px;
+  margin: 0 var(--space-xl);
+  padding: var(--space-sm) var(--space-md);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--warm-text-primary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.piece-title-input:hover {
+  background: var(--warm-linen);
+  border-color: var(--border-light);
+}
+
+.piece-title-input:focus {
+  outline: none;
+  background: white;
+  border-color: var(--warm-gold);
+  box-shadow: 0 0 0 3px rgba(212, 146, 74, 0.15);
+}
+
+.piece-title-input::placeholder {
+  color: var(--warm-text-secondary);
+  opacity: 0.5;
+}
+
+.library-button {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  color: var(--warm-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.library-button:hover {
+  background: var(--warm-sand);
+  color: var(--warm-terracotta);
+  border-color: var(--warm-terracotta);
+}
+
 .header-right {
   display: flex;
   align-items: center;
@@ -87,6 +141,57 @@
 
 .settings-button:hover svg {
   transform: rotate(45deg);
+}
+
+.new-piece-button {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  color: var(--warm-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.new-piece-button:hover {
+  background: var(--warm-sand);
+  color: var(--warm-terracotta);
+  border-color: var(--warm-terracotta);
+}
+
+.save-button {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  color: var(--warm-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-button:hover {
+  background: var(--warm-sand);
+  color: var(--warm-gold);
+  border-color: var(--warm-gold);
+}
+
+.save-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.save-button:disabled:hover {
+  background: transparent;
+  color: var(--warm-text-secondary);
+  border-color: var(--border-light);
 }
 
 .app-sidebar {
@@ -478,6 +583,8 @@
    ============================================ */
 .tempo-section {
   align-items: center;
+  padding: 0;
+  margin: -8px 0;
 }
 
 .actions-section {

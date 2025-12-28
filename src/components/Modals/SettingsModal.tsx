@@ -7,9 +7,11 @@ import styles from './SettingsModal.module.css';
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onExportMusicXML?: () => void;
+  canExport?: boolean;
 }
 
-export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+export function SettingsModal({ isOpen, onClose, onExportMusicXML, canExport = false }: SettingsModalProps) {
   if (!isOpen) return null;
 
   return createPortal(
@@ -55,6 +57,27 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   <ExpertModeProgress />
                   <ExpertModeToggle />
                 </div>
+              </section>
+
+              <section className={styles.section}>
+                <h3 className={styles.sectionTitle}>Export</h3>
+                <p className={styles.sectionDescription}>
+                  Export your progression to use in other music software.
+                </p>
+                <button
+                  className={styles.exportButton}
+                  onClick={() => {
+                    onExportMusicXML?.();
+                    onClose();
+                  }}
+                  disabled={!canExport}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 1v10M4 7l4 4 4-4" />
+                    <path d="M2 12v2h12v-2" />
+                  </svg>
+                  <span>Export MusicXML</span>
+                </button>
               </section>
             </div>
             </motion.div>
