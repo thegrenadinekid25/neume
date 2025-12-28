@@ -2,7 +2,8 @@ import React, { useMemo, useState, useCallback } from 'react';
 import type { VoiceLine as VoiceLineType, VoicePart } from '@/types';
 import { VOICE_RANGES } from '@/data/voice-ranges';
 import { useVoiceLineStore } from '@/store/voice-line-store';
-import { Note } from 'tonal';
+import { useCanvasStore } from '@/store/canvas-store';
+import { Note, Scale } from 'tonal';
 import { NoteDot } from './NoteDot';
 import { ThreadConnector } from './ThreadConnector';
 import { RestCloud } from './RestCloud';
@@ -34,12 +35,44 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
   const selectNote = useVoiceLineStore((state) => state.selectNote);
   const updateNote = useVoiceLineStore((state) => state.updateNote);
   const addNote = useVoiceLineStore((state) => state.addNote);
-  const cycleNoteState = useVoiceLineStore((state) => state.cycleNoteState);
   const selectedNoteIds = useVoiceLineStore((state) => state.selectedNoteIds);
   const playingNoteIds = useVoiceLineStore((state) => state.playingNoteIds);
 
+  // Get current key/mode for diatonic snapping
+  const currentKey = useCanvasStore((state) => state.currentKey);
+  const currentMode = useCanvasStore((state) => state.currentMode);
+
   const voicePart = voiceLine.voicePart as VoicePart;
   const voiceRange = VOICE_RANGES[voicePart];
+
+  // Get all diatonic MIDI values within voice range for snapping
+  const diatonicMidiValues = useMemo(() => {
+    const scaleName = currentMode === 'major' ? 'major' : 'minor';
+    const scale = Scale.get(`${currentKey} ${scaleName}`);
+    if (!scale.notes || scale.notes.length === 0) {
+      // Fallback to chromatic if scale not found
+      return Array.from({ length: voiceRange.highMidi - voiceRange.lowMidi + 1 }, (_, i) => voiceRange.lowMidi + i);
+    }
+
+    // Get pitch classes from scale (without octave)
+    const scalePitchClasses = scale.notes.map(n => Note.pitchClass(n));
+
+    // Generate all diatonic MIDI values within voice range
+    const midiValues: number[] = [];
+    for (let midi = voiceRange.lowMidi; midi <= voiceRange.highMidi; midi++) {
+      const pitchClass = Note.pitchClass(Note.fromMidi(midi) || '');
+      // Check if this pitch class is in the scale (using enharmonic equivalence)
+      const midiOfPitchClass = Note.midi(pitchClass + '4') || 0;
+      const isInScale = scalePitchClasses.some(scalePc => {
+        const scaleMidi = Note.midi(scalePc + '4') || 0;
+        return (midiOfPitchClass % 12) === (scaleMidi % 12);
+      });
+      if (isInScale) {
+        midiValues.push(midi);
+      }
+    }
+    return midiValues;
+  }, [currentKey, currentMode, voiceRange.lowMidi, voiceRange.highMidi]);
 
   // Calculate lane height based on voice range
   const midiRange = voiceRange.highMidi - voiceRange.lowMidi;
@@ -83,14 +116,35 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
   }, [selectNote]);
 
   // Helper to convert Y position back to MIDI (inverse of getY)
+  // Snaps to nearest diatonic scale degree
   const yToMidi = useCallback((y: number) => {
     const midiRange = voiceRange.highMidi - voiceRange.lowMidi;
     const usableHeight = laneHeight - (lanePadding * 2);
     const normalizedPosition = (y - lanePadding) / usableHeight;
-    const midi = voiceRange.highMidi - (normalizedPosition * midiRange);
-    // Clamp to voice range and round to nearest semitone
-    return Math.round(Math.max(voiceRange.lowMidi, Math.min(voiceRange.highMidi, midi)));
-  }, [voiceRange.highMidi, voiceRange.lowMidi, laneHeight]);
+    const rawMidi = voiceRange.highMidi - (normalizedPosition * midiRange);
+
+    // Clamp to voice range
+    const clampedMidi = Math.max(voiceRange.lowMidi, Math.min(voiceRange.highMidi, rawMidi));
+
+    // Snap to nearest diatonic MIDI value
+    if (diatonicMidiValues.length === 0) {
+      return Math.round(clampedMidi);
+    }
+
+    // Find the closest diatonic MIDI value
+    let closestMidi = diatonicMidiValues[0];
+    let closestDistance = Math.abs(clampedMidi - closestMidi);
+
+    for (const midi of diatonicMidiValues) {
+      const distance = Math.abs(clampedMidi - midi);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestMidi = midi;
+      }
+    }
+
+    return closestMidi;
+  }, [voiceRange.highMidi, voiceRange.lowMidi, laneHeight, diatonicMidiValues]);
 
   // Handle note drag (update Y position)
   const handleNoteDrag = useCallback((noteId: string, newY: number) => {
@@ -105,11 +159,6 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
     const newPitch = Note.fromMidi(newMidi) || 'C4';
     updateNote(voicePart, noteId, { midi: newMidi, pitch: newPitch });
   }, [yToMidi, updateNote, voicePart]);
-
-  // Handle right-click to cycle note state
-  const handleNoteContextMenu = useCallback((noteId: string, _e: React.MouseEvent) => {
-    cycleNoteState(voicePart, noteId);
-  }, [cycleNoteState, voicePart]);
 
   // Handle double-click on lane to create a new note
   const handleLaneDoubleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -223,7 +272,6 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
           onSelect={handleNoteSelect}
           onDrag={handleNoteDrag}
           onDragEnd={handleNoteDragEnd}
-          onContextMenu={handleNoteContextMenu}
         />
       ))}
     </div>

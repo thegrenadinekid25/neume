@@ -4,6 +4,7 @@ import { Note } from 'tonal';
 import type { MelodicNote, VoicePart } from '@/types';
 import { useTextSettingStore } from '@/store/text-setting-store';
 import { useVoiceLineStore } from '@/store/voice-line-store';
+import { ContextMenu, type ContextMenuItem } from '@/components/UI/ContextMenu';
 import styles from './NoteDot.module.css';
 
 interface NoteDotProps {
@@ -18,7 +19,6 @@ interface NoteDotProps {
   onSelect: (id: string, multiSelect: boolean) => void;
   onDrag: (id: string, newY: number) => void;
   onDragEnd: (id: string, finalY: number) => void;
-  onContextMenu: (id: string, e: React.MouseEvent) => void;
 }
 
 const LANE_PADDING = 8;
@@ -35,7 +35,6 @@ export const NoteDot: React.FC<NoteDotProps> = ({
   onSelect,
   onDrag: _onDrag,
   onDragEnd,
-  onContextMenu,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -49,8 +48,13 @@ export const NoteDot: React.FC<NoteDotProps> = ({
   const getAssignmentForNote = useTextSettingStore((state) => state.getAssignmentForNote);
   const syllableAssignment = getAssignmentForNote(voicePart, note.id);
 
-  // Get updateNote from voice-line-store for inline editing
+  // Get store actions for note manipulation
   const updateNote = useVoiceLineStore((state) => state.updateNote);
+  const deleteNote = useVoiceLineStore((state) => state.deleteNote);
+
+  // Context menu state
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
 
   // Focus input when entering edit mode
   useEffect(() => {
@@ -108,12 +112,6 @@ export const NoteDot: React.FC<NoteDotProps> = ({
     // Ignore click if we just finished dragging
     if (justDraggedRef.current) return;
 
-    // Alt+Click to cycle note state (natural → sharp → flat → rest)
-    if (e.altKey) {
-      onContextMenu(note.id, e);
-      return;
-    }
-
     const multiSelect = e.metaKey || e.ctrlKey || e.shiftKey;
     onSelect(note.id, multiSelect);
   };
@@ -121,8 +119,62 @@ export const NoteDot: React.FC<NoteDotProps> = ({
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onContextMenu(note.id, e);
+    setContextMenuPosition({ x: e.clientX, y: e.clientY });
+    setContextMenuOpen(true);
   };
+
+  // Context menu items for note manipulation
+  const contextMenuItems: ContextMenuItem[] = useMemo(() => {
+    const currentAccidental = note.accidental;
+
+    return [
+      // Accidental options
+      {
+        id: 'accidental-natural',
+        label: currentAccidental === null ? '✓ Natural' : 'Natural',
+        action: () => {
+          updateNote(voicePart, note.id, { accidental: null });
+          setContextMenuOpen(false);
+        },
+      },
+      {
+        id: 'accidental-sharp',
+        label: currentAccidental === 'sharp' ? '✓ Sharp (♯)' : 'Sharp (♯)',
+        action: () => {
+          updateNote(voicePart, note.id, { accidental: 'sharp' });
+          setContextMenuOpen(false);
+        },
+      },
+      {
+        id: 'accidental-flat',
+        label: currentAccidental === 'flat' ? '✓ Flat (♭)' : 'Flat (♭)',
+        action: () => {
+          updateNote(voicePart, note.id, { accidental: 'flat' });
+          setContextMenuOpen(false);
+        },
+      },
+      { id: 'divider-1', label: '', divider: true },
+      // Rest toggle
+      {
+        id: 'toggle-rest',
+        label: note.isRest ? 'Make Note' : 'Make Rest',
+        action: () => {
+          updateNote(voicePart, note.id, { isRest: !note.isRest });
+          setContextMenuOpen(false);
+        },
+      },
+      { id: 'divider-2', label: '', divider: true },
+      // Delete
+      {
+        id: 'delete-note',
+        label: 'Delete Note',
+        action: () => {
+          deleteNote(voicePart, note.id);
+          setContextMenuOpen(false);
+        },
+      },
+    ];
+  }, [note.accidental, note.isRest, note.id, voicePart, updateNote, deleteNote]);
 
   // Double-click to edit lyric inline
   const handleDoubleClick = (e: React.MouseEvent) => {
@@ -271,6 +323,13 @@ export const NoteDot: React.FC<NoteDotProps> = ({
           {syllableAssignment?.isMelisma ? '\u2014' : (syllableAssignment?.text || note.text)}
         </div>
       ) : null}
+      {/* Note context menu */}
+      <ContextMenu
+        isOpen={contextMenuOpen}
+        position={contextMenuPosition}
+        items={contextMenuItems}
+        onClose={() => setContextMenuOpen(false)}
+      />
     </motion.div>
   );
 };
