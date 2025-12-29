@@ -2,23 +2,26 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAnalysisStore } from '@/store/analysis-store';
+import { useBuildFromBonesStore } from '@/store/build-from-bones-store';
 import { parseYoutubeUrl, isValidYoutubeUrl } from '@/utils/youtube-parser';
+import { BuildFromBonesContent } from '@/components/shared/BuildFromBonesContent';
+import { useAppViewStore } from '@/store/app-view-store';
 import type { AnalysisInput } from '@/types/analysis';
 import styles from './AnalyzeModal.module.css';
 
-// Example YouTube videos for testing chord analysis
+// Example YouTube videos for testing chord analysis - classical choral works
 const EXAMPLE_VIDEOS = [
   {
-    title: 'Never Gonna Give You Up - Rick Astley',
-    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    title: 'O Magnum Mysterium - Morten Lauridsen',
+    url: 'https://www.youtube.com/watch?v=nn5ken3RJBo',
   },
   {
-    title: 'Let It Be - The Beatles',
-    url: 'https://www.youtube.com/watch?v=QDYfEBY9NM4',
+    title: 'Sicut Cervus - Palestrina',
+    url: 'https://www.youtube.com/watch?v=BOqwCeHgFQQ',
   },
   {
-    title: 'Imagine - John Lennon',
-    url: 'https://www.youtube.com/watch?v=DVg2EJvvlF8',
+    title: 'Ave Verum Corpus - William Byrd',
+    url: 'https://www.youtube.com/watch?v=LTW1RS9LJBM',
   },
 ];
 
@@ -33,11 +36,24 @@ export const AnalyzeModal: React.FC = () => {
     isAnalyzing,
     progress,
     error,
+    result,
+    showResultsView,
+    deconstructionSteps,
+    isDeconstructing,
+    deconstructionError,
     closeModal,
     setActiveTab,
     startAnalysis,
+    startDeconstruction,
     setError,
   } = useAnalysisStore();
+
+  const {
+    nextStep,
+    prevStep,
+    jumpToStep,
+    currentStep,
+  } = useBuildFromBonesStore();
 
   // Form state
   const [youtubeUrl, setYoutubeUrl] = useState('');
@@ -48,6 +64,10 @@ export const AnalyzeModal: React.FC = () => {
   const [endTime, setEndTime] = useState('');
   const [keyHint, setKeyHint] = useState('auto');
   const [modeHint, setModeHint] = useState<'auto' | 'major' | 'minor'>('auto');
+
+  // Results view state
+  const [resultsTab, setResultsTab] = useState<'results' | 'bones'>('results');
+  const [isPlayingBones, setIsPlayingBones] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragOverRef = useRef(false);
@@ -196,19 +216,33 @@ export const AnalyzeModal: React.FC = () => {
     }
   };
 
+  // Handle "Go to Canvas" button
+  const handleGoToCanvas = () => {
+    useAppViewStore.getState().navigateToCanvas();
+    closeModal();
+  };
+
+  // Handle "Build from Bones" button in results
+  const handleStartBones = async () => {
+    if (!deconstructionSteps) {
+      await startDeconstruction();
+    }
+    setResultsTab('bones');
+  };
+
   // Handle keyboard shortcuts
   useEffect(() => {
     if (!isModalOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isAnalyzing) {
+      if (e.key === 'Escape' && !isAnalyzing && !isDeconstructing) {
         closeModal();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, isAnalyzing, closeModal]);
+  }, [isModalOpen, isAnalyzing, isDeconstructing, closeModal]);
 
   const content = (
     <AnimatePresence>
@@ -249,8 +283,8 @@ export const AnalyzeModal: React.FC = () => {
               </button>
             </div>
 
-            {/* Tab Navigation - outside scrollable content */}
-            {!isAnalyzing && !progress && (
+            {/* Tab Navigation - input tabs or results tabs */}
+            {!showResultsView && !isAnalyzing && !progress && (
               <div className={styles.tabNav}>
                 <button
                   className={`${styles.tabButton} ${activeTab === 'youtube' ? styles.active : ''}`}
@@ -267,9 +301,111 @@ export const AnalyzeModal: React.FC = () => {
               </div>
             )}
 
+            {/* Results View Tabs */}
+            {showResultsView && (
+              <div className={styles.tabNav}>
+                <button
+                  className={`${styles.tabButton} ${resultsTab === 'results' ? styles.active : ''}`}
+                  onClick={() => setResultsTab('results')}
+                >
+                  Results
+                </button>
+                <button
+                  className={`${styles.tabButton} ${resultsTab === 'bones' ? styles.active : ''}`}
+                  onClick={() => setResultsTab('bones')}
+                >
+                  Build from Bones
+                </button>
+              </div>
+            )}
+
             {/* Content */}
             <div className={styles.content}>
-              {!isAnalyzing && !progress ? (
+              {/* Results View */}
+              {showResultsView ? (
+                <>
+                  {/* Results Tab - Analysis Summary */}
+                  {resultsTab === 'results' && (
+                    <div className={styles.resultsSummary}>
+                      <div className={styles.summarySection}>
+                        <h3 className={styles.summaryTitle}>Analysis Results</h3>
+                        {result && (
+                          <div className={styles.resultGrid}>
+                            <div className={styles.resultItem}>
+                              <div className={styles.resultLabel}>Title</div>
+                              <div className={styles.resultValue}>{result.title || 'Untitled'}</div>
+                            </div>
+                            <div className={styles.resultItem}>
+                              <div className={styles.resultLabel}>Key</div>
+                              <div className={styles.resultValue}>{result.key}</div>
+                            </div>
+                            <div className={styles.resultItem}>
+                              <div className={styles.resultLabel}>Mode</div>
+                              <div className={styles.resultValue}>{result.mode}</div>
+                            </div>
+                            <div className={styles.resultItem}>
+                              <div className={styles.resultLabel}>Tempo</div>
+                              <div className={styles.resultValue}>{result.tempo} BPM</div>
+                            </div>
+                            <div className={styles.resultItem}>
+                              <div className={styles.resultLabel}>Chord Count</div>
+                              <div className={styles.resultValue}>{result.chords?.length || 0}</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        className={styles.startBonesButton}
+                        onClick={handleStartBones}
+                        disabled={isDeconstructing}
+                      >
+                        {isDeconstructing ? 'Deconstructing...' : 'Start Build from Bones'}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Build from Bones Tab */}
+                  {resultsTab === 'bones' && deconstructionSteps && (
+                    <div className={styles.bonesContent}>
+                      {isDeconstructing ? (
+                        <div className={styles.deconstructingContainer}>
+                          <div className={styles.spinner} />
+                          <p className={styles.deconstructingMessage}>Deconstructing progression...</p>
+                        </div>
+                      ) : deconstructionError ? (
+                        <div className={styles.errorContainer}>
+                          <p className={styles.errorMessage}>{deconstructionError.message}</p>
+                        </div>
+                      ) : (
+                        <BuildFromBonesContent
+                          steps={deconstructionSteps}
+                          currentStep={currentStep}
+                          isPlaying={isPlayingBones}
+                          onStepClick={jumpToStep}
+                          onPrevious={prevStep}
+                          onPlay={() => setIsPlayingBones(!isPlayingBones)}
+                          onNext={nextStep}
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  {/* Show button to start deconstruction if not already started */}
+                  {resultsTab === 'bones' && !deconstructionSteps && !isDeconstructing && (
+                    <div className={styles.startBonesContainer}>
+                      <p className={styles.startBonesMessage}>
+                        Click below to start the step-by-step deconstruction
+                      </p>
+                      <button
+                        className={styles.startBonesButton}
+                        onClick={handleStartBones}
+                      >
+                        Start Deconstruction
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : !isAnalyzing && !progress ? (
                 <>
                   {/* YouTube Tab */}
                   {activeTab === 'youtube' && (
@@ -331,7 +467,7 @@ export const AnalyzeModal: React.FC = () => {
                           }
                         }}
                       >
-                        <div className={styles.dropZoneIcon}>🎵</div>
+                        <div className={styles.dropZoneIcon}>Audio</div>
                         <div className={styles.dropZoneText}>Drop audio file here</div>
                         <div className={styles.dropZoneSubtext}>
                           or click to select
@@ -360,7 +496,7 @@ export const AnalyzeModal: React.FC = () => {
                       {audioFile && (
                         <div className={styles.selectedFile}>
                           <span className={styles.fileName}>
-                            📄 {audioFile.name}
+                            {audioFile.name}
                           </span>
                           <button
                             className={styles.removeFile}
@@ -385,7 +521,7 @@ export const AnalyzeModal: React.FC = () => {
                     className={`${styles.advancedToggle} ${showAdvanced ? styles.open : ''}`}
                     onClick={() => setShowAdvanced(!showAdvanced)}
                   >
-                    <span>{showAdvanced ? '▼' : '▶'}</span>
+                    <span className={styles.advancedToggleIcon}>{showAdvanced ? '-' : '+'}</span>
                     Advanced Options
                   </button>
 
@@ -490,21 +626,42 @@ export const AnalyzeModal: React.FC = () => {
 
             {/* Footer */}
             <div className={styles.footer}>
-              <button
-                className={styles.cancelButton}
-                onClick={closeModal}
-                disabled={isAnalyzing}
-              >
-                Cancel
-              </button>
-              <button
-                className={styles.analyzeButton}
-                onClick={handleAnalyze}
-                disabled={isAnalyzing || (activeTab === 'youtube' ? !youtubeUrl || !!urlError : !audioFile)}
-              >
-                {isAnalyzing && <div className={styles.spinner} />}
-                {isAnalyzing ? 'Analyzing...' : 'Analyze'}
-              </button>
+              {showResultsView ? (
+                <>
+                  <button
+                    className={styles.cancelButton}
+                    onClick={closeModal}
+                    disabled={isDeconstructing}
+                  >
+                    Close
+                  </button>
+                  <button
+                    className={styles.analyzeButton}
+                    onClick={handleGoToCanvas}
+                    disabled={isDeconstructing}
+                  >
+                    Go to Canvas
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className={styles.cancelButton}
+                    onClick={closeModal}
+                    disabled={isAnalyzing}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className={styles.analyzeButton}
+                    onClick={handleAnalyze}
+                    disabled={isAnalyzing || (activeTab === 'youtube' ? !youtubeUrl || !!urlError : !audioFile)}
+                  >
+                    {isAnalyzing && <div className={styles.spinner} />}
+                    {isAnalyzing ? 'Analyzing...' : 'Analyze'}
+                  </button>
+                </>
+              )}
             </div>
           </motion.div>
         </>

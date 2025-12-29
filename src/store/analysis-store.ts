@@ -11,6 +11,7 @@ import type {
 } from '@/types/analysis';
 import type { Chord, MusicalKey, Mode } from '@/types/chord';
 import type { PhraseBoundary } from '@/types/progression';
+import type { DeconstructionStep } from './build-from-bones-store';
 import { convertAnalysisResultToChords, quantizeProgression } from '@/utils/chord-converter';
 import { useCanvasStore } from './canvas-store';
 
@@ -18,6 +19,7 @@ interface AnalysisState {
   // Modal state
   isModalOpen: boolean;
   activeTab: 'youtube' | 'audio';
+  showResultsView: boolean;
 
   // Input state
   input: AnalysisInput | null;
@@ -42,6 +44,11 @@ interface AnalysisState {
   // Phrase boundaries for visual grouping
   phraseBoundaries: PhraseBoundary[] | null;
 
+  // Deconstruction state
+  deconstructionSteps: DeconstructionStep[] | null;
+  isDeconstructing: boolean;
+  deconstructionError: AnalysisError | null;
+
   // Actions
   openModal: () => void;
   closeModal: () => void;
@@ -49,6 +56,7 @@ interface AnalysisState {
   setInput: (input: AnalysisInput) => void;
   clearInput: () => void;
   startAnalysis: (input: AnalysisInput) => Promise<void>;
+  startDeconstruction: () => Promise<void>;
   updateProgress: (progress: AnalysisProgress) => void;
   setError: (error: AnalysisError) => void;
   setResult: (result: AnalysisResult) => void;
@@ -63,6 +71,7 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   // Initial state
   isModalOpen: false,
   activeTab: 'youtube',
+  showResultsView: false,
   input: null,
   isAnalyzing: false,
   progress: null,
@@ -71,13 +80,16 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   metadata: null,
   convertedChords: null,
   phraseBoundaries: null,
+  deconstructionSteps: null,
+  isDeconstructing: false,
+  deconstructionError: null,
 
   // Modal actions
-  openModal: () => set({ isModalOpen: true, error: null, result: null }),
+  openModal: () => set({ isModalOpen: true, error: null, result: null, showResultsView: false }),
   closeModal: () => {
-    const { isAnalyzing } = get();
-    if (!isAnalyzing) {
-      set({ isModalOpen: false });
+    const { isAnalyzing, isDeconstructing } = get();
+    if (!isAnalyzing && !isDeconstructing) {
+      set({ isModalOpen: false, showResultsView: false });
     }
   },
   setActiveTab: (tab) => set({ activeTab: tab, error: null }),
@@ -178,7 +190,9 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
           metadata,
           isAnalyzing: false,
           progress: { stage: 'complete', progress: 100, message: 'Analysis complete!' },
-          isModalOpen: false, // Close the modal after successful analysis
+          showResultsView: true, // Show results in modal instead of auto-closing
+          deconstructionSteps: null, // Reset deconstruction when new analysis is done
+          deconstructionError: null,
         });
       } else {
         set({
@@ -200,6 +214,70 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
     }
   },
 
+  // Deconstruction action
+  startDeconstruction: async () => {
+    const { result, convertedChords } = get();
+
+    if (!result || !convertedChords) {
+      set({
+        deconstructionError: {
+          code: 'ANALYSIS_FAILED',
+          message: 'Please analyze a progression first',
+          retryable: false,
+        },
+      });
+      return;
+    }
+
+    set({
+      isDeconstructing: true,
+      deconstructionError: null,
+    });
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/deconstruct`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chords: convertedChords.map((chord) => ({
+            quality: chord.quality,
+            scaleDegree: chord.scaleDegree,
+          })),
+          key: result.key,
+          mode: result.mode,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.steps) {
+        set({
+          deconstructionSteps: data.steps,
+          isDeconstructing: false,
+          deconstructionError: null,
+        });
+      } else {
+        set({
+          deconstructionError: data.error || {
+            code: 'ANALYSIS_FAILED',
+            message: 'Failed to deconstruct progression',
+            retryable: true,
+          },
+          isDeconstructing: false,
+        });
+      }
+    } catch (error) {
+      set({
+        deconstructionError: {
+          code: 'NETWORK_ERROR',
+          message: error instanceof Error ? error.message : 'Network error',
+          retryable: true,
+        },
+        isDeconstructing: false,
+      });
+    }
+  },
+
   updateProgress: (progress) => set({ progress }),
   setError: (error) => set({ error, isAnalyzing: false, progress: null }),
   setResult: (result) => set({ result, isAnalyzing: false }),
@@ -210,6 +288,8 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
       metadata: null,
       convertedChords: null,
       phraseBoundaries: null,
+      deconstructionSteps: null,
+      deconstructionError: null,
     }),
   reset: () =>
     set({
@@ -220,6 +300,9 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
       metadata: null,
       convertedChords: null,
       phraseBoundaries: null,
+      deconstructionSteps: null,
+      deconstructionError: null,
+      showResultsView: false,
       activeTab: 'youtube',
     }),
 }));

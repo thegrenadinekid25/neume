@@ -22,7 +22,7 @@ const TUTORIAL_COMPLETED_KEY = 'tutorial-completed';
 export const useTutorialStore = create<TutorialState>((set) => ({
   isActive: false,
   currentStep: 0,
-  totalSteps: 6,
+  totalSteps: 7,
   hasCompletedTutorial: false,
 
   startTutorial: () => {

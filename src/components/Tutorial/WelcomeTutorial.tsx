@@ -17,35 +17,41 @@ interface Step {
 
 const TUTORIAL_STEPS: Step[] = [
   {
-    title: '🎵 Welcome to Neume',
-    description: 'Explore chord progressions through shapes, colors, and intelligent AI. Let\'s get started!',
+    title: 'Welcome to Neume',
+    description: 'A chord progression studio for classical choral composers. Build harmonies through shapes, explore voice leading, and analyze music you love.',
     action: 'start',
   },
   {
-    title: 'This is a Chord Progression',
-    description: 'Each shape represents a chord. Click the Play button to hear this progression.',
+    title: 'Your Canvas for Harmony',
+    description: 'Each shape represents a chord. Colors indicate harmonic function - golden for tonic, terracotta for dominant.',
     action: 'play',
     highlightElement: 'play-button',
   },
   {
-    title: 'Great! You can hear it',
-    description: 'Each shape represents a chord. Colors show harmonic function. Shapes make them easy to remember.',
+    title: 'Beautiful! You hear the harmony',
+    description: 'Notice how chords pulse as they play.',
     action: 'next',
   },
   {
-    title: 'Add More Chords',
-    description: 'Right-click anywhere on the canvas to add more chords to your progression.',
+    title: 'Build Your Progression',
+    description: 'Right-click to add a chord. Drag to reposition.',
     action: 'add-chord',
   },
   {
-    title: 'Analyze Real Music',
-    description: 'Upload a YouTube link or audio file to extract chord progressions from songs you love.',
+    title: 'Shape Your Voice Leading',
+    description: 'Toggle Voice Lines to see and edit individual SATB parts. Drag notes to create smooth melodic lines.',
+    action: 'next',
+    highlightElement: 'voice-lines-button',
+  },
+  {
+    title: 'Learn from the Masters',
+    description: 'Paste a YouTube link or upload audio to extract chord progressions.',
     action: 'analyze',
     highlightElement: 'analyze-button',
   },
   {
-    title: '🎉 You\'re Ready!',
-    description: 'You\'ve learned the basics. Now explore and create your own progressions!',
+    title: 'You are ready to compose',
+    description: 'Explore the sidebar for tempo, counterpoint checking, and more.',
     action: 'complete',
   },
 ];
@@ -138,13 +144,13 @@ export function WelcomeTutorial() {
                 className={styles.primaryButton}
                 onClick={nextStep}
               >
-                Start Tutorial
+                Begin Tour
               </button>
               <button
                 className={styles.secondaryButton}
                 onClick={skipTutorial}
               >
-                Skip
+                Skip for now
               </button>
             </div>
           </div>
@@ -226,7 +232,7 @@ function Confetti() {
         '--duration': `${2 + Math.random() * 1}s`,
       } as React.CSSProperties}
     >
-      {['🎵', '🎶', '🎼', '✨', '⭐'][Math.floor(Math.random() * 5)]}
+      {['*', '+', 'o', '.', '-'][Math.floor(Math.random() * 5)]}
     </div>
   ));
 

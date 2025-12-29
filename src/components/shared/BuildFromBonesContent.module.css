@@ -1,0 +1,507 @@
+/**
+ * BuildFromBonesContent Component Styles
+ * CSS Module for reusable step-by-step deconstruction display
+ */
+
+/* Main content container */
+.contentContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  width: 100%;
+}
+
+/* Step indicator - flex container for step dots and progress lines */
+.stepIndicator {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  padding: 0;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+}
+
+/* Step container - holds dot and label */
+.stepContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+/* Individual step dot - 48px geometric circles with Fraunces numerals */
+.stepDot {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: transparent;
+  border: 2px solid var(--border-light);
+  cursor: pointer;
+  transition: all var(--duration-slow) var(--ease-breathe);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Fraunces numeral styling */
+.stepNumber {
+  font-size: 24px;
+  font-weight: 600;
+  font-family: var(--font-display);
+  color: var(--text-secondary);
+  line-height: 1;
+  transition: color var(--duration-slow) var(--ease-breathe);
+}
+
+/* Step name label below */
+.stepLabel {
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Checkmark overlay for completed steps */
+.checkmark {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  background: var(--success);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  border: 2px solid var(--background-primary);
+}
+
+.checkmark svg {
+  width: 10px;
+  height: 10px;
+}
+
+.stepDot:hover {
+  border-color: var(--border-medium);
+  transform: scale(1.05);
+}
+
+.stepDot:hover .stepNumber {
+  color: var(--text-primary);
+}
+
+.stepDot:focus-visible {
+  outline: 2px solid var(--color-major-I, #e8a03e);
+  outline-offset: 2px;
+}
+
+/* Active step dot - golden glow with Bauhaus styling */
+.stepDot.active {
+  background: rgba(232, 160, 62, 0.15);
+  border: 3px solid var(--color-major-I, #e8a03e);
+  animation: stepGlow 2s ease-in-out infinite;
+}
+
+.stepDot.active .stepNumber {
+  color: var(--text-primary);
+}
+
+/* Completed step dot - filled with success color */
+.stepDot.completed {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+.stepDot.completed .stepNumber {
+  color: white;
+}
+
+/* Golden glow pulse animation for active step */
+@keyframes stepGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(232, 160, 62, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(232, 160, 62, 0);
+  }
+}
+
+/* Progress line connecting dots - wobbly SVG path */
+.progressLine {
+  flex-shrink: 0;
+  color: var(--border-light);
+  transition: color var(--duration-slow) var(--ease-breathe);
+  align-self: center;
+  margin-top: 12px; /* Align with center of step dots */
+}
+
+.progressPath {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.6s ease-out, stroke var(--duration-slow) var(--ease-breathe);
+}
+
+/* Completed progress line - success color with draw-in effect */
+.progressLine.completed {
+  color: var(--success);
+}
+
+.progressLine.completed .progressPath {
+  animation: drawLine 0.6s ease-out forwards;
+}
+
+/* Progress line draw-in animation */
+@keyframes drawLine {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Step content area */
+.stepContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* Step header - contains title and layer badge */
+.stepHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+/* Step title - 18px font */
+.stepTitle {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+/* Layer type badge */
+.layerBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.layerIcon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.layerLabel {
+  line-height: 1;
+}
+
+/* Modified chords indicator */
+.modifiedIndicator {
+  font-size: 12px;
+  font-family: var(--font-ui);
+  color: var(--color-major-I, #e8a03e);
+  font-weight: 500;
+  margin: 0;
+  padding: 4px 0;
+}
+
+/* Step description - 13px with background */
+.stepDescription {
+  font-size: 13px;
+  font-family: var(--font-ui);
+  line-height: 1.6;
+  color: var(--text-primary);
+  padding: var(--space-md);
+  background: var(--background-secondary);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--border-light);
+  margin: 0;
+}
+
+/* Progression display section */
+.progressionSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.progressionLabel {
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.progressionChords {
+  font-size: 13px;
+  font-family: var(--font-notation);
+  font-weight: 500;
+  color: var(--text-primary);
+  padding: var(--space-md);
+  background: var(--background-secondary);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--border-light);
+  word-break: break-word;
+  line-height: 1.5;
+}
+
+/* Navigation controls - flex container for prev/play/next buttons */
+.navControls {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: center;
+}
+
+/* Button base styles */
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid transparent;
+  border-radius: var(--border-radius-lg);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: all var(--duration-slow) var(--ease-breathe);
+  white-space: nowrap;
+}
+
+/* Primary action button - bright blue */
+.playButton.primary {
+  background: var(--primary-action);
+  color: white;
+  border-color: var(--primary-action);
+}
+
+.playButton.primary:hover:not(:disabled) {
+  background-color: #3a7bc8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+}
+
+.playButton.primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Disabled button state */
+.playButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.playButton:focus-visible:not(:disabled) {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+/* Play button icon styling */
+.playIcon {
+  font-size: 11px;
+  display: inline-block;
+}
+
+/* Navigation button styles (prev/next) */
+.navButton {
+  flex: 1;
+  padding: var(--space-md) var(--space-sm);
+  background: var(--background-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-lg);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: all var(--duration-slow) var(--ease-breathe);
+}
+
+.navButton:hover:not(:disabled) {
+  background: var(--border-light);
+  border-color: var(--border-medium);
+  transform: translateY(-1px);
+}
+
+.navButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.navButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.navButton:focus-visible:not(:disabled) {
+  outline: 2px solid var(--primary-action);
+  outline-offset: -2px;
+}
+
+/* Empty state */
+.emptyContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl) var(--space-lg);
+  gap: var(--space-md);
+  text-align: center;
+  min-height: 150px;
+}
+
+.emptyMessage {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Responsive design - tablet */
+@media (max-width: 768px) {
+  .stepIndicator {
+    gap: 6px;
+  }
+
+  .stepDot {
+    width: 40px;
+    height: 40px;
+  }
+
+  .stepNumber {
+    font-size: 20px;
+  }
+
+  .stepLabel {
+    font-size: 10px;
+    max-width: 60px;
+  }
+
+  .progressLine {
+    width: 24px;
+    margin-top: 10px;
+  }
+
+  .checkmark {
+    width: 16px;
+    height: 16px;
+  }
+
+  .checkmark svg {
+    width: 8px;
+    height: 8px;
+  }
+
+  .navControls {
+    gap: var(--space-xs);
+  }
+
+  .navButton {
+    font-size: 11px;
+    padding: var(--space-sm) var(--space-xs);
+  }
+}
+
+/* Responsive design - mobile */
+@media (max-width: 480px) {
+  .stepIndicator {
+    gap: 4px;
+    overflow-x: auto;
+    justify-content: flex-start;
+  }
+
+  .stepDot {
+    width: 36px;
+    height: 36px;
+    border-width: 2px;
+  }
+
+  .stepDot.active {
+    border-width: 2px;
+  }
+
+  .stepNumber {
+    font-size: 16px;
+  }
+
+  .stepLabel {
+    font-size: 9px;
+    max-width: 48px;
+  }
+
+  .progressLine {
+    width: 16px;
+    height: 16px;
+    margin-top: 10px;
+  }
+
+  .checkmark {
+    width: 14px;
+    height: 14px;
+    bottom: -1px;
+    right: -1px;
+  }
+
+  .checkmark svg {
+    width: 7px;
+    height: 7px;
+  }
+
+  .stepTitle {
+    font-size: 16px;
+  }
+
+  .stepDescription {
+    font-size: 12px;
+    padding: var(--space-sm);
+  }
+
+  .stepContent {
+    gap: var(--space-md);
+  }
+
+  .navControls {
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .navButton {
+    width: 100%;
+    font-size: 12px;
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .playButton {
+    width: 100%;
+    padding: var(--space-md);
+    font-size: 12px;
+  }
+}

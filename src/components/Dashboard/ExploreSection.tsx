@@ -7,25 +7,13 @@ export const ExploreSection: React.FC = () => {
     window.dispatchEvent(new CustomEvent('openAnalyzeModal'));
   };
 
-  const handleBuildFromBones = () => {
-    // Build from Bones requires analyzing a piece first
-    // Open the analyze modal which can lead to Build from Bones
-    window.dispatchEvent(new CustomEvent('openAnalyzeModal'));
-  };
-
   return (
     <div className={styles.container}>
       <ExploreCard
         title="Analyze a Piece"
-        description="Extract chord progressions from existing music"
-        icon="🎵"
+        description="Extract chord progressions from existing music and deconstruct them step by step"
+        icon="analyze"
         onClick={handleAnalyze}
-      />
-      <ExploreCard
-        title="Build from Bones"
-        description="Deconstruct progressions step by step"
-        icon="🦴"
-        onClick={handleBuildFromBones}
       />
     </div>
   );
