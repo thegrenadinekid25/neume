@@ -1002,16 +1002,6 @@ function App() {
               )}
             </button>
           </HelpTooltip>
-          <button
-            onClick={() => openProgressionsModal()}
-            className="action-button progressions-button"
-          >
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path className="folder-top" d="M2 4h4l2 2h6v1H2V4z" />
-              <path d="M2 7h12v6H2z" />
-            </svg>
-            <span>My Progressions</span>
-          </button>
         </SidebarSection>
 
         <SidebarSpacer />
