@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import type { SavedProgression } from '../types';
 import { progressionStorage } from '../services/progression-storage';
 import { useExpertModeStore } from './expert-mode-store';
+import { showDestructiveConfirm } from './confirmation-store';
+import { showSuccessToast, showErrorToast } from './toast-store';
 
 interface ProgressionsState {
   // Modal state
@@ -12,6 +14,7 @@ interface ProgressionsState {
   savedProgressions: SavedProgression[];
   isLoading: boolean;
   error: string | null;
+  currentRequestId: number;
 
   // Filters
   currentFilter: 'all' | 'favorites' | 'recent';
@@ -43,6 +46,7 @@ export const useProgressionsStore = create<ProgressionsState>((set, get) => ({
   savedProgressions: [],
   isLoading: false,
   error: null,
+  currentRequestId: 0,
   currentFilter: 'all',
   searchQuery: '',
 
@@ -60,13 +64,18 @@ export const useProgressionsStore = create<ProgressionsState>((set, get) => ({
 
   // Data loading (now async)
   loadProgressions: async () => {
-    set({ isLoading: true, error: null });
+    const requestId = ++get().currentRequestId;
+    set({ isLoading: true, error: null, currentRequestId: requestId });
     try {
       const progressions = await progressionStorage.getAll();
-      set({ savedProgressions: progressions, isLoading: false });
+      if (get().currentRequestId === requestId) {
+        set({ savedProgressions: progressions, isLoading: false });
+      }
     } catch (error) {
-      console.error('Failed to load progressions:', error);
-      set({ error: 'Failed to load progressions', isLoading: false });
+      if (get().currentRequestId === requestId) {
+        console.error('Failed to load progressions:', error);
+        set({ error: 'Failed to load progressions', isLoading: false });
+      }
     }
   },
 
@@ -90,16 +99,22 @@ export const useProgressionsStore = create<ProgressionsState>((set, get) => ({
 
   // Delete progression (now async)
   deleteProgression: async (id) => {
-    if (!confirm('Delete this progression?')) return;
-
-    set({ isLoading: true, error: null });
-    try {
-      await progressionStorage.delete(id);
-      await get().loadProgressions();
-    } catch (error) {
-      console.error('Failed to delete progression:', error);
-      set({ error: 'Failed to delete progression', isLoading: false });
-    }
+    showDestructiveConfirm(
+      'Delete Progression',
+      'Are you sure you want to delete this progression? This cannot be undone.',
+      async () => {
+        set({ isLoading: true, error: null });
+        try {
+          await progressionStorage.delete(id);
+          await get().loadProgressions();
+          showSuccessToast('Progression deleted');
+        } catch (error) {
+          console.error('Failed to delete progression:', error);
+          set({ error: 'Failed to delete progression', isLoading: false });
+          showErrorToast('Failed to delete progression');
+        }
+      }
+    );
   },
 
   // Toggle favorite status (now async)
@@ -107,13 +122,16 @@ export const useProgressionsStore = create<ProgressionsState>((set, get) => ({
     try {
       const progression = await progressionStorage.getById(id);
       if (progression) {
+        const wasFavorite = progression.isFavorite;
         progression.isFavorite = !progression.isFavorite;
         await progressionStorage.save(progression);
         await get().loadProgressions();
+        showSuccessToast(wasFavorite ? 'Removed from favorites' : 'Added to favorites');
       }
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
       set({ error: 'Failed to update progression' });
+      showErrorToast('Failed to update progression');
     }
   },
 
@@ -125,10 +143,12 @@ export const useProgressionsStore = create<ProgressionsState>((set, get) => ({
         const updated = { ...progression, title: newTitle, updatedAt: new Date().toISOString() };
         await progressionStorage.save(updated);
         await get().loadProgressions();
+        showSuccessToast('Progression renamed');
       }
     } catch (error) {
       console.error('Failed to rename progression:', error);
       set({ error: 'Failed to rename progression' });
+      showErrorToast('Failed to rename progression');
     }
   },
 

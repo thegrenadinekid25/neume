@@ -5,6 +5,7 @@ import { useProgressionsStore } from '@/store/progressions-store';
 import { progressionStorage } from '@/services/progression-storage';
 import { SaveProgressionDialog } from './SaveProgressionDialog';
 import { downloadMusicXML, validateForExport } from '@/services/musicxml-exporter';
+import { showAlert } from '@/store/confirmation-store';
 import type { SavedProgression } from '@/types';
 import styles from './MyProgressionsModal.module.css';
 
@@ -112,7 +113,7 @@ export const MyProgressionsModal: React.FC = () => {
     if (format === 'musicxml') {
       const validation = validateForExport(progression);
       if (!validation.isValid) {
-        alert('Cannot export: ' + validation.errors.join(', '));
+        showAlert('Export Error', 'Cannot export: ' + validation.errors.join(', '));
         return;
       }
       downloadMusicXML(progression);

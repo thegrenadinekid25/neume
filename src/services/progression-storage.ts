@@ -29,6 +29,16 @@ class ProgressionStorage {
   private readonly LOCAL_STORAGE_KEY = 'neume-progressions';
 
   /**
+   * Wrap a promise with a timeout to prevent indefinite hangs
+   */
+  private async withTimeout<T>(promise: Promise<T>, timeoutMs = 10000): Promise<T> {
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Operation timed out')), timeoutMs)
+    );
+    return Promise.race([promise, timeout]);
+  }
+
+  /**
    * Check if user is authenticated and return user ID
    */
   private async getAuthenticatedUserId(): Promise<string | null> {
@@ -36,8 +46,13 @@ class ProgressionStorage {
       return null;
     }
 
-    const { data: { session } } = await supabase.auth.getSession();
-    return session?.user?.id || null;
+    try {
+      const { data: { session } } = await this.withTimeout(supabase.auth.getSession());
+      return session?.user?.id || null;
+    } catch (error) {
+      console.error('Auth session check failed:', error);
+      return null; // Fall back to localStorage
+    }
   }
 
   /**
@@ -150,7 +165,12 @@ class ProgressionStorage {
     const userId = await this.getAuthenticatedUserId();
 
     if (userId) {
-      return this.getFromCloud();
+      try {
+        return await this.getFromCloud();
+      } catch (error) {
+        console.error('Cloud fetch failed, falling back to localStorage:', error);
+        return this.getFromLocalStorage();
+      }
     } else {
       return this.getFromLocalStorage();
     }

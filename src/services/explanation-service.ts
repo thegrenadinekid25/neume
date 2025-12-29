@@ -143,6 +143,8 @@ export function getMockExplanation(
   if (chord.isChromatic && chord.chromaticType) {
     contextual += `adds a chromatic flavor as a ${chord.chromaticType} chord, `;
     contextual += `creating unexpected harmonic color. `;
+  } else {
+    contextual += `establishes its harmonic role. `;
   }
 
   // Explain harmonic relationships with surrounding chords

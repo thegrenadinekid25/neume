@@ -13,8 +13,9 @@ import { Sidebar, SidebarSection, SidebarDivider, SidebarSpacer } from '@/compon
 import { AuthModal, UserMenu } from '@/components/Auth';
 import { AudioLoadingIndicator } from '@/components/Audio';
 import { VoiceToggleBar } from '@/components/VoiceLaneEditor';
-import { ToastContainer } from '@/components/UI';
+import { ToastContainer, ConfirmationDialog } from '@/components/UI';
 import { useAppViewStore } from '@/store/app-view-store';
+import { showConfirmation, showDestructiveConfirm } from '@/store/confirmation-store';
 import { Dashboard } from '@/components/Dashboard';
 
 // Lazy load modals for code splitting
@@ -459,6 +460,12 @@ function App() {
     setSelectedChordIds(duplicates.map((c) => c.id));
   }, [selectedChordIds, chords, saveToHistory]);
 
+  const handleSave = useCallback(() => {
+    if (chords.length > 0) {
+      setShowSaveDialog(true);
+    }
+  }, [chords.length]);
+
   // Handle Build From Bones - generates smart steps based on actual chord complexity
   const handleBuildFromBones = useCallback(() => {
     const steps: Array<{
@@ -689,20 +696,48 @@ function App() {
 
   // Handle new piece - reset canvas and state
   const handleNewPiece = useCallback(() => {
-    if (chords.length > 0 && !window.confirm('Start a new piece? Any unsaved changes will be lost.')) {
-      return;
+    if (chords.length > 0) {
+      showConfirmation({
+        title: 'Start New Piece',
+        message: 'Any unsaved changes will be lost. Continue?',
+        confirmLabel: 'Start New',
+        onConfirm: () => {
+          setChords([]);
+          setSelectedChordIds([]);
+          setCurrentKey('C');
+          setCurrentMode('major');
+          setBeatsPerMeasure(4);
+          setShowVoiceLanes(false);
+          setPieceTitle('Untitled');
+          clearAnalyzedProgression();
+          useVoiceLineStore.getState().initializeFromChords([]);
+        },
+      });
+    } else {
+      setPieceTitle('Untitled');
     }
-    setChords([]);
-    setSelectedChordIds([]);
-    setCurrentKey('C');
-    setCurrentMode('major');
-    setBeatsPerMeasure(4);
-    setShowVoiceLanes(false);
-    setPieceTitle('Untitled');
-    clearAnalyzedProgression();
-    // Reset voice lines by reinitializing with empty chords
-    useVoiceLineStore.getState().initializeFromChords([]);
   }, [chords.length, clearAnalyzedProgression]);
+
+  // Handle back to dashboard - check for unsaved changes
+  const handleBackToDashboard = useCallback(() => {
+    if (chords.length > 0) {
+      showDestructiveConfirm(
+        'Unsaved Changes',
+        'You have unsaved changes. Are you sure you want to leave? Your changes will be lost.',
+        () => {
+          // Clear state and navigate
+          setChords([]);
+          setSelectedChordIds([]);
+          navigateToDashboard();
+        },
+        () => {
+          // Cancel - do nothing
+        }
+      );
+    } else {
+      navigateToDashboard();
+    }
+  }, [chords.length, navigateToDashboard]);
 
   // Early return for dashboard view
   if (currentView === 'dashboard') {
@@ -732,6 +767,7 @@ function App() {
           onClose={() => setShowAuthModal(false)}
         />
         <ToastContainer />
+        <ConfirmationDialog />
       </>
     );
   }
@@ -741,7 +777,7 @@ function App() {
       <header className="app-header">
         <button
           className="back-to-dashboard"
-          onClick={navigateToDashboard}
+          onClick={handleBackToDashboard}
           title="Back to Dashboard"
         >
           ←
@@ -761,7 +797,7 @@ function App() {
         <div className="header-right">
           <button
             className="library-button"
-            onClick={openProgressionsModal}
+            onClick={() => openProgressionsModal()}
             aria-label="My Library"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -990,7 +1026,7 @@ function App() {
             </button>
           </HelpTooltip>
           <button
-            onClick={openProgressionsModal}
+            onClick={() => openProgressionsModal()}
             className="action-button progressions-button"
           >
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1058,6 +1094,7 @@ function App() {
         onTogglePlay={togglePlay}
         onStop={stop}
         onTempoChange={(delta) => setTempo(Math.max(60, Math.min(220, tempo + delta)))}
+        onSave={handleSave}
         onAnalyze={openAnalyzeModal}
         onRefine={() => {
           if (selectedChordIds.length > 0) {
@@ -1113,6 +1150,7 @@ function App() {
       </Suspense>
 
       <ToastContainer />
+      <ConfirmationDialog />
     </div>
   );
 }

@@ -61,7 +61,7 @@
   font-weight: 500;
   color: var(--warm-text-primary, #3D3530);
   line-height: 1;
-  cursor: text;
+  cursor: inherit;
 }
 
 .tempoValue:hover {

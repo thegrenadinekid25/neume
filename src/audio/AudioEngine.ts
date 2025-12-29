@@ -158,7 +158,7 @@ export class AudioEngine {
         sustain: 0.7,    // Holds the tone well
         release: 0.5,    // Longer release for warm decay
       },
-      volume: -11, // Reduced to match piano sampler volume
+      volume: -15, // Further reduced for better balance with piano
     }).toDestination();
 
     console.log('Chime synth created');

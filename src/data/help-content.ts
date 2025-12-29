@@ -21,8 +21,8 @@ export const HELP_CONTENT: Record<string, HelpContent> = {
   'tempo-dial': {
     id: 'tempo-dial',
     title: 'Tempo Control',
-    content: 'Drag left/right to adjust playback speed. Range: 60-220 BPM.',
-    shortcut: 'No keyboard shortcut',
+    content: 'Drag up/down to adjust playback speed. Click to edit, double-click to reset to 120 BPM. Range: 60-220 BPM.',
+    shortcut: '↑/↓ or [/] to adjust',
   },
 
   'key-selector': {

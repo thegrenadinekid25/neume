@@ -42,6 +42,7 @@ export const KeyboardShortcutsGuide: React.FC<KeyboardShortcutsGuideProps> = ({
         { keys: `${mod} + Z`, description: 'Undo' },
         { keys: `${mod} + Shift + Z`, description: 'Redo' },
         { keys: `${mod} + D`, description: 'Duplicate selected' },
+        { keys: `${mod} + S`, description: 'Save progression' },
         { keys: 'Delete / Backspace', description: 'Delete selected' },
         { keys: `${mod} + A`, description: 'Select all' },
         { keys: 'Escape', description: 'Clear selection' },
@@ -54,6 +55,8 @@ export const KeyboardShortcutsGuide: React.FC<KeyboardShortcutsGuideProps> = ({
         { keys: 'Shift + ← →', description: 'Move selected 1 beat' },
         { keys: '↑ ↓', description: 'Adjust tempo (±1 BPM)' },
         { keys: 'Shift + ↑ ↓', description: 'Adjust tempo (±10 BPM)' },
+        { keys: '[ / ]', description: 'Adjust tempo (±5 BPM)' },
+        { keys: 'Shift + [ / ]', description: 'Adjust tempo (±10 BPM)' },
       ]
     },
     {

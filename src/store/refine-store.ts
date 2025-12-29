@@ -6,6 +6,10 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import type { Chord } from '@/types/chord';
+import {
+  suggestRefinements,
+  type SimpleChord,
+} from '@/services/api-service';
 
 /**
  * Refinement suggestion from the suggestion engine
@@ -52,6 +56,35 @@ interface RefineState {
   applySuggestion: (suggestionId: string) => void;
   clearSuggestions: () => void;
   reset: () => void;
+}
+
+/**
+ * Convert scale degree to root note based on key
+ * Uses semitone calculations to correctly handle all keys including sharps/flats
+ */
+function scaleDegreeToRoot(scaleDegree: number, key: string, _mode: string): string {
+  const chromaticScale = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const keyToSemitone: Record<string, number> = {
+    'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
+    'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
+    'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+  };
+  const keySemitone = keyToSemitone[key] ?? 0;
+  const majorScaleIntervals = [0, 2, 4, 5, 7, 9, 11]; // semitones from root for each scale degree
+  const noteIndex = (keySemitone + majorScaleIntervals[scaleDegree - 1]) % 12;
+  return chromaticScale[noteIndex];
+}
+
+/**
+ * Convert Chord to SimpleChord for API communication
+ */
+function chordToSimpleChord(chord: Chord): SimpleChord {
+  const root = scaleDegreeToRoot(chord.scaleDegree, chord.key, chord.mode);
+  return {
+    root,
+    quality: chord.quality,
+    extensions: chord.extensions ? { ...chord.extensions } as Record<string, boolean> : undefined,
+  };
 }
 
 /**
@@ -291,13 +324,44 @@ export const useRefineStore = create<RefineState>((set, get) => ({
 }));
 
 /**
- * Helper function to get suggestions (will call API when backend is ready)
+ * Get suggestions from API with fallback to mock data
  */
 export async function getSuggestions(
   intent: string,
   chords: Chord[]
 ): Promise<Suggestion[]> {
-  // For now, return mock suggestions
-  // Later: return await fetch(`/api/suggest`, { method: 'POST', body: JSON.stringify({intent, chords}) })
-  return generateMockSuggestions(intent, chords);
+  if (chords.length === 0) return [];
+
+  const firstChord = chords[0];
+  const key = firstChord.key;
+  const mode = firstChord.mode;
+  const simpleChords = chords.map(chordToSimpleChord);
+
+  try {
+    const response = await suggestRefinements(intent, simpleChords, key, mode);
+
+    if (!response.success || !response.suggestions) {
+      console.warn('API returned no suggestions, using mock data');
+      return generateMockSuggestions(intent, chords);
+    }
+
+    // Map backend response to frontend Suggestion type
+    return response.suggestions.map((s, idx) => ({
+      id: s.id,
+      technique: s.technique,
+      targetChordId: chords[idx % chords.length].id,
+      from: chords[idx % chords.length],
+      to: {
+        ...chords[idx % chords.length],
+        quality: s.toChord.quality as any,
+        extensions: s.toChord.extensions as any,
+      },
+      rationale: s.rationale,
+      examples: s.examples,
+      relevanceScore: s.relevanceScore,
+    }));
+  } catch (error) {
+    console.error('Failed to get suggestions from API:', error);
+    return generateMockSuggestions(intent, chords);
+  }
 }

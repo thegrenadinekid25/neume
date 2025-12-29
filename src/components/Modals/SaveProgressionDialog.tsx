@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { SavedProgression } from '@/types';
-import { showSuccessToast } from '@/store/toast-store';
+import { showSuccessToast, showErrorToast } from '@/store/toast-store';
 import styles from './SaveProgressionDialog.module.css';
 
 interface SaveProgressionDialogProps {
@@ -86,6 +86,7 @@ export const SaveProgressionDialog: React.FC<SaveProgressionDialogProps> = ({
       onClose();
     } catch (error) {
       console.error('Failed to save progression:', error);
+      showErrorToast('Failed to save progression. Please try again.');
       setSaveError('Failed to save progression. Please try again.');
     } finally {
       setIsSaving(false);

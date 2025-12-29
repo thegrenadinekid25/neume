@@ -11,7 +11,7 @@ numpy==1.24.3
 scipy==1.11.4
 
 # YouTube
-yt-dlp==2023.11.16
+yt-dlp>=2024.12.23
 
 # AI
 anthropic==0.39.0

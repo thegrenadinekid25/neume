@@ -13,6 +13,7 @@ interface UseKeyboardShortcutsProps {
   onMoveSelected?: (direction: 'left' | 'right', amount: number) => void;
   onTempoChange?: (delta: number) => void;
   onShowHelp?: () => void;
+  onSave?: () => void;
   enabled?: boolean;
 }
 
@@ -28,6 +29,7 @@ export function useKeyboardShortcuts({
   onMoveSelected,
   onTempoChange,
   onShowHelp,
+  onSave,
   enabled = true,
 }: UseKeyboardShortcutsProps) {
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -57,6 +59,13 @@ export function useKeyboardShortcuts({
     if (modifier && e.key === 'd' && onDuplicateSelected) {
       e.preventDefault();
       onDuplicateSelected();
+      return;
+    }
+
+    // Cmd/Ctrl + S: Save
+    if (modifier && e.key === 's' && onSave) {
+      e.preventDefault();  // Prevent browser's save page dialog
+      onSave();
       return;
     }
 
@@ -126,13 +135,21 @@ export function useKeyboardShortcuts({
       return;
     }
 
+    // [ / ]: Adjust tempo
+    if (onTempoChange && (e.key === '[' || e.key === ']')) {
+      e.preventDefault();
+      const delta = e.shiftKey ? 10 : 5; // ±10 BPM with shift, ±5 otherwise
+      onTempoChange(e.key === ']' ? delta : -delta);
+      return;
+    }
+
     // ?: Show keyboard shortcuts guide (Shift+/)
     if ((e.key === '?' || (e.key === '/' && e.shiftKey)) && onShowHelp) {
       e.preventDefault();
       onShowHelp();
       return;
     }
-  }, [enabled, onSelectAll, onClearSelection, onDeleteSelected, onDuplicateSelected, onTogglePlay, onStop, onUndo, onRedo, onMoveSelected, onTempoChange, onShowHelp]);
+  }, [enabled, onSelectAll, onClearSelection, onDeleteSelected, onDuplicateSelected, onTogglePlay, onStop, onUndo, onRedo, onMoveSelected, onTempoChange, onShowHelp, onSave]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);

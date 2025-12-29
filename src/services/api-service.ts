@@ -65,3 +65,49 @@ export async function getAnalysisStatus(jobId: string): Promise<{
   const response = await fetch(`${API_BASE_URL}/api/analyze/status/${jobId}`);
   return response.json();
 }
+
+/**
+ * Types for suggestion API
+ */
+export interface SimpleChord {
+  root: string;
+  quality: string;
+  extensions?: Record<string, boolean>;
+}
+
+export interface SuggestionData {
+  id: string;
+  technique: string;
+  targetChordId?: string;
+  fromChord: SimpleChord;
+  toChord: SimpleChord;
+  rationale: string;
+  examples: string[];
+  relevanceScore: number;
+}
+
+export interface SuggestResponse {
+  success: boolean;
+  suggestions?: SuggestionData[];
+  error?: string;
+}
+
+/**
+ * Get chord refinement suggestions from the API
+ */
+export async function suggestRefinements(
+  intent: string,
+  chords: SimpleChord[],
+  key: string,
+  mode: string
+): Promise<SuggestResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/suggest`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ intent, chords, key, mode }),
+  });
+  if (!response.ok) {
+    throw new Error('Suggestion request failed');
+  }
+  return response.json();
+}

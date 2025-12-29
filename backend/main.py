@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uuid
 import os
 import json
+import asyncio
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import anthropic
@@ -35,7 +36,7 @@ from models.schemas import (
     ChordInsightRequest,
     ChordInsightResponse,
 )
-from services.youtube_downloader import YouTubeDownloader
+from services.youtube_downloader import YouTubeDownloader, YouTubeDownloaderError
 from services.chord_extractor import ChordExtractor, parse_chord_label
 from services.deconstructor import ProgressionDeconstructor
 from services.emotional_mapper import EmotionalMapper
@@ -96,10 +97,29 @@ async def analyze_audio(request: AnalyzeRequest):
             if not request.videoId:
                 raise HTTPException(status_code=400, detail="videoId required for YouTube")
 
-            download_result = youtube_downloader.download_audio(request.videoId)
-            audio_file = download_result["filepath"]
-            title = download_result["title"]
-            source_url = request.youtubeUrl
+            try:
+                download_result = await youtube_downloader.download_audio(request.videoId)
+                audio_file = download_result["filepath"]
+                title = download_result["title"]
+                source_url = request.youtubeUrl
+            except YouTubeDownloaderError as e:
+                return AnalyzeResponse(
+                    success=False,
+                    error=ErrorData(
+                        code="YOUTUBE_DOWNLOAD_FAILED",
+                        message=e.message,
+                        retryable=e.retryable
+                    )
+                )
+            except asyncio.TimeoutError:
+                return AnalyzeResponse(
+                    success=False,
+                    error=ErrorData(
+                        code="DOWNLOAD_TIMEOUT",
+                        message="Download timed out after 5 minutes",
+                        retryable=True
+                    )
+                )
 
         elif request.type == "audio":
             if not request.uploadId:

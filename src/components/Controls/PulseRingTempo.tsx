@@ -22,30 +22,59 @@ export function PulseRingTempo({
   const [editValue, setEditValue] = useState(String(tempo));
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
+  const hasDragged = useRef(false);
   const startY = useRef(0);
   const startTempo = useRef(tempo);
+  const pointerId = useRef<number | null>(null);
 
   // Calculate animation duration based on tempo (one beat)
   const beatDuration = 60000 / tempo; // ms per beat
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (disabled || isEditing) return;
+    e.preventDefault();
     isDragging.current = true;
+    hasDragged.current = false;
     startY.current = e.clientY;
     startTempo.current = tempo;
-    (e.target as Element).setPointerCapture(e.pointerId);
+    pointerId.current = e.pointerId;
+    containerRef.current?.setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!isDragging.current || disabled) return;
     const deltaY = startY.current - e.clientY;
+
+    // Detect drag (3px threshold)
+    if (Math.abs(deltaY) >= 3) {
+      hasDragged.current = true;
+    }
+
     const tempoChange = Math.round(deltaY / 3); // 3px = 1 BPM
     const newTempo = Math.max(minTempo, Math.min(maxTempo, startTempo.current + tempoChange));
     onTempoChange(newTempo);
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (_e: React.PointerEvent) => {
+    if (pointerId.current !== null) {
+      containerRef.current?.releasePointerCapture(pointerId.current);
+      pointerId.current = null;
+    }
+
+    // Only enter edit mode if it was a click (not a drag)
+    if (isDragging.current && !hasDragged.current && !disabled) {
+      setIsEditing(true);
+      setEditValue(String(tempo));
+    }
+
     isDragging.current = false;
+    hasDragged.current = false;
+  };
+
+  const handleDoubleClick = () => {
+    if (disabled) return;
+    // Reset tempo to 120 BPM on double-click
+    onTempoChange(120);
   };
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -54,12 +83,6 @@ export function PulseRingTempo({
     const delta = e.deltaY > 0 ? -1 : 1;
     const newTempo = Math.max(minTempo, Math.min(maxTempo, tempo + delta));
     onTempoChange(newTempo);
-  };
-
-  const handleNumberClick = () => {
-    if (disabled) return;
-    setIsEditing(true);
-    setEditValue(String(tempo));
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,6 +115,7 @@ export function PulseRingTempo({
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
       onWheel={handleWheel}
+      onDoubleClick={handleDoubleClick}
     >
       {/* Pulse Ring SVG */}
       <svg
@@ -126,7 +150,6 @@ export function PulseRingTempo({
         ) : (
           <span
             className={styles.tempoValue}
-            onClick={handleNumberClick}
             role="button"
             tabIndex={0}
           >

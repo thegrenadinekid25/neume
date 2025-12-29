@@ -300,6 +300,7 @@ export const AnalyzeModal: React.FC = () => {
                         <p className={styles.exampleLinksTitle}>Example Videos</p>
                         {EXAMPLE_VIDEOS.map((video, idx) => (
                           <button
+                            type="button"
                             key={idx}
                             className={styles.exampleLink}
                             onClick={() => handleExampleLinkClick(video.url)}

@@ -45,6 +45,7 @@ interface DroppableCanvasProps {
   onTogglePlay?: () => void;
   onStop?: () => void;
   onTempoChange?: (delta: number) => void;
+  onSave?: () => void;
   onAnalyze?: () => void;
   onRefine?: () => void;
 }
@@ -80,6 +81,7 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
   onTogglePlay,
   onStop,
   onTempoChange,
+  onSave,
   onAnalyze,
   onRefine,
 }) => {
@@ -131,6 +133,7 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
     onShowHelp,
     onTogglePlay,
     onStop,
+    onSave,
   });
 
   // Handle chord click for selection
