@@ -6,6 +6,11 @@
   position: relative;
 }
 
+.selectorWrapper {
+  padding: 8px;
+  border-bottom: 1px solid var(--warm-linen, #EDE8E0);
+}
+
 .legendWrapper {
   padding: 0 8px;
   border-bottom: 1px solid var(--warm-linen, #EDE8E0);

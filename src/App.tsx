@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { DroppableCanvas } from '@/components/Canvas';
 import { MetadataBanner } from '@/components/Canvas/MetadataBanner';
+import { PatternDefs } from '@/components/Canvas/PatternDefs';
 import { DeleteConfirmation } from '@/components/UI/DeleteConfirmation';
 import { HelpTooltip } from '@/components/UI/HelpTooltip';
 import { KeySelector, ModeToggle, BeatsSelector } from '@/components/UI/MusicalSelector';
 import { VoicingModeToggle } from '@/components/UI/VoicingModeToggle';
 import { HELP_CONTENT } from '@/data/help-content';
-import { WhyThisPanel, BuildFromBonesPanel, CompositionToolsPanel } from '@/components/Panels';
+import { WhyThisPanel, BuildFromBonesPanel, CompositionToolsPanel, SnapshotsPanel, CritiquePanel } from '@/components/Panels';
 import { PulseRingTempo, SoundToggle } from '@/components/Controls';
 import { WelcomeTutorial } from '@/components/Tutorial/WelcomeTutorial';
 import { Sidebar, SidebarSection, SidebarDivider, SidebarSpacer } from '@/components/Sidebar';
@@ -16,6 +17,7 @@ import { VoiceToggleBar } from '@/components/VoiceLaneEditor';
 import { ToastContainer, ConfirmationDialog } from '@/components/UI';
 import { useAppViewStore } from '@/store/app-view-store';
 import { showConfirmation, showDestructiveConfirm } from '@/store/confirmation-store';
+import { useCritiqueStore } from '@/store/critique-store';
 import { Dashboard } from '@/components/Dashboard';
 
 // Lazy load modals for code splitting
@@ -24,6 +26,7 @@ const AnalyzeModal = lazy(() => import('@/components/Modals/AnalyzeModal').then(
 const MyProgressionsModal = lazy(() => import('@/components/Modals/MyProgressionsModal').then(m => ({ default: m.MyProgressionsModal })));
 const RefineModal = lazy(() => import('@/components/Modals/RefineModal').then(m => ({ default: m.RefineModal })));
 const SaveProgressionDialog = lazy(() => import('@/components/Modals/SaveProgressionDialog').then(m => ({ default: m.SaveProgressionDialog })));
+const SaveSnapshotDialog = lazy(() => import('@/components/Modals/SaveSnapshotDialog').then(m => ({ default: m.SaveSnapshotDialog })));
 const NarrativeComposerModal = lazy(() => import('@/components/Modals/NarrativeComposerModal').then(m => ({ default: m.NarrativeComposerModal })));
 const SettingsModal = lazy(() => import('@/components/Modals/SettingsModal').then(m => ({ default: m.SettingsModal })));
 import { useHistory } from '@/hooks/useHistory';
@@ -40,10 +43,11 @@ import { useTutorialStore } from '@/store/tutorial-store';
 import { useVoiceLineStore } from '@/store/voice-line-store';
 import { useCompositionToolsStore } from '@/store/composition-tools-store';
 import { useVoicingStore } from '@/store/voicing-store';
+import { useSnapshotsStore } from '@/store/snapshots-store';
 import { analyzeCounterpoint } from '@/services/counterpoint-analyzer';
 import { downloadMusicXML } from '@/services/musicxml-exporter';
 import { generateSATBVoicing } from '@/audio/VoiceLeading';
-import { deconstructProgression } from '@/services/api-service';
+import { deconstructProgression, critiqueProgression } from '@/services/api-service';
 import { optimizeProgressionVoicing } from '@/services/voice-leading-optimizer';
 import { audioEngine } from '@/audio/AudioEngine';
 import type { Chord, MusicalKey, Mode, ScaleDegree, ChordQuality, ChordExtensions, Voices, SavedProgression } from '@/types';
@@ -145,6 +149,8 @@ function App() {
   const { migrateLocalData, loadProgressions, saveProgression } = useProgressionsStore();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showSaveSnapshotDialog, setShowSaveSnapshotDialog] = useState(false);
+  const [snapshotChordsToSave, setSnapshotChordsToSave] = useState<Chord[]>([]);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Initialize auth on mount
@@ -206,6 +212,7 @@ function App() {
   const openCompositionToolsPanel = useCompositionToolsStore(state => state.openPanel);
   const openProgressionsModal = useProgressionsStore(state => state.openModal);
   const openRefineModal = useRefineStore(state => state.openModal);
+  const openSnapshotsPanel = useSnapshotsStore(state => state.openPanel);
 
   // Voice lines
   const initializeVoiceLines = useVoiceLineStore(state => state.initializeFromChords);
@@ -544,6 +551,45 @@ function App() {
     }
   }, [chords, currentKey, currentMode, metadata, scaleDegreeToRoot, openBuildFromBonesPanel, setBuildFromBonesLoading, setBuildFromBonesError]);
 
+  // Critique store actions
+  const openCritiquePanel = useCritiqueStore(state => state.openPanel);
+  const setCritique = useCritiqueStore(state => state.setCritique);
+  const setCritiqueLoading = useCritiqueStore(state => state.setLoading);
+  const setCritiqueError = useCritiqueStore(state => state.setError);
+
+  // Handle Critique - calls backend API for harmonic analysis
+  const handleCritique = useCallback(async () => {
+    if (chords.length === 0) {
+      setCritiqueError('No chords to critique. Add some chords first.');
+      return;
+    }
+
+    // Set loading state and open panel to show spinner
+    setCritiqueLoading(true);
+    openCritiquePanel();
+
+    try {
+      // Convert chords to API format (SimpleChord)
+      const simpleChords = chords.map(c => ({
+        root: scaleDegreeToRoot(c.scaleDegree, c.key),
+        quality: c.quality,
+        extensions: c.extensions ? { ...c.extensions } as Record<string, boolean> : undefined,
+      }));
+
+      // Call the backend API
+      const response = await critiqueProgression(simpleChords, currentKey, currentMode);
+
+      setCritique(response);
+    } catch (error) {
+      console.error('Critique error:', error);
+      setCritiqueError(
+        error instanceof Error ? error.message : 'Failed to critique progression'
+      );
+    } finally {
+      setCritiqueLoading(false);
+    }
+  }, [chords, currentKey, currentMode, scaleDegreeToRoot, openCritiquePanel, setCritique, setCritiqueLoading, setCritiqueError]);
+
   const chordsWithPlayState = useMemo(() => {
     return chords.map(chord => ({
       ...chord,
@@ -752,6 +798,7 @@ function App() {
 
   return (
     <div className="app">
+      <PatternDefs />
       <header className="app-header">
         <div className="header-left">
           <button
@@ -937,6 +984,26 @@ function App() {
             </svg>
             <span>Check Rules{counterpointViolations.length > 0 ? ` (${counterpointViolations.length})` : ''}</span>
           </button>
+
+          <button
+            onClick={handleCritique}
+            disabled={chords.length === 0}
+            className="action-button"
+            style={{
+              marginTop: '8px',
+              background: 'transparent',
+              color: 'var(--warm-text-primary)',
+              borderColor: 'var(--warm-gold)',
+              width: '100%',
+            }}
+            aria-label="Critique"
+            title="Analyze voice leading and harmony"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Critique</span>
+          </button>
         </SidebarSection>
 
         <SidebarDivider />
@@ -1002,6 +1069,26 @@ function App() {
               )}
             </button>
           </HelpTooltip>
+
+          <button
+            onClick={openSnapshotsPanel}
+            className="action-button snapshots-button"
+            style={{
+              marginTop: '8px',
+              background: 'transparent',
+              color: 'var(--warm-text-primary)',
+              borderColor: 'var(--warm-gold)',
+              width: '100%',
+            }}
+            aria-label="Snapshots"
+            title="Browse and insert chord snapshots"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+            <span>Snapshots</span>
+          </button>
         </SidebarSection>
 
         <SidebarSpacer />
@@ -1068,6 +1155,13 @@ function App() {
             openRefineModal(selectedChordIds);
           }
         }}
+        onSaveSnapshot={() => {
+          if (selectedChordIds.length > 0) {
+            const selectedChords = chords.filter(c => selectedChordIds.includes(c.id));
+            setSnapshotChordsToSave(selectedChords);
+            setShowSaveSnapshotDialog(true);
+          }
+        }}
         onBuildFromBones={handleBuildFromBones}
       />
       </div>
@@ -1098,6 +1192,10 @@ function App() {
         chords={chords}
         onUpdateChordVoices={handleUpdateChordVoices}
       />
+      <SnapshotsPanel />
+      <CritiquePanel
+        onSelectChords={handleSelectChords}
+      />
 
       <WelcomeTutorial />
 
@@ -1114,6 +1212,15 @@ function App() {
           isOpen={showSaveDialog}
           onClose={() => setShowSaveDialog(false)}
           onSave={saveProgression}
+        />
+        <SaveSnapshotDialog
+          isOpen={showSaveSnapshotDialog}
+          onClose={() => setShowSaveSnapshotDialog(false)}
+          chordsToSave={snapshotChordsToSave}
+          currentKey={currentKey}
+          currentMode={currentMode}
+          currentTempo={chords.length > 0 ? 120 : 120}
+          source={{ type: 'composed', progressionName: pieceTitle }}
         />
       </Suspense>
 

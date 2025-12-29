@@ -175,3 +175,29 @@ export const DEFAULT_COMPOSITION_MODE: CompositionMode = {
   highlightRangeViolations: true,
   preventVoiceCrossing: true,
 };
+
+/**
+ * Note value enum for UI selection
+ * Represents standard musical note durations
+ */
+export type NoteValue = 'whole' | 'half' | 'quarter' | 'eighth' | 'sixteenth' | 'thirtysecond';
+
+/**
+ * Mapping note values to beat fractions
+ * Based on 4/4 time signature where quarter note = 1 beat
+ */
+export const NOTE_VALUE_TO_BEATS: Record<NoteValue, number> = {
+  whole: 4,
+  half: 2,
+  quarter: 1,
+  eighth: 0.5,
+  sixteenth: 0.25,
+  thirtysecond: 0.125,
+};
+
+/**
+ * Snap resolution options for note placement
+ * 1 = whole beat, 0.5 = half beat, 0.25 = quarter beat, etc.
+ * 0 = no snapping (free positioning)
+ */
+export type SnapResolution = 1 | 0.5 | 0.25 | 0.125 | 0;

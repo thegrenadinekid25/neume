@@ -21,6 +21,7 @@ interface DraggableChordProps {
   onSelect?: () => void;
   onClick?: (e: React.MouseEvent) => void;
   onUpdateChord?: (chordId: string, updates: Partial<Chord>) => void;
+  onSaveSnapshot?: () => void;
   zoom?: number;
   showVoiceLanes?: boolean;
 }
@@ -34,6 +35,7 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
   onSelect,
   onClick,
   onUpdateChord: onUpdateChordProp,
+  onSaveSnapshot,
   zoom = 1.0,
   showVoiceLanes = false,
 }) => {
@@ -305,6 +307,23 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
           setContextMenuOpen(false);
         },
       },
+      // Save as Snapshot
+      {
+        id: 'save-snapshot',
+        label: 'Save as Snapshot',
+        icon: (
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="2" width="12" height="12" rx="2" />
+            <circle cx="8" cy="7" r="2" />
+            <path d="M4 12h8" />
+          </svg>
+        ),
+        action: () => {
+          onSaveSnapshot?.();
+          setContextMenuOpen(false);
+        },
+        disabled: !isSelected,
+      },
       // Delete
       {
         id: 'divider-2',
@@ -321,7 +340,7 @@ const DraggableChordComponent: React.FC<DraggableChordProps> = ({
       },
     ];
     return items;
-  }, [chord, previousChord, nextChord, sortedChords, songContext, openWhyThisPanel, openRefineModal, removeChord, hasExtensions, handleQualityChange, handleExtensionToggle, handleClearExtensions, currentAnnotation, contextMenuPosition, openAnnotationPopover, showVoiceLanes, resetNotesToChord, getNotesAtBeat, updateChord]);
+  }, [chord, previousChord, nextChord, sortedChords, songContext, openWhyThisPanel, openRefineModal, removeChord, hasExtensions, handleQualityChange, handleExtensionToggle, handleClearExtensions, currentAnnotation, contextMenuPosition, openAnnotationPopover, showVoiceLanes, resetNotesToChord, getNotesAtBeat, updateChord, onSaveSnapshot, isSelected]);
 
   return (
     <>

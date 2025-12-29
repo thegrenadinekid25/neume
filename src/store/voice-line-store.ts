@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import { Note } from 'tonal';
-import type { MelodicNote, VoicePart, VoicePart8, AnyVoicePart, CompositionMode, Accidental, VoiceLines4, VoiceLines8 } from '@/types';
+import type { MelodicNote, VoicePart, VoicePart8, AnyVoicePart, CompositionMode, Accidental, VoiceLines4, VoiceLines8, NoteValue, SnapResolution } from '@/types';
 import type { Chord } from '@/types/chord';
 import type { VoiceCount } from '@/types/voicing';
 import { DEFAULT_MELODIC_NOTE_VISUAL_STATE, DEFAULT_COMPOSITION_MODE } from '@/types/voice-line';
@@ -21,6 +21,9 @@ interface VoiceLineState {
   hoveredNoteId: string | null;
   playingNoteIds: string[];
   isInitialized: boolean;
+  // Sub-beat notes feature
+  selectedNoteValue: NoteValue;
+  snapResolution: SnapResolution;
   // History for undo/redo (4-voice only for now)
   _history: Array<VoiceLines4>;
   _historyIndex: number;
@@ -108,6 +111,9 @@ export const useVoiceLineStore = create<VoiceLineState & {
   setCompositionMode: (mode: CompositionMode) => void;
   setPlayingNotes: (noteIds: string[]) => void;
   setNoteHovered: (noteId: string | null) => void;
+  // Sub-beat notes actions
+  setSelectedNoteValue: (value: NoteValue) => void;
+  setSnapResolution: (resolution: SnapResolution) => void;
   // Voice count actions
   setVoiceCount: (count: VoiceCount) => void;
   getActiveVoiceParts: () => AnyVoicePart[];
@@ -131,6 +137,8 @@ export const useVoiceLineStore = create<VoiceLineState & {
     hoveredNoteId: null,
     playingNoteIds: [],
     isInitialized: false,
+    selectedNoteValue: 'quarter',
+    snapResolution: 1,
     _history: [],
     _historyIndex: -1,
 
@@ -433,6 +441,14 @@ export const useVoiceLineStore = create<VoiceLineState & {
 
     setNoteHovered: (noteId: string | null) => {
       set({ hoveredNoteId: noteId });
+    },
+
+    setSelectedNoteValue: (value: NoteValue) => {
+      set({ selectedNoteValue: value });
+    },
+
+    setSnapResolution: (resolution: SnapResolution) => {
+      set({ snapResolution: resolution });
     },
 
     // Analysis actions

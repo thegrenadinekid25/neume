@@ -1,0 +1,165 @@
+.card {
+  position: relative;
+  padding: 16px;
+  background: white;
+  border: 1px solid var(--warm-linen);
+  border-radius: 8px;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.card:hover {
+  border-color: var(--warm-gold);
+  box-shadow: 0 4px 12px rgba(232, 160, 62, 0.1);
+}
+
+.card.dragging {
+  opacity: 0.6;
+  border-color: var(--warm-gold);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.titleSection {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--warm-text-primary);
+  word-break: break-word;
+}
+
+.date {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--warm-text-secondary);
+}
+
+.favoriteButton {
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  color: var(--warm-text-secondary);
+  flex-shrink: 0;
+}
+
+.favoriteButton:hover {
+  background: var(--warm-sand);
+  color: var(--warm-gold);
+}
+
+.favoriteButton.active {
+  color: var(--warm-gold);
+}
+
+.description {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  color: var(--warm-text-secondary);
+  line-height: 1.4;
+}
+
+.previewWrapper {
+  margin-bottom: 12px;
+}
+
+.metadata {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--warm-text-secondary);
+  margin-bottom: 10px;
+}
+
+.chordCount,
+.source {
+  padding: 2px 6px;
+  background: var(--warm-sand);
+  border-radius: 3px;
+}
+
+.tagsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 4px 8px;
+  background: var(--warm-linen);
+  color: var(--warm-text-secondary);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.tag:hover {
+  background: var(--warm-gold);
+  color: white;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-apple-smooth);
+  padding-top: 12px;
+  border-top: 1px solid var(--warm-linen);
+}
+
+.actions.visible {
+  opacity: 1;
+}
+
+.insertButton,
+.deleteButton {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--warm-linen);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  background: white;
+  color: var(--warm-text-primary);
+}
+
+.insertButton:hover {
+  background: var(--warm-gold);
+  border-color: var(--warm-gold);
+  color: white;
+}
+
+.deleteButton:hover {
+  background: var(--error, #C44536);
+  border-color: var(--error, #C44536);
+  color: white;
+}
+
+.insertButton:active,
+.deleteButton:active {
+  transform: scale(0.98);
+}

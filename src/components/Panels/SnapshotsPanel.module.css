@@ -1,0 +1,248 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(1px);
+  z-index: calc(var(--z-panel) - 1);
+}
+
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 380px;
+  height: 100vh;
+  background: var(--warm-cream);
+  border-left: 1px solid var(--warm-linen);
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-panel);
+  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.08);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--warm-linen);
+  flex-shrink: 0;
+}
+
+.headerContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--warm-text-primary);
+}
+
+.subtitle {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: var(--warm-text-secondary);
+}
+
+.closeButton {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--warm-text-secondary);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  flex-shrink: 0;
+}
+
+.closeButton:hover {
+  background: rgba(61, 53, 48, 0.08);
+  color: var(--warm-text-primary);
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid var(--warm-gold);
+  outline-offset: 2px;
+}
+
+.searchSection {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--warm-linen);
+  flex-shrink: 0;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--warm-linen);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--warm-text-primary);
+  background: white;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--warm-gold);
+  box-shadow: 0 0 0 2px rgba(232, 160, 62, 0.1);
+}
+
+.filterTabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--warm-linen);
+  flex-shrink: 0;
+}
+
+.filterTab {
+  flex: 1;
+  padding: var(--space-md) var(--space-lg);
+  border: none;
+  background: transparent;
+  color: var(--warm-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  border-bottom: 2px solid transparent;
+}
+
+.filterTab:hover {
+  color: var(--warm-text-primary);
+  background: rgba(232, 160, 62, 0.04);
+}
+
+.filterTab.active {
+  color: var(--warm-gold);
+  border-bottom-color: var(--warm-gold);
+}
+
+.tagFilter {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--warm-linen);
+  flex-shrink: 0;
+}
+
+.tagLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--warm-text-secondary);
+  margin-bottom: 8px;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tagButton {
+  padding: 4px 10px;
+  background: white;
+  border: 1px solid var(--warm-linen);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--warm-text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.tagButton:hover {
+  border-color: var(--warm-gold);
+  color: var(--warm-gold);
+}
+
+.tagButton.selected {
+  background: var(--warm-gold);
+  border-color: var(--warm-gold);
+  color: white;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl) var(--space-lg);
+  gap: var(--space-md);
+  color: var(--warm-text-secondary);
+  font-size: 13px;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--warm-linen);
+  border-top-color: var(--warm-gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl) var(--space-lg);
+  text-align: center;
+  color: var(--warm-text-secondary);
+}
+
+.emptyMessage {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--warm-text-primary);
+}
+
+.emptySubtext {
+  margin: 8px 0 0 0;
+  font-size: 12px;
+  color: var(--warm-text-secondary);
+  line-height: 1.4;
+}
+
+/* Scrollbar styling */
+.content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: var(--warm-linen);
+  border-radius: 3px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: var(--warm-gold);
+}

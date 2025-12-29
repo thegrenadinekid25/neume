@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import type { VoiceLine as VoiceLineType, VoicePart, Chord } from '@/types';
+import { NOTE_VALUE_TO_BEATS } from '@/types/voice-line';
 import { VOICE_RANGES } from '@/data/voice-ranges';
 import { useVoiceLineStore } from '@/store/voice-line-store';
 import { useCanvasStore } from '@/store/canvas-store';
@@ -44,6 +45,8 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
   const addNote = useVoiceLineStore((state) => state.addNote);
   const selectedNoteIds = useVoiceLineStore((state) => state.selectedNoteIds);
   const playingNoteIds = useVoiceLineStore((state) => state.playingNoteIds);
+  const selectedNoteValue = useVoiceLineStore((state) => state.selectedNoteValue);
+  const snapResolution = useVoiceLineStore((state) => state.snapResolution);
 
   // Get current key/mode for diatonic snapping
   const currentKey = useCanvasStore((state) => state.currentKey);
@@ -128,12 +131,14 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
     return beat * beatWidth * zoom;
   }, [beatWidth, zoom]);
 
-  // Helper to convert X position back to beat
+  // Helper to convert X position back to beat with snap resolution
   const xToBeat = useCallback((x: number) => {
     const beat = x / (beatWidth * zoom);
-    // Snap to nearest beat
-    return Math.round(beat);
-  }, [beatWidth, zoom]);
+    // If snapResolution is 0, return exact beat without snapping
+    if (snapResolution === 0) return beat;
+    // Otherwise, snap to the nearest resolution increment
+    return Math.round(beat / snapResolution) * snapResolution;
+  }, [beatWidth, zoom, snapResolution]);
 
   // Helper to convert MIDI to Y position within this lane
   // Higher MIDI = lower Y (inverted axis), scaled to fit within lane
@@ -228,6 +233,7 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
     const beat = xToBeat(x);
     const midi = yToMidi(y);
     const pitch = Note.fromMidi(midi) || 'C4';
+    const duration = NOTE_VALUE_TO_BEATS[selectedNoteValue];
 
     // Check if there's already a note at this beat
     const existingNote = voiceLine.notes.find(n => n.startBeat === beat);
@@ -237,7 +243,7 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
       pitch,
       midi,
       startBeat: beat,
-      duration: 4,
+      duration,
       accidental: null,
       isRest: false,
       visualState: {
@@ -256,7 +262,7 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
         tendency: null,
       },
     });
-  }, [xToBeat, yToMidi, voiceLine.notes, addNote, voicePart]);
+  }, [xToBeat, yToMidi, voiceLine.notes, addNote, voicePart, selectedNoteValue]);
 
   // Determine which notes are currently playing
   const isNotePlaying = useCallback((noteId: string) => {

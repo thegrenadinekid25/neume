@@ -105,11 +105,14 @@ export type {
   VoiceLines8,
   CompositionModeType,
   CompositionMode,
+  NoteValue,
+  SnapResolution,
 } from './voice-line';
 
 export {
   DEFAULT_MELODIC_NOTE_VISUAL_STATE,
   DEFAULT_COMPOSITION_MODE,
+  NOTE_VALUE_TO_BEATS,
 } from './voice-line';
 
 export type {
@@ -148,3 +151,10 @@ export type {
   VoicingStyle,
   VoiceCount as VoicingVoiceCount,
 } from './voicing';
+
+export type {
+  Snapshot,
+  SnapshotInput,
+  SnapshotChord,
+  SnapshotSource,
+} from './snapshot';

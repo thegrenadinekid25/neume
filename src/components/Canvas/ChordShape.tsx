@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import type { Chord } from '@/types';
 import { getScaleDegreeColor, CHROMATIC_INDICATORS, UI_COLORS } from '@/styles/colors';
 import { getChordBadgeText, hasChordModifications } from '@/utils/chord-helpers';
+import { useAccessibilityStore } from '@/store/accessibility-store';
+import { getPatternId } from '@/styles/patterns';
 import styles from './ChordShape.module.css';
 
 interface ChordShapeProps {
@@ -35,6 +37,7 @@ const ChordShapeComponent: React.FC<ChordShapeProps> = ({
 }) => {
   const size = chord.size * zoom;
   const baseColor = getScaleDegreeColor(chord.scaleDegree, chord.mode);
+  const colorblindMode = useAccessibilityStore((state) => state.colorblindMode);
 
   const shapePath = useMemo(() => {
     return generateShapePath(chord.scaleDegree, size);
@@ -127,12 +130,14 @@ const ChordShapeComponent: React.FC<ChordShapeProps> = ({
         viewBox={`0 0 ${size} ${size}`}
         xmlns="http://www.w3.org/2000/svg"
       >
-        {chord.isChromatic && (
+        {(chord.isChromatic || colorblindMode) && (
           <defs>
-            <linearGradient id={`shimmer-${chord.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor={CHROMATIC_INDICATORS.shimmerGradientStart} stopOpacity={CHROMATIC_INDICATORS.shimmerOpacity} />
-              <stop offset="100%" stopColor={CHROMATIC_INDICATORS.shimmerGradientEnd} stopOpacity={CHROMATIC_INDICATORS.shimmerOpacity} />
-            </linearGradient>
+            {chord.isChromatic && (
+              <linearGradient id={`shimmer-${chord.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor={CHROMATIC_INDICATORS.shimmerGradientStart} stopOpacity={CHROMATIC_INDICATORS.shimmerOpacity} />
+                <stop offset="100%" stopColor={CHROMATIC_INDICATORS.shimmerGradientEnd} stopOpacity={CHROMATIC_INDICATORS.shimmerOpacity} />
+              </linearGradient>
+            )}
           </defs>
         )}
 
@@ -144,6 +149,14 @@ const ChordShapeComponent: React.FC<ChordShapeProps> = ({
           strokeDasharray={strokeDasharray}
           className={styles.chordShape}
         />
+
+        {colorblindMode && chord.scaleDegree !== 1 && (
+          <path
+            d={shapePath}
+            fill={`url(#${getPatternId(chord.scaleDegree)})`}
+            pointerEvents="none"
+          />
+        )}
 
         {chord.isChromatic && (
           <>

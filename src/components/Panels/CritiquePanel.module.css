@@ -1,0 +1,448 @@
+/**
+ * CritiquePanel Component Styles
+ * CSS Module for the Harmonic Critique Panel
+ */
+
+/* Overlay backdrop */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+  z-index: calc(var(--z-panel) - 1);
+}
+
+/* Panel container */
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 380px;
+  height: 100vh;
+  background: var(--background-primary);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.12);
+  z-index: var(--z-panel);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Panel header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+  gap: var(--space-md);
+}
+
+.headerContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  font-family: var(--font-display);
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Score badge */
+.scoreBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.scoreBadge.excellent {
+  background: var(--success);
+}
+
+.scoreBadge.good {
+  background: var(--warning);
+}
+
+.scoreBadge.poor {
+  background: var(--error);
+}
+
+/* Close button */
+.closeButton {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-radius: var(--border-radius-sm);
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: background-color var(--duration-fast) var(--ease-apple-smooth),
+              color var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.closeButton:hover {
+  background-color: var(--background-secondary);
+  color: var(--text-primary);
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+/* Content area */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  padding-right: calc(var(--space-lg) - 4px); /* Account for scrollbar */
+}
+
+/* Scrollbar styling */
+.content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 3px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: var(--border-dark);
+}
+
+/* Summary section */
+.summary {
+  padding: var(--space-md);
+  background: var(--background-secondary);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-light);
+}
+
+.summaryText {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Issues list */
+.issuesList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.issuesSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.sectionHeader {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+  margin-top: var(--space-sm);
+}
+
+/* Issue card */
+.issueCard {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--background-secondary);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-light);
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+}
+
+.issueCard:hover {
+  border-color: var(--border-medium);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.issueCard.highlighted {
+  border-color: var(--primary-action);
+  background: rgba(74, 144, 226, 0.03);
+}
+
+.issueIcon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.issueIcon.error {
+  background: rgba(196, 69, 54, 0.15);
+  color: var(--error);
+}
+
+.issueIcon.warning {
+  background: rgba(232, 168, 124, 0.15);
+  color: var(--warning);
+}
+
+.issueIcon.suggestion {
+  background: rgba(74, 144, 226, 0.15);
+  color: var(--primary-action);
+}
+
+.issueContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.issueTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.issueDescription {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.issueSuggestion {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--primary-action);
+  margin: 0;
+  margin-top: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: rgba(74, 144, 226, 0.08);
+  border-radius: var(--border-radius-sm);
+  border-left: 2px solid var(--primary-action);
+}
+
+.issueButtons {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.showButton {
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--primary-action);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  white-space: nowrap;
+}
+
+.showButton:hover {
+  background-color: #3a7bc8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(74, 144, 226, 0.3);
+}
+
+.showButton:active {
+  transform: translateY(0);
+}
+
+.showButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+/* Loading state */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl) var(--space-lg);
+  gap: var(--space-lg);
+  min-height: 200px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(74, 144, 226, 0.2);
+  border-top-color: var(--primary-action);
+  border-radius: 50%;
+  animation: spin var(--duration-normal) linear infinite;
+}
+
+.loadingText {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin: 0;
+}
+
+/* Error state */
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl) var(--space-lg);
+  gap: var(--space-md);
+  background: rgba(196, 69, 54, 0.05);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-light);
+  text-align: center;
+}
+
+.errorIcon {
+  font-size: 28px;
+  opacity: 0.7;
+}
+
+.errorMessage {
+  font-size: 13px;
+  color: var(--error);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.retryButton {
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--primary-action);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple-smooth);
+  margin-top: var(--space-md);
+}
+
+.retryButton:hover {
+  background-color: #3a7bc8;
+  transform: translateY(-1px);
+}
+
+.retryButton:active {
+  transform: translateY(0);
+}
+
+.retryButton:focus-visible {
+  outline: 2px solid var(--primary-action);
+  outline-offset: 2px;
+}
+
+/* Empty state */
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl) var(--space-lg);
+  text-align: center;
+  min-height: 200px;
+}
+
+.emptyState p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Animations */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .panel {
+    width: 100%;
+    border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+    top: auto;
+    bottom: 0;
+    max-height: 80vh;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
+  }
+
+  .header {
+    padding: var(--space-md);
+  }
+
+  .content {
+    padding: var(--space-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .panel {
+    width: 100%;
+    max-height: 90vh;
+  }
+
+  .title {
+    font-size: 14px;
+  }
+
+  .scoreBadge {
+    min-width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  .issueCard {
+    flex-direction: column;
+  }
+
+  .issueButtons {
+    width: 100%;
+  }
+
+  .showButton {
+    flex: 1;
+  }
+}

@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { ExpertModeProgress } from '@/components/UI/ExpertModeProgress';
 import { ExpertModeToggle } from '@/components/UI/ExpertModeToggle';
+import { ColorblindModeToggle } from '@/components/UI/ColorblindModeToggle';
 import styles from './SettingsModal.module.css';
 
 interface SettingsModalProps {
@@ -57,6 +58,11 @@ export function SettingsModal({ isOpen, onClose, onExportMusicXML, canExport = f
                   <ExpertModeProgress />
                   <ExpertModeToggle />
                 </div>
+              </section>
+
+              <section className={styles.section}>
+                <h3 className={styles.sectionTitle}>Accessibility</h3>
+                <ColorblindModeToggle />
               </section>
 
               <section className={styles.section}>

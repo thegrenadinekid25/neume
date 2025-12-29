@@ -94,6 +94,101 @@ function parsePitch(pitchStr: string): ParsedPitch | null {
 }
 
 /**
+ * Convert a scale degree and key to the root note
+ * Example: scaleDegree=4, key='C', mode='major' -> { step: 'F', alter: undefined }
+ * Example: scaleDegree=5, key='G', mode='major' -> { step: 'D', alter: undefined }
+ * Example: scaleDegree=3, key='F', mode='major' -> { step: 'A', alter: -1 } (Bb major scale)
+ */
+function scaleDegreeToRoot(
+  scaleDegree: number,
+  key: string,
+  mode: 'major' | 'minor'
+): { step: string; alter?: number } {
+  // Natural notes in order
+  const notes = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+
+  // Get the base note name from key (C, D, E, F, G, A, B)
+  const keyBase = key.charAt(0).toUpperCase();
+  const keyIndex = notes.indexOf(keyBase);
+
+  if (keyIndex === -1) {
+    // Fallback to C if key is invalid
+    return { step: 'C' };
+  }
+
+  // Calculate root note from scale degree
+  // Scale degrees are 1-based, so subtract 1
+  const rootIndex = (keyIndex + scaleDegree - 1) % 7;
+  const step = notes[rootIndex];
+
+  // Determine alteration (accidental) for the root note
+  // Get the natural scale from the key
+  const majorScales: Record<string, Record<number, number>> = {
+    C: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 },
+    G: { 1: 0, 2: 0, 3: 0, 4: 1, 5: 0, 6: 0, 7: 0 },
+    D: { 1: 0, 2: 0, 3: 1, 4: 1, 5: 0, 6: 0, 7: 1 },
+    A: { 1: 0, 2: 1, 3: 1, 4: 1, 5: 0, 6: 1, 7: 1 },
+    E: { 1: 0, 2: 1, 3: 1, 4: 0, 5: 0, 6: 1, 7: 1 },
+    B: { 1: 0, 2: 1, 3: 1, 4: 0, 5: 1, 6: 1, 7: 1 },
+    F: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: -1 },
+    Bb: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: -1, 7: -1 },
+    Eb: { 1: 0, 2: 0, 3: -1, 4: 0, 5: 0, 6: -1, 7: -1 },
+    Ab: { 1: 0, 2: -1, 3: -1, 4: 0, 5: 0, 6: -1, 7: -1 },
+    Db: { 1: -1, 2: -1, 3: -1, 4: 0, 5: 0, 6: -1, 7: -1 },
+    Gb: { 1: -1, 2: -1, 3: -1, 4: -1, 5: -1, 6: -1, 7: -1 },
+  };
+
+  // For minor mode, lower scale degrees 3, 6, 7
+  const minorAdjustments: Record<number, number> = {
+    3: -1,
+    6: -1,
+    7: -1,
+  };
+
+  let alter = majorScales[key]?.[scaleDegree] ?? 0;
+
+  if (mode === 'minor' && minorAdjustments[scaleDegree]) {
+    alter += minorAdjustments[scaleDegree];
+  }
+
+  return {
+    step,
+    alter: alter !== 0 ? alter : undefined,
+  };
+}
+
+/**
+ * Map chord quality to MusicXML kind element value
+ */
+function getChordKind(quality: string): string {
+  const kindMap: Record<string, string> = {
+    major: 'major',
+    minor: 'minor',
+    diminished: 'diminished',
+    augmented: 'augmented',
+    dom7: 'dominant',
+    maj7: 'major-seventh',
+    min7: 'minor-seventh',
+    halfdim7: 'half-diminished',
+    dim7: 'diminished-seventh',
+    dom9: 'dominant-ninth',
+    maj9: 'major-ninth',
+    min9: 'minor-ninth',
+    dom11: 'dominant-11th',
+    min11: 'minor-11th',
+    dom13: 'dominant-13th',
+    maj13: 'major-13th',
+    min13: 'minor-13th',
+    alt: 'other',
+    dom7b9: 'dominant',
+    dom7sharp9: 'dominant',
+    dom7sharp11: 'dominant',
+  };
+
+  return kindMap[quality] || 'major';
+}
+
+/**
  * Convert duration in beats to MusicXML duration and type
  */
 function getDurationInfo(durationBeats: number): { duration: number; type: string; dots: number } {
@@ -128,14 +223,16 @@ function getDurationInfo(durationBeats: number): { duration: number; type: strin
 /**
  * Get key signature fifths from key and mode
  */
-function getKeyFifths(key: string, mode: 'major' | 'minor'): number {
+function getKeyFifths(key: string, _mode: 'major' | 'minor'): number {
+  // Note: mode is accepted for API consistency but not used for fifths calculation
+  // Minor keys use relative major key signature (e.g., A minor = C major = 0 fifths)
   const majorFifths: Record<string, number> = {
     C: 0, G: 1, D: 2, A: 3, E: 4, B: 5,
     F: -1, Bb: -2, Eb: -3, Ab: -4, Db: -5, Gb: -6,
   };
 
   const fifths = majorFifths[key] ?? 0;
-  return mode === 'minor' ? fifths : fifths;
+  return fifths;
 }
 
 /**
@@ -249,6 +346,27 @@ function generateRestXml(durationBeats: number): string {
   return xml;
 }
 
+/**
+ * Generate <harmony> XML element for a chord symbol
+ * This displays the chord name (e.g., "Cmaj7", "Dm", "G7") above the staff
+ */
+function generateHarmonyXml(chord: Chord, key: string, mode: 'major' | 'minor'): string {
+  const root = scaleDegreeToRoot(chord.scaleDegree, key, mode);
+  const kind = getChordKind(chord.quality);
+
+  let xml = '<harmony>\n';
+  xml += '        <root>\n';
+  xml += `          <root-step>${root.step}</root-step>\n`;
+  if (root.alter) {
+    xml += `          <root-alter>${root.alter}</root-alter>\n`;
+  }
+  xml += '        </root>\n';
+  xml += `        <kind>${kind}</kind>\n`;
+  xml += '      </harmony>\n';
+
+  return xml;
+}
+
 // ============================================================================
 // Measure Organization
 // ============================================================================
@@ -302,12 +420,15 @@ function generatePartXml(
   timeSignature: TimeSignature,
   tempo: number,
   voiceLine?: VoiceLine,
-  textAssignments?: SyllableAssignment[]
+  textAssignments?: SyllableAssignment[],
+  includeChordSymbols: boolean = true
 ): string {
   let xml = `<part id="${partId}">`;
 
   const clef = CLEF_BY_VOICE[voice];
   const { beats, beatType } = parseTimeSignature(timeSignature);
+  // Only show harmony in first voice (soprano)
+  const shouldShowHarmony = includeChordSymbols && voice === 'soprano';
 
   for (const measure of measures) {
     xml += `<measure number="${measure.number}">`;
@@ -360,6 +481,12 @@ function generatePartXml(
 
       let currentBeat = measure.startBeat;
 
+      for (const chord of measure.chords) {
+        if (shouldShowHarmony) {
+          xml += generateHarmonyXml(chord, key, mode);
+        }
+      }
+
       for (const note of notesInMeasure) {
         // Add rest if there's a gap
         if (note.startBeat > currentBeat) {
@@ -390,6 +517,11 @@ function generatePartXml(
         if (chord.startBeat > currentBeat) {
           const gapDuration = chord.startBeat - currentBeat;
           xml += generateRestXml(gapDuration);
+        }
+
+        // Add harmony element before the first note in soprano
+        if (shouldShowHarmony) {
+          xml += generateHarmonyXml(chord, key, mode);
         }
 
         const voicePitch = chord.voices[voice];
@@ -484,7 +616,8 @@ export function exportToMusicXML(
       progression.timeSignature,
       progression.tempo,
       voiceLine,
-      assignments
+      assignments,
+      opts.includeChordSymbols
     );
     xml += '\n';
   }

@@ -59,7 +59,7 @@ except ImportError as e:
 load_dotenv()
 
 # Claude API Configuration
-CLAUDE_MODEL = "claude-opus-4-5-20250929"
+CLAUDE_MODEL = "claude-sonnet-4-20250514"
 
 # Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)
@@ -986,6 +986,127 @@ async def get_chord_insight(request: Request, body: ChordInsightRequest):
             success=False,
             error=f"Chord insight failed: {str(e)}"
         )
+
+
+def build_critique_prompt(chords: list, key: str, mode: str) -> str:
+    """Build prompt for harmonic critique analysis."""
+    prompt = """Analyze this chord progression for voice leading and harmonic issues.
+
+You are an expert in music theory and voice leading, particularly in choral and classical composition. Provide constructive, educational analysis focused on traditional voice leading rules.
+
+## Key and Mode
+Key: """ + key + """ """ + mode + """
+
+## Chords
+""" + json.dumps(chords) + """
+
+## Analysis Task
+Identify voice leading and harmonic issues including:
+- Parallel fifths/octaves between any voices
+- Unresolved tensions (unresolved 7ths, suspensions)
+- Voice crossing (soprano lower than alto, etc.)
+- Large melodic leaps greater than an octave
+- Doubled leading tones (7th scale degree)
+- Spacing issues (gaps larger than an octave between adjacent upper voices)
+- Missing expected resolutions (e.g., V that doesn't resolve to I)
+
+## Response Format
+Return ONLY valid JSON with this structure:
+{
+  "issues": [
+    {
+      "id": "issue-1",
+      "type": "parallel_fifths|parallel_octaves|unresolved_tension|voice_crossing|large_leap|doubled_leading_tone|spacing_issue|missing_resolution",
+      "severity": "error|warning|suggestion",
+      "title": "Brief issue title",
+      "description": "Detailed explanation of the issue",
+      "chordIds": ["chord-index or id"],
+      "voice": "soprano|alto|tenor|bass" (optional),
+      "suggestion": "How to fix this issue" (optional)
+    }
+  ],
+  "summary": "Overall assessment of the progression's voice leading quality (2-3 sentences)",
+  "score": 0-100
+}
+
+Be constructive and educational. A score of 100 means perfect voice leading, 80+ is excellent, 60-79 is good with minor issues, below 60 has significant problems."""
+
+    return prompt
+
+
+@app.post("/api/critique")
+@limiter.limit("20/hour")
+async def critique_progression(request: Request, body: dict):
+    """Analyze progression for voice leading and harmonic issues."""
+    api_key = os.getenv("CLAUDE_API_KEY")
+
+    if not api_key:
+        return {
+            "issues": [],
+            "summary": "Claude API key not configured",
+            "score": 0
+        }
+
+    chords = body.get("chords", [])
+    key = body.get("key", "C")
+    mode = body.get("mode", "major")
+
+    if not chords:
+        return {
+            "issues": [],
+            "summary": "No chords to analyze.",
+            "score": 100
+        }
+
+    try:
+        prompt = build_critique_prompt(chords, key, mode)
+
+        # Call Claude API
+        client = anthropic.Anthropic(api_key=api_key)
+        message = client.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=2048,
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+
+        # Parse the response
+        content = message.content[0].text if message.content else ""
+
+        # Clean up potential markdown code blocks
+        if content.startswith("```"):
+            content = content.split("\n", 1)[1] if "\n" in content else content
+        if content.endswith("```"):
+            content = content.rsplit("```", 1)[0]
+        content = content.strip()
+
+        critique_result = json.loads(content)
+
+        return {
+            "issues": critique_result.get("issues", []),
+            "summary": critique_result.get("summary", ""),
+            "score": critique_result.get("score", 50)
+        }
+
+    except json.JSONDecodeError as e:
+        return {
+            "issues": [],
+            "summary": f"Failed to parse analysis: {str(e)}",
+            "score": 0
+        }
+    except anthropic.APIError as e:
+        return {
+            "issues": [],
+            "summary": f"Claude API error: {str(e)}",
+            "score": 0
+        }
+    except Exception as e:
+        return {
+            "issues": [],
+            "summary": f"Critique failed: {str(e)}",
+            "score": 0
+        }
 
 
 if __name__ == "__main__":

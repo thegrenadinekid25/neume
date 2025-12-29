@@ -1,7 +1,8 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Note } from 'tonal';
-import type { MelodicNote, VoicePart } from '@/types';
+import type { MelodicNote, VoicePart, NoteValue } from '@/types';
+import { NOTE_VALUE_TO_BEATS } from '@/types/voice-line';
 import { useTextSettingStore } from '@/store/text-setting-store';
 import { useVoiceLineStore } from '@/store/voice-line-store';
 import { ContextMenu, type ContextMenuItem } from '@/components/UI/ContextMenu';
@@ -133,6 +134,17 @@ export const NoteDot: React.FC<NoteDotProps> = ({
   const contextMenuItems: ContextMenuItem[] = useMemo(() => {
     const currentAccidental = note.accidental;
 
+    // Duration submenu items
+    const durationOptions: NoteValue[] = ['whole', 'half', 'quarter', 'eighth', 'sixteenth', 'thirtysecond'];
+    const durationLabels: Record<NoteValue, string> = {
+      whole: 'Whole Note (4 beats)',
+      half: 'Half Note (2 beats)',
+      quarter: 'Quarter Note (1 beat)',
+      eighth: 'Eighth Note (0.5 beats)',
+      sixteenth: 'Sixteenth Note (0.25 beats)',
+      thirtysecond: 'Thirty-second Note (0.125 beats)',
+    };
+
     return [
       // Accidental options
       {
@@ -160,6 +172,20 @@ export const NoteDot: React.FC<NoteDotProps> = ({
         },
       },
       { id: 'divider-1', label: '', divider: true },
+      // Duration submenu
+      {
+        id: 'duration',
+        label: 'Duration',
+        submenu: durationOptions.map((dur) => ({
+          id: `duration-${dur}`,
+          label: note.duration === NOTE_VALUE_TO_BEATS[dur] ? `✓ ${durationLabels[dur]}` : durationLabels[dur],
+          action: () => {
+            updateNote(voicePart, note.id, { duration: NOTE_VALUE_TO_BEATS[dur] });
+            setContextMenuOpen(false);
+          },
+        })),
+      },
+      { id: 'divider-2', label: '', divider: true },
       // Rest toggle
       {
         id: 'toggle-rest',
@@ -169,7 +195,7 @@ export const NoteDot: React.FC<NoteDotProps> = ({
           setContextMenuOpen(false);
         },
       },
-      { id: 'divider-2', label: '', divider: true },
+      { id: 'divider-3', label: '', divider: true },
       // Delete
       {
         id: 'delete-note',
@@ -180,7 +206,7 @@ export const NoteDot: React.FC<NoteDotProps> = ({
         },
       },
     ];
-  }, [note.accidental, note.isRest, note.id, voicePart, updateNote, deleteNote]);
+  }, [note.accidental, note.isRest, note.id, note.duration, voicePart, updateNote, deleteNote]);
 
   // Double-click to edit lyric inline
   const handleDoubleClick = (e: React.MouseEvent) => {

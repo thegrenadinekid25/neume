@@ -18,12 +18,15 @@ export class PlaybackSystem {
   }
 
   /**
-   * Convert beat number to Tone.js time format (bars:beats:sixteenths)
+   * Convert beat number to Tone.js time format (bars:quarters:sixteenths)
+   * Supports fractional beats for sub-beat notes
    */
   private beatToTransportTime(beat: number): string {
     const bars = Math.floor(beat / 4);
-    const beats = beat % 4;
-    return `${bars}:${beats}:0`;
+    const remainingBeats = beat % 4;
+    const quarters = Math.floor(remainingBeats);
+    const sixteenths = Math.round((remainingBeats - quarters) * 4);
+    return `${bars}:${quarters}:${sixteenths}`;
   }
 
   /**

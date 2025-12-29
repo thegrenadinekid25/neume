@@ -48,6 +48,7 @@ interface DroppableCanvasProps {
   onSave?: () => void;
   onAnalyze?: () => void;
   onRefine?: () => void;
+  onSaveSnapshot?: () => void;
   onBuildFromBones?: () => void;
 }
 
@@ -85,6 +86,7 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
   onSave,
   onAnalyze,
   onRefine,
+  onSaveSnapshot,
   onBuildFromBones,
 }) => {
   const { sensors } = useDragDrop();
@@ -393,6 +395,7 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
           onZoomChange={onZoomChange}
           onAnalyze={onAnalyze}
           onRefine={onRefine}
+          onSaveSnapshot={onSaveSnapshot}
           hasChords={chords.length > 0}
           hasSelection={selectedChordIds.length > 0}
         >
@@ -406,6 +409,7 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
               isPlaying={isPlaying && chord.playing}
               onClick={(e) => handleChordClick(chord, e)}
               onUpdateChord={onUpdateChord}
+              onSaveSnapshot={onSaveSnapshot}
               zoom={zoom}
               showVoiceLanes={showVoiceLanes}
             />

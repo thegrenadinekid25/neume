@@ -19,6 +19,7 @@ interface ChordContextMenuProps {
   ) => void;
   onAnalyze?: () => void;
   onRefine?: () => void;
+  onSaveSnapshot?: () => void;
   hasChords?: boolean;
   hasSelection?: boolean;
 }
@@ -32,6 +33,7 @@ export const ChordContextMenu: React.FC<ChordContextMenuProps> = ({
   onAddChord,
   onAnalyze,
   onRefine,
+  onSaveSnapshot,
   hasChords = false,
   hasSelection = false,
 }) => {
@@ -169,6 +171,21 @@ export const ChordContextMenu: React.FC<ChordContextMenuProps> = ({
         </svg>
       ),
       action: () => onRefine?.(),
+      disabled: !hasSelection,
+    },
+
+    // Save as Snapshot action
+    {
+      id: 'save-snapshot',
+      label: 'Save as Snapshot',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="2" width="12" height="12" rx="2" />
+          <circle cx="8" cy="7" r="2" />
+          <path d="M4 12h8" />
+        </svg>
+      ),
+      action: () => onSaveSnapshot?.(),
       disabled: !hasSelection,
     },
   ];

@@ -1,0 +1,90 @@
+.container {
+  padding: 12px;
+  background: linear-gradient(135deg, var(--warm-cream, #FAF8F5) 0%, var(--warm-sand, #F5F1E8) 100%);
+  border: 1px solid rgba(107, 143, 173, 0.3);
+  border-radius: 12px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.badge {
+  padding: 2px 8px;
+  background: var(--warm-sage-muted, #7A9E87);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: white;
+  letter-spacing: 0.5px;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warm-text-primary);
+}
+
+.description {
+  font-size: 12px;
+  color: var(--warm-text-secondary, #7F8C8D);
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.toggleOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+
+.toggleOption input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--warm-sage-muted, #7A9E87);
+  cursor: pointer;
+}
+
+.toggleLabel {
+  font-size: 13px;
+  color: var(--warm-text-primary);
+}
+
+.patterns {
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.patternsTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--warm-text-primary, #2C3E50);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.patternsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.patternsList li {
+  font-size: 11px;
+  color: var(--warm-text-secondary, #7F8C8D);
+  margin: 0;
+  padding: 0;
+}

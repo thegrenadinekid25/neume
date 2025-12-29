@@ -26,6 +26,7 @@ interface CanvasProps {
   onZoomChange?: (zoom: number) => void;
   onAnalyze?: () => void;
   onRefine?: () => void;
+  onSaveSnapshot?: () => void;
   hasChords?: boolean;
   hasSelection?: boolean;
   children?: React.ReactNode;
@@ -46,6 +47,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
   onZoomChange,
   onAnalyze,
   onRefine,
+  onSaveSnapshot,
   hasChords = false,
   hasSelection = false,
   children,
@@ -338,6 +340,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
         onAddChord={handleAddChord}
         onAnalyze={onAnalyze}
         onRefine={onRefine}
+        onSaveSnapshot={onSaveSnapshot}
         hasChords={hasChords}
         hasSelection={hasSelection}
       />

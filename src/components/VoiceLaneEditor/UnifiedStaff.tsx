@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { Note, Scale } from 'tonal';
 import type { VoicePart, Chord, MelodicNote } from '@/types';
+import { NOTE_VALUE_TO_BEATS } from '@/types/voice-line';
 import { VOICE_ORDER, VOICE_RANGES } from '@/data/voice-ranges';
 import { useVoiceLineStore } from '@/store/voice-line-store';
 import { useCanvasStore } from '@/store/canvas-store';
@@ -45,6 +46,8 @@ export const UnifiedStaff: React.FC<UnifiedStaffProps> = ({
   const selectedNoteIds = useVoiceLineStore((state) => state.selectedNoteIds);
   const playingNoteIds = useVoiceLineStore((state) => state.playingNoteIds);
   const activeVoicePart = useVoiceLineStore((state) => state.activeVoicePart);
+  const selectedNoteValue = useVoiceLineStore((state) => state.selectedNoteValue);
+  const snapResolution = useVoiceLineStore((state) => state.snapResolution);
 
   // Get current key/mode for diatonic snapping
   const currentKey = useCanvasStore((state) => state.currentKey);
@@ -119,11 +122,14 @@ export const UnifiedStaff: React.FC<UnifiedStaffProps> = ({
     return beat * beatWidth * zoom;
   }, [beatWidth, zoom]);
 
-  // Helper to convert X position back to beat
+  // Helper to convert X position back to beat with snap resolution
   const xToBeat = useCallback((x: number) => {
     const beat = x / (beatWidth * zoom);
-    return Math.round(beat);
-  }, [beatWidth, zoom]);
+    // If snapResolution is 0, return exact beat without snapping
+    if (snapResolution === 0) return beat;
+    // Otherwise, snap to the nearest resolution increment
+    return Math.round(beat / snapResolution) * snapResolution;
+  }, [beatWidth, zoom, snapResolution]);
 
   // Helper to convert MIDI to Y position within unified staff
   const getY = useCallback((midi: number) => {
@@ -253,11 +259,13 @@ export const UnifiedStaff: React.FC<UnifiedStaffProps> = ({
     if (existingNote) return;
 
     const pitch = Note.fromMidi(midi) || 'C4';
+    const duration = NOTE_VALUE_TO_BEATS[selectedNoteValue];
+
     addNote(effectiveActiveVoice, {
       pitch,
       midi,
       startBeat: beat,
-      duration: 4,
+      duration,
       accidental: null,
       isRest: false,
       visualState: {
@@ -276,7 +284,7 @@ export const UnifiedStaff: React.FC<UnifiedStaffProps> = ({
         tendency: null,
       },
     });
-  }, [xToBeat, yToMidi, effectiveActiveVoice, voiceLines, addNote]);
+  }, [xToBeat, yToMidi, effectiveActiveVoice, voiceLines, addNote, selectedNoteValue]);
 
   // Determine if a note is playing
   const isNotePlaying = useCallback((note: MelodicNote) => {

@@ -199,3 +199,67 @@ export async function deconstructProgression(
   }
   return response.json();
 }
+
+/**
+ * Types for critique API
+ */
+export type CritiqueIssueType =
+  | 'parallel_fifths'
+  | 'parallel_octaves'
+  | 'unresolved_tension'
+  | 'voice_crossing'
+  | 'large_leap'
+  | 'doubled_leading_tone'
+  | 'spacing_issue'
+  | 'missing_resolution';
+
+export type IssueSeverity = 'error' | 'warning' | 'suggestion';
+
+export interface CritiqueIssue {
+  id: string;
+  type: CritiqueIssueType;
+  severity: IssueSeverity;
+  title: string;
+  description: string;
+  chordIds: string[];
+  voice?: 'soprano' | 'alto' | 'tenor' | 'bass';
+  suggestion?: string;
+}
+
+export interface CritiqueResponse {
+  issues: CritiqueIssue[];
+  summary: string;
+  score: number;
+  timestamp: string;
+}
+
+/**
+ * Get harmonic critique for a chord progression
+ */
+export async function critiqueProgression(
+  chords: SimpleChord[],
+  key: string,
+  mode: string
+): Promise<CritiqueResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/critique`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chords,
+      key,
+      mode,
+    }),
+  });
+
+  await checkRateLimit(response);
+
+  if (!response.ok) {
+    throw new Error('Critique request failed');
+  }
+
+  const data = await response.json();
+  return {
+    ...data,
+    timestamp: new Date().toISOString(),
+  };
+}

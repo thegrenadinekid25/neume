@@ -1,8 +1,10 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { useVoiceLineStore } from '@/store/voice-line-store';
+import { useNoteValueKeyboardShortcuts } from '@/hooks/useNoteValueKeyboardShortcuts';
 import type { Chord } from '@/types/chord';
 import { UnifiedStaff } from './UnifiedStaff';
 import { VoiceLegend } from './VoiceLegend';
+import { NoteValueSelector } from './NoteValueSelector';
 import { ChordConflictDialog } from './ChordConflictDialog';
 import styles from './VoiceLaneEditor.module.css';
 
@@ -25,6 +27,9 @@ export const VoiceLaneEditor: React.FC<VoiceLaneEditorProps> = ({
 }) => {
   const voiceLines = useVoiceLineStore((state) => state.voiceLines);
   const analyzeAllNotes = useVoiceLineStore((state) => state.analyzeAllNotes);
+
+  // Initialize keyboard shortcuts for note values and snap resolution
+  useNoteValueKeyboardShortcuts();
 
   // Track previous note count to detect changes (avoiding analyzing on every render)
   const prevNoteCountRef = useRef<number>(0);
@@ -54,6 +59,11 @@ export const VoiceLaneEditor: React.FC<VoiceLaneEditorProps> = ({
     <div className={styles.container}>
       {/* Chord conflict dialog */}
       <ChordConflictDialog />
+
+      {/* Note value selector - controls note duration and snap resolution */}
+      <div className={styles.selectorWrapper}>
+        <NoteValueSelector />
+      </div>
 
       {/* Voice legend - shows active voices with colors */}
       <div className={styles.legendWrapper}>

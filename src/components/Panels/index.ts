@@ -7,3 +7,5 @@ export { WhyThisPanel } from './WhyThisPanel';
 export { BuildFromBonesPanel } from './BuildFromBonesPanel';
 export { ProgressionNotesPanel } from './ProgressionNotesPanel';
 export { CompositionToolsPanel } from './CompositionToolsPanel';
+export { SnapshotsPanel } from './SnapshotsPanel';
+export { CritiquePanel } from './CritiquePanel';
