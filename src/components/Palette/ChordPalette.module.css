@@ -4,7 +4,7 @@
  */
 
 .container {
-  position: fixed;
+  position: absolute;
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
@@ -12,6 +12,24 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+/* Draggable palette chord styles */
+.draggablePaletteChord {
+  touch-action: none;
+}
+
+.draggablePaletteChord.isDragging {
+  opacity: 0.6;
+  cursor: grabbing;
+}
+
+.draggablePaletteChord .chordItem {
+  cursor: grab;
+}
+
+.draggablePaletteChord.isDragging .chordItem {
+  cursor: grabbing;
 }
 
 /* Collapsed trigger button */

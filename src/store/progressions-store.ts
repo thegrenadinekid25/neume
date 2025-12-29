@@ -79,9 +79,11 @@ export const useProgressionsStore = create<ProgressionsState>((set, get) => ({
       useExpertModeStore.getState().trackProgressionSaved();
 
       await get().loadProgressions();
+      set({ isLoading: false });
     } catch (error) {
       console.error('Failed to save progression:', error);
       set({ error: 'Failed to save progression', isLoading: false });
+      throw error; // Re-throw so caller can handle
     }
   },
 

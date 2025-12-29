@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { CANVAS_CONFIG } from '@/utils/constants';
 import styles from './Canvas.module.css';
 import { Playhead } from './Playhead';
@@ -31,7 +31,7 @@ interface CanvasProps {
   children?: React.ReactNode;
 }
 
-export const Canvas: React.FC<CanvasProps> = ({
+export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
   currentMode = 'major',
   beatsPerMeasure = 4,
   zoom = 1.0,
@@ -49,8 +49,11 @@ export const Canvas: React.FC<CanvasProps> = ({
   hasChords = false,
   hasSelection = false,
   children,
-}) => {
+}, ref) => {
   const timelineRef = useRef<HTMLDivElement>(null);
+
+  // Expose the timeline ref to parent components for scroll position access
+  useImperativeHandle(ref, () => timelineRef.current as HTMLDivElement);
   const rulerRef = useRef<HTMLDivElement>(null);
   const [contextMenu, setContextMenu] = useState<{
     isOpen: boolean;
@@ -83,10 +86,38 @@ export const Canvas: React.FC<CanvasProps> = ({
     return () => timeline.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Auto-scroll to follow playhead during playback
+  useEffect(() => {
+    if (!isPlaying) return;
+    const timeline = timelineRef.current;
+    if (!timeline) return;
+
+    const playheadPixelPosition = playheadPosition * CANVAS_CONFIG.GRID_BEAT_WIDTH * zoom;
+    const timelineWidth = timeline.clientWidth;
+    const scrollLeft = timeline.scrollLeft;
+    const margin = timelineWidth * 0.2; // 20% margin from edge
+
+    // If playhead is near right edge, scroll to keep it visible
+    if (playheadPixelPosition > scrollLeft + timelineWidth - margin) {
+      timeline.scrollLeft = playheadPixelPosition - timelineWidth + margin;
+    }
+    // If playhead is near left edge (after looping back), scroll to beginning
+    else if (playheadPixelPosition < scrollLeft + margin && playheadPixelPosition < margin) {
+      timeline.scrollLeft = 0;
+    }
+  }, [isPlaying, playheadPosition, zoom]);
+
   const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const rect = timelineRef.current?.getBoundingClientRect();
-    const clickX = rect ? e.clientX - rect.left : 0;
+    const timeline = timelineRef.current;
+    if (!timeline) return;
+
+    const rect = timeline.getBoundingClientRect();
+    const styles = window.getComputedStyle(timeline);
+    const paddingLeft = parseFloat(styles.paddingLeft) || 0;
+
+    // Subtract padding and add scroll offset
+    const clickX = e.clientX - rect.left - paddingLeft + timeline.scrollLeft;
 
     setContextMenu({
       isOpen: true,
@@ -301,7 +332,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       <ChordContextMenu
         isOpen={contextMenu.isOpen}
         position={contextMenu.position}
-        clickX={contextMenu.clickX + (timelineRef.current?.scrollLeft || 0)}
+        clickX={contextMenu.clickX}
         currentMode={currentMode}
         onClose={handleCloseContextMenu}
         onAddChord={handleAddChord}
@@ -312,4 +343,6 @@ export const Canvas: React.FC<CanvasProps> = ({
       />
     </div>
   );
-};
+});
+
+Canvas.displayName = 'Canvas';

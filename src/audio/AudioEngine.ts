@@ -186,12 +186,10 @@ export class AudioEngine {
         this.reverbMix.gain.value = 1;
 
         this.useConvolutionReverb = true;
-        console.log('Convolution reverb ready');
-      } else {
-        console.log('Using algorithmic fallback reverb');
       }
-    } catch (error) {
-      console.warn('Convolution reverb setup failed, using algorithmic fallback:', error);
+      // ReverbLoader handles logging - no need to duplicate here
+    } catch {
+      // ReverbLoader handles error logging
     }
   }
 

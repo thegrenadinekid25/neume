@@ -4,7 +4,6 @@ import { MetadataBanner } from '@/components/Canvas/MetadataBanner';
 import { DeleteConfirmation } from '@/components/UI/DeleteConfirmation';
 import { HelpTooltip } from '@/components/UI/HelpTooltip';
 import { KeySelector, ModeToggle, BeatsSelector } from '@/components/UI/MusicalSelector';
-import { ChordPalette } from '@/components/Palette';
 import { HELP_CONTENT } from '@/data/help-content';
 import { WhyThisPanel, BuildFromBonesPanel, CompositionToolsPanel } from '@/components/Panels';
 import { PulseRingTempo } from '@/components/Controls';
@@ -13,6 +12,7 @@ import { Sidebar, SidebarSection, SidebarDivider, SidebarSpacer } from '@/compon
 import { AuthModal, UserMenu } from '@/components/Auth';
 import { AudioLoadingIndicator } from '@/components/Audio';
 import { VoiceToggleBar } from '@/components/VoiceLaneEditor';
+import { ToastContainer } from '@/components/UI';
 
 // Lazy load modals for code splitting
 const KeyboardShortcutsGuide = lazy(() => import('@/components/UI/KeyboardShortcutsGuide').then(m => ({ default: m.KeyboardShortcutsGuide })));
@@ -179,9 +179,14 @@ function App() {
 
   // Voice lines
   const initializeVoiceLines = useVoiceLineStore(state => state.initializeFromChords);
-  const isVoiceLinesInitialized = useVoiceLineStore(state => state.isInitialized);
   const voiceLines = useVoiceLineStore(state => state.voiceLines);
 
+  // Sync voice lines when chords change and voice lanes are visible
+  useEffect(() => {
+    if (showVoiceLanes && chords.length > 0) {
+      initializeVoiceLines(chords);
+    }
+  }, [chords, showVoiceLanes, initializeVoiceLines]);
 
   // Counterpoint analysis
   const setCounterpointResult = useCounterpointWarningsStore(state => state.setAnalysisResult);
@@ -204,12 +209,12 @@ function App() {
   // Run counterpoint analysis
   const handleAnalyzeCounterpoint = useCallback(() => {
     // Initialize voice lines from current chords for analysis
-    const voiceLineStore = require('@/store/voice-line-store').useVoiceLineStore.getState();
+    const voiceLineStore = useVoiceLineStore.getState();
     if (!voiceLineStore.isInitialized) {
       voiceLineStore.initializeFromChords(chords);
     }
     // Get fresh voiceLines after initialization
-    const currentVoiceLines = require('@/store/voice-line-store').useVoiceLineStore.getState().voiceLines;
+    const currentVoiceLines = useVoiceLineStore.getState().voiceLines;
     const result = analyzeCounterpoint(currentVoiceLines);
     setCounterpointResult(result);
     if (!isCounterpointVisible) {
@@ -240,7 +245,7 @@ function App() {
       updatedAt: new Date().toISOString(),
     };
     // Get voice lines from store if initialized
-    const voiceLineStore = require('@/store/voice-line-store').useVoiceLineStore.getState();
+    const voiceLineStore = useVoiceLineStore.getState();
     downloadMusicXML(progression, voiceLineStore.isInitialized ? voiceLineStore.voiceLines : undefined);
   }, [chords, currentKey, currentMode, tempo, beatsPerMeasure, metadata]);
 
@@ -625,12 +630,34 @@ function App() {
   }, []);
 
   // Update chord properties (quality, extensions, etc.)
+  // Regenerates voices when quality or extensions change to update audio
   const handleUpdateChord = useCallback((chordId: string, updates: Partial<Chord>) => {
-    setChords((prevChords) =>
-      prevChords.map((chord) =>
-        chord.id === chordId ? { ...chord, ...updates } : chord
-      )
-    );
+    setChords((prevChords) => {
+      // Check if we need to regenerate voices (quality or extensions changed)
+      const needsVoiceRegeneration = 'quality' in updates || 'extensions' in updates;
+
+      // Find the chord index and get previous chord for voice leading
+      const chordIndex = prevChords.findIndex(c => c.id === chordId);
+      if (chordIndex === -1) return prevChords;
+
+      // Sort by startBeat to find the actual previous chord
+      const sortedChords = [...prevChords].sort((a, b) => a.startBeat - b.startBeat);
+      const sortedIndex = sortedChords.findIndex(c => c.id === chordId);
+      const previousChord = sortedIndex > 0 ? sortedChords[sortedIndex - 1] : undefined;
+
+      return prevChords.map((chord) => {
+        if (chord.id !== chordId) return chord;
+
+        const updatedChord = { ...chord, ...updates };
+
+        // Regenerate voices if quality or extensions changed
+        if (needsVoiceRegeneration) {
+          updatedChord.voices = generateSATBVoicing(updatedChord, previousChord?.voices);
+        }
+
+        return updatedChord;
+      });
+    });
   }, []);
 
   // Handle new piece - reset canvas and state
@@ -646,9 +673,8 @@ function App() {
     setShowVoiceLanes(false);
     setPieceTitle('Untitled');
     clearAnalyzedProgression();
-    // Reset voice lines
-    const voiceLineStore = require('@/store/voice-line-store').useVoiceLineStore.getState();
-    voiceLineStore.reset();
+    // Reset voice lines by reinitializing with empty chords
+    useVoiceLineStore.getState().initializeFromChords([]);
   }, [chords.length, clearAnalyzedProgression]);
 
   return (
@@ -756,10 +782,11 @@ function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
               onClick={() => {
-                if (!isVoiceLinesInitialized) {
+                const newShowState = !showVoiceLanes;
+                if (newShowState && chords.length > 0) {
                   initializeVoiceLines(chords);
                 }
-                setShowVoiceLanes(!showVoiceLanes);
+                setShowVoiceLanes(newShowState);
               }}
               className="action-button analyze-button"
               style={{
@@ -992,8 +1019,6 @@ function App() {
         onClose={() => setShowAuthModal(false)}
       />
 
-      <ChordPalette mode={currentMode} onAddChord={handleAddChordFromPalette} />
-
       <AudioLoadingIndicator />
 
       <Suspense fallback={null}>
@@ -1004,6 +1029,8 @@ function App() {
           onSave={saveProgression}
         />
       </Suspense>
+
+      <ToastContainer />
     </div>
   );
 }

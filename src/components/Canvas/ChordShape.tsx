@@ -22,22 +22,6 @@ const WOBBLE_CONFIG = {
   scale: 0.02,     // ±2% scale
 } as const;
 
-// Custom comparison function for React.memo
-function areChordShapePropsEqual(prev: ChordShapeProps, next: ChordShapeProps): boolean {
-  return (
-    prev.chord.id === next.chord.id &&
-    prev.chord.scaleDegree === next.chord.scaleDegree &&
-    prev.chord.size === next.chord.size &&
-    prev.chord.quality === next.chord.quality &&
-    prev.chord.extensions === next.chord.extensions &&
-    prev.chord.isChromatic === next.chord.isChromatic &&
-    prev.isSelected === next.isSelected &&
-    prev.isPlaying === next.isPlaying &&
-    prev.isDragging === next.isDragging &&
-    prev.hasAnnotation === next.hasAnnotation &&
-    prev.zoom === next.zoom
-  );
-}
 
 const ChordShapeComponent: React.FC<ChordShapeProps> = ({
   chord,
@@ -179,8 +163,8 @@ const ChordShapeComponent: React.FC<ChordShapeProps> = ({
         )}
       </svg>
 
-      {hasChordModifications(chord.quality, chord.extensions) && (() => {
-        const badgeText = getChordBadgeText(chord.quality, chord.extensions);
+      {hasChordModifications(chord.quality, chord.extensions, chord.scaleDegree, chord.mode) && (() => {
+        const badgeText = getChordBadgeText(chord.quality, chord.extensions, chord.scaleDegree, chord.mode);
         if (!badgeText) return null;
 
         const badgeColor = getScaleDegreeColor(chord.scaleDegree, chord.mode);
@@ -224,8 +208,7 @@ const ChordShapeComponent: React.FC<ChordShapeProps> = ({
 
 ChordShapeComponent.displayName = 'ChordShape';
 
-// Export memoized version with custom comparison function
-export const ChordShape = React.memo(ChordShapeComponent, areChordShapePropsEqual);
+export const ChordShape = React.memo(ChordShapeComponent);
 
 function generateShapePath(scaleDegree: number, size: number): string {
   const center = size / 2;

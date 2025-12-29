@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTutorialStore } from '@/store/tutorial-store';
+import { useAudioEngine } from '@/hooks/useAudioEngine';
 import styles from './WelcomeTutorial.module.css';
 
 interface Step {
@@ -61,18 +62,28 @@ export function WelcomeTutorial() {
 
   const [showConfetti, setShowConfetti] = useState(false);
   const [hasPlayedDemo, setHasPlayedDemo] = useState(false);
+  const { isReady, isSamplesLoaded, initialize } = useAudioEngine();
 
   // Handle play button in tutorial
-  const handleTutorialPlay = useCallback(() => {
-    // Click the actual play button in the sidebar
-    const playButton = document.querySelector('.play-button') as HTMLButtonElement;
-    if (playButton) {
-      playButton.click();
-      setHasPlayedDemo(true);
-      // Advance after a short delay to let them hear the music
-      setTimeout(() => nextStep(), 1500);
+  const handleTutorialPlay = useCallback(async () => {
+    try {
+      // Ensure audio is initialized before playing
+      if (!isReady || !isSamplesLoaded) {
+        await initialize();
+      }
+
+      // Click the actual play button in the sidebar
+      const playButton = document.querySelector('.play-button') as HTMLButtonElement;
+      if (playButton) {
+        playButton.click();
+        setHasPlayedDemo(true);
+        // Advance after a short delay to let them hear the music
+        setTimeout(() => nextStep(), 2500);
+      }
+    } catch (error) {
+      console.error('Failed to initialize audio for tutorial:', error);
     }
-  }, [nextStep]);
+  }, [nextStep, isReady, isSamplesLoaded, initialize]);
 
   // Handle step-specific actions (only for add-chord step now)
   useEffect(() => {

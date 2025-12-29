@@ -39,7 +39,12 @@ export class PlaybackSystem {
     const sampler = audioEngine.getSampler();
 
     if (!sampler) {
-      console.warn('Sampler not available for playback scheduling');
+      console.warn('[Playback] Audio still loading - please wait and try again');
+      return;
+    }
+
+    if (chords.length === 0) {
+      console.warn('[Playback] No chords to play');
       return;
     }
 
@@ -89,7 +94,7 @@ export class PlaybackSystem {
 
     const sampler = audioEngine.getSampler();
     if (!sampler) {
-      console.warn('Sampler not available for voice line playback scheduling');
+      console.warn('[Playback] Audio still loading - please wait and try again');
       return;
     }
 
@@ -99,6 +104,12 @@ export class PlaybackSystem {
     const parts: VoicePart[] = ['soprano', 'alto', 'tenor', 'bass'];
     parts.forEach(part => {
       const voiceLine = voiceLines[part];
+
+      // Skip if voice line is undefined or missing
+      if (!voiceLine) {
+        return;
+      }
+
       if (!voiceLine.enabled || voiceLine.muted) return;
 
       voiceLine.notes.forEach(note => {

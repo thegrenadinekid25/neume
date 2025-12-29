@@ -212,6 +212,17 @@
   line-height: 1.4;
 }
 
+/* Save error banner */
+.saveError {
+  padding: var(--space-md);
+  background: rgba(196, 69, 54, 0.1);
+  border: 1px solid var(--error);
+  border-radius: var(--border-radius-sm);
+  color: var(--error);
+  font-size: 13px;
+  margin: 0 var(--space-lg);
+}
+
 /* Checkbox group */
 .checkboxGroup {
   display: flex;

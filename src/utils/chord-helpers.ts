@@ -1,15 +1,41 @@
-import type { Chord, ChordQuality, ChordExtensions } from '../types/chord';
+import type { Chord, ChordQuality, ChordExtensions, ScaleDegree, Mode } from '../types/chord';
 import { EXTENDED_BADGE_LABELS, EXTENDED_CHORD_TYPE_NAMES } from '@/data/extended-chords';
 
 /**
- * Badge labels for displaying chord extensions and alterations
+ * Get the natural/diatonic quality for a scale degree in a given mode
+ */
+export function getNaturalQuality(scaleDegree: ScaleDegree, mode: Mode): ChordQuality {
+  if (mode === 'major') {
+    const qualities: Record<ScaleDegree, ChordQuality> = {
+      1: 'major', 2: 'minor', 3: 'minor', 4: 'major', 5: 'major', 6: 'minor', 7: 'diminished',
+    };
+    return qualities[scaleDegree];
+  } else {
+    // Natural minor
+    const qualities: Record<ScaleDegree, ChordQuality> = {
+      1: 'minor', 2: 'diminished', 3: 'major', 4: 'minor', 5: 'major', 6: 'major', 7: 'major',
+    };
+    return qualities[scaleDegree];
+  }
+}
+
+/**
+ * Badge labels for displaying chord modifications
+ * Only shown when quality differs from natural diatonic quality
  */
 export const BADGE_LABELS: Record<string, string> = {
+  // Quality alterations (shown when different from natural)
+  major: 'M',      // Capital M when naturally minor becomes major
+  minor: 'm',      // Lowercase m when naturally major becomes minor
+  diminished: '°',
+  augmented: '+',
+  // Seventh chords (always show as they add notes)
   dom7: '7',
   maj7: '△7',
   min7: 'm7',
   halfdim7: 'ø7',
   dim7: '°7',
+  // Extensions
   sus2: 'sus2',
   sus4: 'sus4',
   add9: '+9',
@@ -61,16 +87,28 @@ export function isSeventhChord(quality: ChordQuality): boolean {
 }
 
 /**
- * Get the badge text for a chord quality
- * Returns the abbreviated display text for the chord quality
+ * Get the badge text for a chord
+ * Only shows quality badge when it differs from the natural diatonic quality
  */
 export function getChordBadgeText(
   quality: ChordQuality,
-  extensions: ChordExtensions
+  extensions: ChordExtensions,
+  scaleDegree?: ScaleDegree,
+  mode?: Mode
 ): string | null {
-  // For seventh chords, return their badge
+  // For seventh chords, always return their badge (they add notes)
   if (isSeventhChord(quality)) {
     return BADGE_LABELS[quality] || null;
+  }
+
+  // For basic triads, only show badge if quality differs from natural
+  if (scaleDegree !== undefined && mode !== undefined) {
+    const naturalQuality = getNaturalQuality(scaleDegree, mode);
+
+    // Only show badge if quality differs from natural
+    if (quality !== naturalQuality) {
+      return BADGE_LABELS[quality] || null;
+    }
   }
 
   // For extensions, prioritize in order of common usage
@@ -90,15 +128,26 @@ export function getChordBadgeText(
 }
 
 /**
- * Check if a chord has any modifications (extensions or alterations)
+ * Check if a chord has any modifications that should show a badge
+ * Only considers quality a modification if it differs from natural
  */
 export function hasChordModifications(
   quality: ChordQuality,
-  extensions: ChordExtensions
+  extensions: ChordExtensions,
+  scaleDegree?: ScaleDegree,
+  mode?: Mode
 ): boolean {
-  // Seventh chords are considered modifications
+  // Seventh chords always show a badge (they add notes)
   if (isSeventhChord(quality)) {
     return true;
+  }
+
+  // Check if quality differs from natural
+  if (scaleDegree !== undefined && mode !== undefined) {
+    const naturalQuality = getNaturalQuality(scaleDegree, mode);
+    if (quality !== naturalQuality) {
+      return true;
+    }
   }
 
   // Check if any extensions are present

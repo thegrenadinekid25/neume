@@ -112,19 +112,24 @@ export function usePlayback(
     setCurrentChordId(null);
   }, []);
 
-  const togglePlay = useCallback(() => {
+  const togglePlay = useCallback(async () => {
     if (isPlaying) {
       stop(); // Use stop() instead of pause() for cleaner behavior
     } else {
-      // Re-schedule events before playing to ensure fresh state
+      // Initialize audio first if needed (must happen before scheduling)
+      if (!audioReady) {
+        await initialize();
+      }
+      // Schedule events after audio is ready
       if (voiceLinesActive && voiceLines) {
         playbackSystem.scheduleVoiceLines(voiceLines);
       } else if (chords.length > 0) {
         playbackSystem.scheduleProgression(chords);
       }
-      play();
+      playbackSystem.play();
+      setIsPlaying(true);
     }
-  }, [isPlaying, play, stop, chords, voiceLinesActive, voiceLines]);
+  }, [isPlaying, stop, chords, voiceLinesActive, voiceLines, audioReady, initialize]);
 
   const setTempo = useCallback((bpm: number) => {
     playbackSystem.setTempo(bpm);

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
 import { restrictToHorizontalAxis } from '@dnd-kit/modifiers';
 import { useDragDrop } from '@/hooks/useDragDrop';
@@ -7,6 +7,7 @@ import { Canvas } from './Canvas';
 import { DraggableChord } from './DraggableChord';
 import { ChordShape } from './ChordShape';
 import { SelectionBox } from './SelectionBox';
+import { ChordPalette } from '@/components/Palette/ChordPalette';
 import type { Chord, ScaleDegree, MusicalKey, Mode } from '@/types';
 import type { PhraseBoundary } from '@/types/progression';
 import type { SongContext } from '@/store/why-this-store';
@@ -84,7 +85,15 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
 }) => {
   const { sensors } = useDragDrop();
   const [activeChord, setActiveChord] = useState<Chord | null>(null);
+  const [activePaletteItem, setActivePaletteItem] = useState<{ scaleDegree: ScaleDegree } | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const canvasScrollRef = useRef<HTMLDivElement>(null);
+
+  // Ref to track current chords - avoids stale closure in drag handlers
+  const chordsRef = useRef(chords);
+  useEffect(() => {
+    chordsRef.current = chords;
+  }, [chords]);
 
   // Selection box state
   const [selectionBox, setSelectionBox] = useState<{
@@ -213,17 +222,72 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
   // Drag handlers
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const { active } = event;
+    const data = active.data.current;
+
+    // Check if this is a palette chord drag
+    if (data?.type === 'palette-chord') {
+      setActivePaletteItem({ scaleDegree: data.scaleDegree as ScaleDegree });
+      setActiveChord(null);
+      return;
+    }
+
+    // Otherwise it's an existing chord
     const chord = chords.find(c => c.id === active.id);
     if (chord) {
       setActiveChord(chord);
+      setActivePaletteItem(null);
     }
   }, [chords]);
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, delta } = event;
+    const data = active.data.current;
 
+    // Handle palette chord drops
+    if (data?.type === 'palette-chord') {
+      const scaleDegree = data.scaleDegree as ScaleDegree;
+
+      // Calculate drop position from initial pointer + delta
+      const pointerEvent = event.activatorEvent as PointerEvent | MouseEvent | TouchEvent;
+      let startX = 0;
+
+      if (pointerEvent && 'clientX' in pointerEvent) {
+        startX = pointerEvent.clientX;
+      } else if (pointerEvent && 'touches' in pointerEvent && pointerEvent.touches[0]) {
+        startX = pointerEvent.touches[0].clientX;
+      }
+
+      if (canvasContainerRef.current && (startX > 0 || delta)) {
+        const canvasRect = canvasContainerRef.current.getBoundingClientRect();
+        const scrollLeft = canvasScrollRef.current?.scrollLeft || 0;
+
+        // Final X position = start position + delta, relative to canvas
+        const finalX = startX + (delta?.x || 0);
+        const dropX = finalX - canvasRect.left + scrollLeft;
+
+        // Snap to beat - subtract half beat width to center the drop
+        const startBeat = Math.max(0, Math.floor((dropX - beatWidth / 2) / beatWidth));
+
+        // Add the chord
+        onAddChord(scaleDegree, { x: startBeat * beatWidth });
+      } else {
+        // Fallback: add at end of progression
+        const lastChord = chords.length > 0
+          ? chords.reduce((prev, curr) => curr.startBeat > prev.startBeat ? curr : prev)
+          : null;
+        const nextBeat = lastChord ? lastChord.startBeat + lastChord.duration : 0;
+        onAddChord(scaleDegree, { x: nextBeat * beatWidth });
+      }
+
+      setActivePaletteItem(null);
+      setActiveChord(null);
+      return;
+    }
+
+    // Handle existing chord movement
     if (!delta) {
       setActiveChord(null);
+      setActivePaletteItem(null);
       return;
     }
 
@@ -232,9 +296,12 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
       ? selectedChordIds
       : [active.id as string];
 
+    // Use ref to get current chords (avoids stale closure from @dnd-kit)
+    const currentChords = chordsRef.current;
+
     // Move chords horizontally
     chordsToMove.forEach((id) => {
-      const chord = chords.find(c => c.id === id);
+      const chord = currentChords.find(c => c.id === id);
       if (!chord) return;
 
       // Calculate new X position and snap to beat
@@ -246,19 +313,55 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
     });
 
     setActiveChord(null);
-  }, [chords, beatWidth, selectedChordIds, onUpdateChordPosition]);
+    setActivePaletteItem(null);
+  }, [beatWidth, chords, selectedChordIds, onUpdateChordPosition, onAddChord]);
 
   const handleDragCancel = useCallback(() => {
     setActiveChord(null);
+    setActivePaletteItem(null);
   }, []);
+
+  // Handle adding chord from palette click (non-drag)
+  const handlePaletteAddChord = useCallback((scaleDegree: ScaleDegree) => {
+    // Find the next available position (after the last chord)
+    const lastChord = chords.length > 0
+      ? chords.reduce((prev, curr) => curr.startBeat > prev.startBeat ? curr : prev)
+      : null;
+
+    const nextBeat = lastChord ? lastChord.startBeat + lastChord.duration : 0;
+    onAddChord(scaleDegree, { x: nextBeat * beatWidth });
+  }, [chords, beatWidth, onAddChord]);
+
+  // Create a mock chord for the drag overlay when dragging from palette
+  const palettePreviewChord: Chord | null = activePaletteItem ? {
+    id: 'palette-preview',
+    scaleDegree: activePaletteItem.scaleDegree,
+    quality: 'major',
+    extensions: {},
+    key: currentKey,
+    mode: currentMode,
+    isChromatic: false,
+    voices: { soprano: '', alto: '', tenor: '', bass: '' },
+    startBeat: 0,
+    duration: 1,
+    position: { x: 0, y: 0 },
+    size: 60,
+    selected: false,
+    playing: false,
+    source: 'user',
+    createdAt: new Date().toISOString(),
+  } : null;
+
+  // Only restrict to horizontal axis when dragging existing chords, not palette items
+  const modifiers = activePaletteItem ? [] : [restrictToHorizontalAxis];
 
   return (
     <DndContext
       sensors={sensors}
+      modifiers={modifiers}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
-      modifiers={[restrictToHorizontalAxis]}
     >
       <div
         ref={canvasContainerRef}
@@ -270,6 +373,7 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
         onMouseLeave={handleSelectionEnd}
       >
         <Canvas
+          ref={canvasScrollRef}
           currentKey={currentKey}
           currentMode={currentMode}
           beatsPerMeasure={beatsPerMeasure}
@@ -316,6 +420,9 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
             current={selectionBox.current}
           />
         )}
+
+        {/* Chord Palette */}
+        <ChordPalette mode={currentMode} onAddChord={handlePaletteAddChord} />
       </div>
 
       {/* Drag Overlay */}
@@ -328,6 +435,12 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
         {activeChord ? (
           <ChordShape
             chord={activeChord}
+            zoom={zoom}
+            isDragging
+          />
+        ) : palettePreviewChord ? (
+          <ChordShape
+            chord={palettePreviewChord}
             zoom={zoom}
             isDragging
           />

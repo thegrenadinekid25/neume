@@ -42,12 +42,18 @@ class ProgressionStorage {
 
   /**
    * Save a progression (create or update)
+   * Falls back to localStorage if cloud save fails
    */
   async save(progression: SavedProgression): Promise<void> {
     const userId = await this.getAuthenticatedUserId();
 
     if (userId) {
-      await this.saveToCloud(progression, userId);
+      try {
+        await this.saveToCloud(progression, userId);
+      } catch (error) {
+        console.error('Cloud save failed, falling back to localStorage:', error);
+        this.saveToLocalStorage(progression);
+      }
     } else {
       this.saveToLocalStorage(progression);
     }

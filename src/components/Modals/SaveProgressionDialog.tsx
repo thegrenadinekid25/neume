@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { SavedProgression } from '@/types';
+import { showSuccessToast } from '@/store/toast-store';
 import styles from './SaveProgressionDialog.module.css';
 
 interface SaveProgressionDialogProps {
   progression: SavedProgression;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (progression: SavedProgression) => void;
+  onSave: (progression: SavedProgression) => Promise<void>;
 }
 
 /**
@@ -26,6 +27,7 @@ export const SaveProgressionDialog: React.FC<SaveProgressionDialogProps> = ({
   const [notes, setNotes] = useState(progression.notes || '');
   const [isFavorite, setIsFavorite] = useState(progression.isFavorite);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Reset form when dialog opens
   useEffect(() => {
@@ -34,6 +36,7 @@ export const SaveProgressionDialog: React.FC<SaveProgressionDialogProps> = ({
       setTagsInput(progression.tags.join(', '));
       setNotes(progression.notes || '');
       setIsFavorite(progression.isFavorite);
+      setSaveError(null);
     }
   }, [isOpen, progression]);
 
@@ -62,6 +65,7 @@ export const SaveProgressionDialog: React.FC<SaveProgressionDialogProps> = ({
     if (!isValid || isSaving) return;
 
     setIsSaving(true);
+    setSaveError(null);
     try {
       const tags = tagsInput
         .split(',')
@@ -77,8 +81,12 @@ export const SaveProgressionDialog: React.FC<SaveProgressionDialogProps> = ({
         updatedAt: new Date().toISOString(),
       };
 
-      onSave(updatedProgression);
+      await onSave(updatedProgression);
+      showSuccessToast(`"${title.trim()}" saved successfully`);
       onClose();
+    } catch (error) {
+      console.error('Failed to save progression:', error);
+      setSaveError('Failed to save progression. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -219,6 +227,13 @@ export const SaveProgressionDialog: React.FC<SaveProgressionDialogProps> = ({
                 </label>
               </div>
             </div>
+
+            {/* Error message */}
+            {saveError && (
+              <div className={styles.saveError}>
+                {saveError}
+              </div>
+            )}
 
             {/* Footer */}
             <div className={styles.footer}>

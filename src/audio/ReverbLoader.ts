@@ -4,6 +4,8 @@
  */
 export class ReverbLoader {
   private cache: Map<string, AudioBuffer> = new Map();
+  private failedUrls: Set<string> = new Set();
+  private hasLoggedForUrl: Set<string> = new Set();
 
   /**
    * Load impulse response from URL
@@ -18,9 +20,12 @@ export class ReverbLoader {
       return this.cache.get(url)!;
     }
 
-    try {
-      console.log(`Loading impulse response from ${url}...`);
+    // Check if we've already failed to load this URL
+    if (this.failedUrls.has(url)) {
+      return null;
+    }
 
+    try {
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
@@ -31,11 +36,23 @@ export class ReverbLoader {
 
       // Cache for future use
       this.cache.set(url, audioBuffer);
-      console.log(`Impulse response loaded (${audioBuffer.duration.toFixed(2)}s)`);
+
+      // Only log success once per URL
+      if (!this.hasLoggedForUrl.has(url)) {
+        console.log(`[Audio] Impulse response loaded (${audioBuffer.duration.toFixed(2)}s)`);
+        this.hasLoggedForUrl.add(url);
+      }
 
       return audioBuffer;
     } catch (error) {
-      console.warn('Failed to load impulse response:', error);
+      // Cache the failure to prevent repeated attempts
+      this.failedUrls.add(url);
+
+      // Only log failure once per URL
+      if (!this.hasLoggedForUrl.has(url)) {
+        console.warn('[Audio] Impulse response unavailable, using algorithmic reverb');
+        this.hasLoggedForUrl.add(url);
+      }
       return null;
     }
   }

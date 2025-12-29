@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useDraggable, useDndMonitor } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getScaleDegreeColor } from '@/styles/colors';
 import type { ScaleDegree, Mode } from '@/types';
@@ -30,9 +32,29 @@ const SCALE_DEGREES: Array<{
  * Hover-expand chord palette for adding chords to the canvas
  * Shows at bottom center, expands on hover to reveal all 7 scale degrees
  * Click on a chord to add it at the next available position
+ * Drag a chord to place it at a specific position on the canvas
  */
 export const ChordPalette: React.FC<ChordPaletteProps> = ({ mode, onAddChord }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isDraggingFromPalette, setIsDraggingFromPalette] = useState(false);
+
+  // Track when a palette chord is being dragged to prevent collapse
+  useDndMonitor({
+    onDragStart: (event) => {
+      const id = String(event.active.id);
+      if (id.startsWith('palette-chord-')) {
+        setIsDraggingFromPalette(true);
+      }
+    },
+    onDragEnd: () => {
+      setIsDraggingFromPalette(false);
+      setIsExpanded(false); // Collapse after drop
+    },
+    onDragCancel: () => {
+      setIsDraggingFromPalette(false);
+      setIsExpanded(false); // Collapse after cancel
+    },
+  });
 
   const handleChordClick = (degree: ScaleDegree) => {
     onAddChord(degree);
@@ -40,11 +62,18 @@ export const ChordPalette: React.FC<ChordPaletteProps> = ({ mode, onAddChord }) 
     // setIsExpanded(false);
   };
 
+  const handleMouseLeave = () => {
+    // Don't collapse if we're dragging from the palette
+    if (!isDraggingFromPalette) {
+      setIsExpanded(false);
+    }
+  };
+
   return (
     <div
       className={styles.container}
       onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
+      onMouseLeave={handleMouseLeave}
     >
       {/* Collapsed trigger */}
       <motion.div
@@ -80,11 +109,11 @@ export const ChordPalette: React.FC<ChordPaletteProps> = ({ mode, onAddChord }) 
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
           >
             <div className={styles.paletteHeader}>
-              <span>Click to add chord</span>
+              <span>Click or drag to add chord</span>
             </div>
             <div className={styles.chordGrid}>
               {SCALE_DEGREES.map((info, index) => (
-                <ChordItem
+                <DraggablePaletteChord
                   key={info.degree}
                   degree={info.degree}
                   mode={mode}
@@ -111,13 +140,88 @@ interface ChordItemProps {
   onClick: () => void;
 }
 
-const ChordItem: React.FC<ChordItemProps> = ({
+interface DraggablePaletteChordProps extends ChordItemProps {}
+
+/**
+ * Wrapper component that makes palette chords draggable
+ * Uses useDraggable from @dnd-kit/core to enable drag-and-drop
+ */
+const DraggablePaletteChord: React.FC<DraggablePaletteChordProps> = ({
   degree,
   mode,
   numeral,
   name,
   index,
   onClick,
+}) => {
+  // Memoize data to ensure stable reference for @dnd-kit
+  const dragData = useMemo(() => ({
+    scaleDegree: degree,
+    type: 'palette-chord' as const,
+  }), [degree]);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    isDragging,
+  } = useDraggable({
+    id: `palette-chord-${degree}`,
+    data: dragData,
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform),
+    zIndex: isDragging ? 1000 : undefined,
+  };
+
+  const handleClick = (_e: React.MouseEvent) => {
+    // Only trigger click if not dragging
+    if (!isDragging) {
+      onClick();
+    }
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`${styles.draggablePaletteChord} ${isDragging ? styles.isDragging : ''}`}
+      {...listeners}
+      {...attributes}
+    >
+      <ChordItem
+        degree={degree}
+        mode={mode}
+        numeral={numeral}
+        name={name}
+        index={index}
+        onClick={handleClick}
+        isDragging={isDragging}
+      />
+    </div>
+  );
+};
+
+interface ChordItemInternalProps {
+  degree: ScaleDegree;
+  mode: Mode;
+  numeral: string;
+  name: string;
+  index: number;
+  onClick: (e: React.MouseEvent) => void;
+  isDragging?: boolean;
+}
+
+const ChordItem: React.FC<ChordItemInternalProps> = ({
+  degree,
+  mode,
+  numeral,
+  name,
+  index,
+  onClick,
+  isDragging = false,
 }) => {
   const color = getScaleDegreeColor(degree, mode);
   const shapePath = getShapePath(degree);
@@ -128,11 +232,16 @@ const ChordItem: React.FC<ChordItemProps> = ({
     <motion.button
       className={styles.chordItem}
       initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.03 }}
+      animate={{
+        opacity: isDragging ? 0.8 : 1,
+        y: 0,
+        scale: isDragging ? 1.05 : 1,
+      }}
+      transition={{ delay: isDragging ? 0 : index * 0.03 }}
       onClick={onClick}
-      title={`Add ${name} (${numeral})`}
+      title={`Add ${name} (${numeral}) - Click or drag to canvas`}
       aria-label={`Add ${name} chord`}
+      style={{ pointerEvents: isDragging ? 'none' : 'auto' }}
     >
       <svg
         className={styles.chordShape}

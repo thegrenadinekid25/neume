@@ -68,8 +68,8 @@ export const MyProgressionsModal: React.FC = () => {
   };
 
   // Handle save edited progression
-  const handleSaveEditedProgression = (progression: SavedProgression) => {
-    saveProgression(progression);
+  const handleSaveEditedProgression = async (progression: SavedProgression) => {
+    await saveProgression(progression);
     setShowEditDialog(false);
     setEditingProgression(null);
   };

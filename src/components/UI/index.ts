@@ -22,3 +22,5 @@ export { NecklaceToggle } from './NecklaceToggle';
 export { ExpertModeToggle } from './ExpertModeToggle';
 
 export { ExpertModeProgress } from './ExpertModeProgress';
+
+export { ToastContainer } from './Toast';

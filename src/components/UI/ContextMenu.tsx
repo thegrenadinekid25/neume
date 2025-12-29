@@ -71,6 +71,11 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       }
     };
 
+    // Get indices of non-divider items for keyboard navigation
+    const navigableIndices = items
+      .map((item, index) => (item.divider ? -1 : index))
+      .filter((index) => index !== -1);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
         case 'Escape':
@@ -79,16 +84,24 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           break;
         case 'ArrowDown':
           e.preventDefault();
-          setFocusedIndex((prev) => (prev + 1) % items.length);
+          setFocusedIndex((prev) => {
+            const currentNavIndex = navigableIndices.indexOf(prev);
+            const nextNavIndex = (currentNavIndex + 1) % navigableIndices.length;
+            return navigableIndices[nextNavIndex];
+          });
           break;
         case 'ArrowUp':
           e.preventDefault();
-          setFocusedIndex((prev) => (prev - 1 + items.length) % items.length);
+          setFocusedIndex((prev) => {
+            const currentNavIndex = navigableIndices.indexOf(prev);
+            const prevNavIndex = (currentNavIndex - 1 + navigableIndices.length) % navigableIndices.length;
+            return navigableIndices[prevNavIndex];
+          });
           break;
         case 'Enter':
         case ' ':
           e.preventDefault();
-          if (!items[focusedIndex].disabled && items[focusedIndex].action) {
+          if (!items[focusedIndex]?.divider && !items[focusedIndex]?.disabled && items[focusedIndex]?.action) {
             items[focusedIndex].action();
             onClose();
           }
@@ -234,44 +247,49 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         >
           {items.map((item, index) => (
             <React.Fragment key={item.id}>
-              <div
-                className={styles.menuItemWrapper}
-                onMouseEnter={() => {
-                  if (item.submenu && item.submenu.length > 0) {
-                    handleSubmenuEnter(item.id);
-                  }
-                }}
-                onMouseLeave={handleSubmenuLeave}
-              >
-                <button
-                  className={`${styles.menuItem} ${index === focusedIndex ? styles.focused : ''} ${
-                    item.submenu ? styles.hasSubmenu : ''
-                  }`}
-                  onClick={() => {
-                    if (!item.disabled && (!item.submenu || item.submenu.length === 0) && item.action) {
-                      item.action();
-                      onClose();
+              {item.divider ? (
+                // Render only divider, no button
+                <div className={styles.divider} role="separator" />
+              ) : (
+                // Render menu item with button
+                <div
+                  className={styles.menuItemWrapper}
+                  onMouseEnter={() => {
+                    if (item.submenu && item.submenu.length > 0) {
+                      handleSubmenuEnter(item.id);
                     }
                   }}
-                  disabled={item.disabled}
-                  role="menuitem"
-                  tabIndex={index === focusedIndex ? 0 : -1}
-                  aria-disabled={item.disabled}
-                  aria-haspopup={item.submenu ? 'menu' : undefined}
-                  aria-expanded={openSubmenuId === item.id}
+                  onMouseLeave={handleSubmenuLeave}
                 >
-                  {item.icon && (
-                    <span className={styles.icon}>{item.icon}</span>
-                  )}
-                  <span className={styles.label}>{item.label}</span>
-                </button>
-                <AnimatePresence>
-                  {openSubmenuId === item.id && item.submenu && item.submenu.length > 0 && (
-                    renderSubmenu(item.submenu, item.id)
-                  )}
-                </AnimatePresence>
-              </div>
-              {item.divider && <div className={styles.divider} />}
+                  <button
+                    className={`${styles.menuItem} ${index === focusedIndex ? styles.focused : ''} ${
+                      item.submenu ? styles.hasSubmenu : ''
+                    }`}
+                    onClick={() => {
+                      if (!item.disabled && (!item.submenu || item.submenu.length === 0) && item.action) {
+                        item.action();
+                        onClose();
+                      }
+                    }}
+                    disabled={item.disabled}
+                    role="menuitem"
+                    tabIndex={index === focusedIndex ? 0 : -1}
+                    aria-disabled={item.disabled}
+                    aria-haspopup={item.submenu ? 'menu' : undefined}
+                    aria-expanded={openSubmenuId === item.id}
+                  >
+                    {item.icon && (
+                      <span className={styles.icon}>{item.icon}</span>
+                    )}
+                    <span className={styles.label}>{item.label}</span>
+                  </button>
+                  <AnimatePresence>
+                    {openSubmenuId === item.id && item.submenu && item.submenu.length > 0 && (
+                      renderSubmenu(item.submenu, item.id)
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
             </React.Fragment>
           ))}
         </motion.div>
