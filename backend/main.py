@@ -3,8 +3,12 @@ Neume Chord Extraction API
 FastAPI backend for analyzing music and extracting chord progressions
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import uuid
 import os
 import json
@@ -44,12 +48,21 @@ from services.emotional_mapper import EmotionalMapper
 # Load environment variables
 load_dotenv()
 
+# Claude API Configuration
+CLAUDE_MODEL = "claude-opus-4-5-20250929"
+
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+
 # Initialize FastAPI app
 app = FastAPI(
     title="Neume Chord Extraction API",
     description="Extract chord progressions from audio files and YouTube videos",
     version="1.0.0"
 )
+
+# Add rate limiter to app state
+app.state.limiter = limiter
 
 # CORS configuration
 app.add_middleware(
@@ -69,6 +82,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# Custom exception handler for rate limit exceeded
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={
+            "success": False,
+            "error": {
+                "code": "RATE_LIMIT_EXCEEDED",
+                "message": f"Too many requests. Limit: {exc.detail}. Please try again later.",
+                "retryable": True,
+                "retryAfter": 3600
+            }
+        },
+        headers={"Retry-After": "3600"}
+    )
+
+
 # Initialize services
 youtube_downloader = YouTubeDownloader(output_dir="./temp")
 chord_extractor = ChordExtractor()
@@ -79,6 +111,27 @@ emotional_mapper = EmotionalMapper()
 os.makedirs("./temp", exist_ok=True)
 
 
+@app.on_event("startup")
+async def validate_api_key():
+    """Validate Claude API key on startup."""
+    api_key = os.getenv("CLAUDE_API_KEY")
+
+    if not api_key:
+        print("\n" + "=" * 60)
+        print("WARNING: CLAUDE_API_KEY not found in environment variables!")
+        print("AI features will not work. Set CLAUDE_API_KEY in .env file.")
+        print("=" * 60 + "\n")
+        return
+
+    if not api_key.startswith("sk-ant-"):
+        print("\n" + "=" * 60)
+        print("WARNING: CLAUDE_API_KEY appears invalid (should start with 'sk-ant-')")
+        print("=" * 60 + "\n")
+        return
+
+    print("✓ Claude API key validated successfully")
+
+
 @app.get("/")
 async def root():
     """Health check endpoint"""
@@ -86,7 +139,8 @@ async def root():
 
 
 @app.post("/api/analyze", response_model=AnalyzeResponse)
-async def analyze_audio(request: AnalyzeRequest):
+@limiter.limit("10/hour")
+async def analyze_audio(request_obj: Request, request: AnalyzeRequest):
     """Analyze audio and extract chord progression."""
     try:
         audio_file = None
@@ -345,7 +399,8 @@ def build_explanation_prompt(
 
 
 @app.post("/api/explain", response_model=ExplainResponse)
-async def explain_chord(request: ExplainRequest):
+@limiter.limit("30/hour")
+async def explain_chord(request_obj: Request, request: ExplainRequest):
     """Get AI-powered explanation for a chord choice."""
     api_key = os.getenv("CLAUDE_API_KEY")
 
@@ -369,7 +424,7 @@ async def explain_chord(request: ExplainRequest):
         # Call Claude API
         client = anthropic.Anthropic(api_key=api_key)
         message = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
+            model=CLAUDE_MODEL,
             max_tokens=1024,
             messages=[
                 {"role": "user", "content": prompt}
@@ -417,7 +472,8 @@ async def explain_chord(request: ExplainRequest):
 
 
 @app.post("/api/deconstruct", response_model=DeconstructResponse)
-async def deconstruct_progression(request: DeconstructRequest):
+@limiter.limit("20/hour")
+async def deconstruct_progression(request_obj: Request, request: DeconstructRequest):
     """
     Analyze a chord progression and return its step-by-step evolution.
 
@@ -605,7 +661,7 @@ Keep it conversational and engaging. No markdown formatting."""
     try:
         client = anthropic.Anthropic(api_key=api_key)
         message = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
+            model=CLAUDE_MODEL,
             max_tokens=256,
             messages=[
                 {"role": "user", "content": prompt}
@@ -646,7 +702,8 @@ def calculate_relevance_score(technique: str, intent: str, avoid_list: List[str]
 
 
 @app.post("/api/suggest", response_model=SuggestResponse)
-async def suggest_refinements(request: SuggestRequest):
+@limiter.limit("20/hour")
+async def suggest_refinements(request_obj: Request, request: SuggestRequest):
     """
     Generate chord refinement suggestions based on emotional intent.
 
@@ -817,7 +874,8 @@ def build_chord_insight_prompt(
 
 
 @app.post("/api/chord-insight", response_model=ChordInsightResponse)
-async def get_chord_insight(request: ChordInsightRequest):
+@limiter.limit("30/hour")
+async def get_chord_insight(request_obj: Request, request: ChordInsightRequest):
     """
     Get AI-powered insight for selected chord(s).
 
@@ -853,7 +911,7 @@ async def get_chord_insight(request: ChordInsightRequest):
         # Call Claude API
         client = anthropic.Anthropic(api_key=api_key)
         message = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=CLAUDE_MODEL,
             max_tokens=1024,
             messages=[{"role": "user", "content": prompt}]
         )

@@ -226,8 +226,8 @@ export const NoteDot: React.FC<NoteDotProps> = ({
     retardation: 'ret',
   };
 
-  // Determine chord tone status
-  const isChordTone = note.analysis?.isChordTone ?? true;
+  // Determine chord tone status - default to hollow (false) if not analyzed
+  const isChordTone = note.analysis?.isChordTone ?? false;
   const nctType = note.analysis?.nonChordToneType;
   const nctAbbrev = nctType ? NCT_ABBREVIATIONS[nctType] : null;
 

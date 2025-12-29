@@ -5,8 +5,8 @@
   pointer-events: auto;
   cursor: grab;
   /* Offset by half the dot size to center on position */
-  margin-left: -7px;
-  margin-top: -7px;
+  margin-left: -8px;
+  margin-top: -8px;
 }
 
 .noteDotWrapper.dragging {
@@ -15,15 +15,16 @@
 }
 
 .noteDot {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  transition: box-shadow var(--duration-fast, 200ms) var(--ease-breathe),
-              transform var(--duration-fast, 200ms) var(--ease-breathe),
-              background-color var(--duration-fast, 200ms) var(--ease-breathe);
+  /* GPU-accelerated properties: transform and opacity only */
+  transition: transform var(--duration-fast, 200ms) var(--ease-breathe),
+              opacity var(--duration-fast, 200ms) var(--ease-breathe);
+  will-change: transform, opacity;
   /* Default: hollow style for non-chord tones */
   background-color: transparent;
-  border: 2px solid currentColor;
+  border: 2.5px solid currentColor;
 }
 
 /* Chord tones are filled */
@@ -31,10 +32,9 @@
   background-color: currentColor;
 }
 
-/* Non-chord tones stay hollow but have dashed border */
+/* Non-chord tones stay hollow with solid border */
 .noteDot.nonChordTone {
   background-color: transparent;
-  border-style: dashed;
 }
 
 .noteDotWrapper:hover .noteDot {

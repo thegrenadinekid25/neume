@@ -63,6 +63,9 @@ export const useVoiceLineStore = create<VoiceLineState & {
   setActiveVoice: (part: VoicePart | null) => void;
   toggleVoiceEnabled: (part: VoicePart) => void;
   toggleVoiceMuted: (part: VoicePart) => void;
+  setVoiceEnabled: (part: VoicePart, enabled: boolean) => void;
+  enableSingleVoice: (part: VoicePart) => void;
+  setAllVoicesEnabled: (enabled: boolean) => void;
   setCompositionMode: (mode: CompositionMode) => void;
   setPlayingNotes: (noteIds: string[]) => void;
   setNoteHovered: (noteId: string | null) => void;
@@ -116,7 +119,7 @@ export const useVoiceLineStore = create<VoiceLineState & {
                   visualState: { ...DEFAULT_MELODIC_NOTE_VISUAL_STATE },
                   text: null,
                   analysis: {
-                    isChordTone: true,
+                    isChordTone: false,
                     nonChordToneType: null,
                     scaleDegree: null,
                     interval: null,
@@ -336,6 +339,46 @@ export const useVoiceLineStore = create<VoiceLineState & {
       }));
     },
 
+    setVoiceEnabled: (part: VoicePart, enabled: boolean) => {
+      set((state) => ({
+        voiceLines: {
+          ...state.voiceLines,
+          [part]: {
+            ...state.voiceLines[part],
+            enabled,
+          },
+        },
+      }));
+    },
+
+    enableSingleVoice: (part: VoicePart) => {
+      set((state) => {
+        const parts: VoicePart[] = ['soprano', 'alto', 'tenor', 'bass'];
+        const updatedVoiceLines = { ...state.voiceLines };
+        parts.forEach(p => {
+          updatedVoiceLines[p] = {
+            ...updatedVoiceLines[p],
+            enabled: p === part,
+          };
+        });
+        return { voiceLines: updatedVoiceLines };
+      });
+    },
+
+    setAllVoicesEnabled: (enabled: boolean) => {
+      set((state) => {
+        const parts: VoicePart[] = ['soprano', 'alto', 'tenor', 'bass'];
+        const updatedVoiceLines = { ...state.voiceLines };
+        parts.forEach(p => {
+          updatedVoiceLines[p] = {
+            ...updatedVoiceLines[p],
+            enabled,
+          };
+        });
+        return { voiceLines: updatedVoiceLines };
+      });
+    },
+
     setCompositionMode: (mode: CompositionMode) => {
       set({ compositionMode: mode });
     },
@@ -407,7 +450,7 @@ export const useVoiceLineStore = create<VoiceLineState & {
               visualState: { ...DEFAULT_MELODIC_NOTE_VISUAL_STATE },
               text: null,
               analysis: {
-                isChordTone: true,
+                isChordTone: false,
                 nonChordToneType: null,
                 scaleDegree: null,
                 interval: null,

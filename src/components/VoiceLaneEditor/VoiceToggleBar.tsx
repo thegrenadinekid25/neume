@@ -17,12 +17,47 @@ const VOICE_COLORS: Record<VoicePart, string> = {
   bass: '#4A6FA5',
 };
 
+const VOICE_PAIRS: Record<VoicePart, VoicePart> = {
+  soprano: 'alto',
+  alto: 'soprano',
+  tenor: 'bass',
+  bass: 'tenor',
+};
+
 export const VoiceToggleBar: React.FC = () => {
   const voiceLines = useVoiceLineStore(s => s.voiceLines);
-  const toggleVoiceEnabled = useVoiceLineStore(s => s.toggleVoiceEnabled);
+  const enableSingleVoice = useVoiceLineStore(s => s.enableSingleVoice);
+  const setVoiceEnabled = useVoiceLineStore(s => s.setVoiceEnabled);
+  const setAllVoicesEnabled = useVoiceLineStore(s => s.setAllVoicesEnabled);
+
+  const allEnabled = ['soprano', 'alto', 'tenor', 'bass'].every(voice => voiceLines[voice as VoicePart]?.enabled ?? false);
+
+  const handleVoiceClick = (voice: VoicePart, e: React.MouseEvent<HTMLButtonElement>) => {
+    if (e.shiftKey) {
+      // Shift+click: toggle the pair
+      const pair = VOICE_PAIRS[voice];
+      const pairEnabled = voiceLines[pair]?.enabled ?? false;
+      setVoiceEnabled(voice, !voiceLines[voice]?.enabled);
+      setVoiceEnabled(pair, !pairEnabled);
+    } else {
+      // Default: radio behavior (only this voice enabled)
+      enableSingleVoice(voice);
+    }
+  };
+
+  const handleAllClick = () => {
+    setAllVoicesEnabled(!allEnabled);
+  };
 
   return (
     <div className={styles.toggleBar}>
+      <button
+        className={`${styles.allButton} ${allEnabled ? styles.active : ''}`}
+        onClick={handleAllClick}
+        title="Toggle all voices"
+      >
+        All
+      </button>
       {(['soprano', 'alto', 'tenor', 'bass'] as const).map(voice => {
         const isEnabled = voiceLines[voice]?.enabled ?? false;
         return (
@@ -34,8 +69,8 @@ export const VoiceToggleBar: React.FC = () => {
               borderColor: VOICE_COLORS[voice],
               color: isEnabled ? 'white' : VOICE_COLORS[voice],
             }}
-            onClick={() => toggleVoiceEnabled(voice)}
-            title={`Toggle ${voice} voice`}
+            onClick={(e) => handleVoiceClick(voice, e)}
+            title={`Click to enable only ${voice}. Shift+click to toggle ${voice} and ${VOICE_PAIRS[voice]} together.`}
           >
             {VOICE_LABELS[voice]}
           </button>

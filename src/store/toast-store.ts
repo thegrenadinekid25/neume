@@ -58,3 +58,15 @@ export const showWarningToast = (message: string) => {
 export const showInfoToast = (message: string) => {
   useToastStore.getState().addToast('info', message);
 };
+
+/**
+ * Show rate limit error toast with retry info
+ */
+export const showRateLimitToast = (retryAfter: number = 3600) => {
+  const minutes = Math.ceil(retryAfter / 60);
+  const message = minutes >= 60
+    ? `Rate limit reached. Please try again in ${Math.ceil(minutes / 60)} hour(s).`
+    : `Rate limit reached. Please try again in ${minutes} minute(s).`;
+
+  useToastStore.getState().addToast('warning', message, 8000);
+};

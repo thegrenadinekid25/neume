@@ -257,7 +257,7 @@ Current Chords: {chord_str}"""
 
         try:
             message = self.client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model="claude-opus-4-5-20250929",
                 max_tokens=300,
                 messages=[{"role": "user", "content": prompt}],
             )

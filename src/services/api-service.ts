@@ -6,6 +6,35 @@ import type { AnalysisInput, AnalysisResult, AnalysisError } from '@/types/analy
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+/**
+ * Custom error class for rate limit exceeded responses
+ */
+export class RateLimitError extends Error {
+  code: string;
+  retryAfter: number;
+
+  constructor(message: string, retryAfter: number = 3600) {
+    super(message);
+    this.name = 'RateLimitError';
+    this.code = 'RATE_LIMIT_EXCEEDED';
+    this.retryAfter = retryAfter;
+  }
+}
+
+/**
+ * Check response for rate limit error and throw RateLimitError if needed
+ */
+async function checkRateLimit(response: Response): Promise<void> {
+  if (response.status === 429) {
+    const data = await response.json().catch(() => ({}));
+    const retryAfter = data.error?.retryAfter ||
+                       parseInt(response.headers.get('Retry-After') || '3600', 10);
+    const message = data.error?.message ||
+                    'Too many requests. Please try again later.';
+    throw new RateLimitError(message, retryAfter);
+  }
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   result?: T;
@@ -23,6 +52,8 @@ export async function uploadAudioFile(file: File): Promise<{ uploadId: string; e
     method: 'POST',
     body: formData,
   });
+
+  await checkRateLimit(response);
 
   if (!response.ok) {
     throw new Error('Upload failed');
@@ -50,6 +81,8 @@ export async function analyzeAudio(input: AnalysisInput): Promise<ApiResponse<An
     }),
   });
 
+  await checkRateLimit(response);
+
   return response.json();
 }
 
@@ -63,6 +96,7 @@ export async function getAnalysisStatus(jobId: string): Promise<{
   estimatedTimeRemaining?: number;
 }> {
   const response = await fetch(`${API_BASE_URL}/api/analyze/status/${jobId}`);
+  await checkRateLimit(response);
   return response.json();
 }
 
@@ -106,6 +140,9 @@ export async function suggestRefinements(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ intent, chords, key, mode }),
   });
+
+  await checkRateLimit(response);
+
   if (!response.ok) {
     throw new Error('Suggestion request failed');
   }
