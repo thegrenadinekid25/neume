@@ -3,7 +3,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  background-color: var(--warm-linen, #EDE8E0);
+  background-color: var(--warm-sand, #F5F1E8);
 }
 
 .rulerWrapper {
@@ -12,7 +12,6 @@
   flex-shrink: 0;
   padding: 0 var(--space-lg);
   background-color: var(--warm-sand, #F5F1E8);
-  border-bottom: 1px solid rgba(139, 115, 85, 0.2);
 }
 
 .timeline {
