@@ -753,14 +753,14 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <button
-          className="back-to-dashboard"
-          onClick={handleBackToDashboard}
-          title="Back to Dashboard"
-        >
-          ←
-        </button>
-        <div className="header-brand">
+        <div className="header-left">
+          <button
+            className="back-to-dashboard"
+            onClick={handleBackToDashboard}
+            title="Back to Dashboard"
+          >
+            ←
+          </button>
           <h1>NEUME</h1>
         </div>
         <input
