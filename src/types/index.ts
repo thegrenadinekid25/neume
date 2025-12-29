@@ -41,6 +41,7 @@ export type {
 
 export type {
   AudioEngineState,
+  SoundType,
   VoiceRange,
   SATBRanges,
   AudioSettings,
@@ -133,3 +134,7 @@ export type {
 export {
   DEFAULT_TEXT_SETTING,
 } from './text-setting';
+
+export type {
+  VoicingMode,
+} from './voicing';

@@ -1,0 +1,38 @@
+.dashboard {
+  min-height: 100vh;
+  background: var(--warm-cream, #FAF8F5);
+  padding: var(--spacing-xl, 32px);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-xl, 32px);
+}
+
+.logo {
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--warm-charcoal, #3D3632);
+  letter-spacing: 0.15em;
+  margin: 0;
+}
+
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section {
+  margin-bottom: var(--spacing-xl, 32px);
+}
+
+.sectionTitle {
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--warm-charcoal, #3D3632);
+  margin: 0 0 var(--spacing-md, 16px) 0;
+}

@@ -1,0 +1,12 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--spacing-md, 16px);
+}
+
+.loading {
+  color: var(--warm-stone, #8B8178);
+  font-family: var(--font-ui, 'Inter', sans-serif);
+  padding: var(--spacing-lg, 24px);
+  text-align: center;
+}

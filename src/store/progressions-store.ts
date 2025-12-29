@@ -26,6 +26,7 @@ interface ProgressionsState {
   saveProgression: (progression: SavedProgression) => Promise<void>;
   deleteProgression: (id: string) => Promise<void>;
   toggleFavorite: (id: string) => Promise<void>;
+  renameProgression: (id: string, newTitle: string) => Promise<void>;
   setFilter: (filter: 'all' | 'favorites' | 'recent') => void;
   setSearchQuery: (query: string) => void;
   migrateLocalData: (userId: string) => Promise<{ migrated: number; errors: number }>;
@@ -113,6 +114,21 @@ export const useProgressionsStore = create<ProgressionsState>((set, get) => ({
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
       set({ error: 'Failed to update progression' });
+    }
+  },
+
+  // Rename progression (now async)
+  renameProgression: async (id, newTitle) => {
+    try {
+      const progression = await progressionStorage.getById(id);
+      if (progression) {
+        const updated = { ...progression, title: newTitle, updatedAt: new Date().toISOString() };
+        await progressionStorage.save(updated);
+        await get().loadProgressions();
+      }
+    } catch (error) {
+      console.error('Failed to rename progression:', error);
+      set({ error: 'Failed to rename progression' });
     }
   },
 

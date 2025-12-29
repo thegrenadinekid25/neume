@@ -383,6 +383,7 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
           totalBeats={totalBeats}
           phrases={phrases}
           showVoiceLanes={showVoiceLanes}
+          chords={chords}
           onAddChord={onAddChord}
           onZoomChange={onZoomChange}
           onAnalyze={onAnalyze}

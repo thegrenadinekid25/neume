@@ -4,15 +4,18 @@ import { MetadataBanner } from '@/components/Canvas/MetadataBanner';
 import { DeleteConfirmation } from '@/components/UI/DeleteConfirmation';
 import { HelpTooltip } from '@/components/UI/HelpTooltip';
 import { KeySelector, ModeToggle, BeatsSelector } from '@/components/UI/MusicalSelector';
+import { VoicingModeToggle } from '@/components/UI/VoicingModeToggle';
 import { HELP_CONTENT } from '@/data/help-content';
 import { WhyThisPanel, BuildFromBonesPanel, CompositionToolsPanel } from '@/components/Panels';
-import { PulseRingTempo } from '@/components/Controls';
+import { PulseRingTempo, SoundToggle } from '@/components/Controls';
 import { WelcomeTutorial } from '@/components/Tutorial/WelcomeTutorial';
 import { Sidebar, SidebarSection, SidebarDivider, SidebarSpacer } from '@/components/Sidebar';
 import { AuthModal, UserMenu } from '@/components/Auth';
 import { AudioLoadingIndicator } from '@/components/Audio';
 import { VoiceToggleBar } from '@/components/VoiceLaneEditor';
 import { ToastContainer } from '@/components/UI';
+import { useAppViewStore } from '@/store/app-view-store';
+import { Dashboard } from '@/components/Dashboard';
 
 // Lazy load modals for code splitting
 const KeyboardShortcutsGuide = lazy(() => import('@/components/UI/KeyboardShortcutsGuide').then(m => ({ default: m.KeyboardShortcutsGuide })));
@@ -25,6 +28,7 @@ const SettingsModal = lazy(() => import('@/components/Modals/SettingsModal').the
 import { useHistory } from '@/hooks/useHistory';
 import { usePlayback } from '@/hooks/usePlayback';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
+import { useAudioStore } from '@/store/audio-store';
 import { useAnalysisStore } from '@/store/analysis-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useCounterpointWarningsStore } from '@/store/counterpoint-warnings-store';
@@ -34,9 +38,12 @@ import { useRefineStore } from '@/store/refine-store';
 import { useTutorialStore } from '@/store/tutorial-store';
 import { useVoiceLineStore } from '@/store/voice-line-store';
 import { useCompositionToolsStore } from '@/store/composition-tools-store';
+import { useVoicingStore } from '@/store/voicing-store';
 import { analyzeCounterpoint } from '@/services/counterpoint-analyzer';
 import { downloadMusicXML } from '@/services/musicxml-exporter';
 import { generateSATBVoicing } from '@/audio/VoiceLeading';
+import { optimizeProgressionVoicing } from '@/services/voice-leading-optimizer';
+import { audioEngine } from '@/audio/AudioEngine';
 import type { Chord, MusicalKey, Mode, ScaleDegree, ChordQuality, ChordExtensions, Voices, SavedProgression } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { CANVAS_CONFIG } from '@/utils/constants';
@@ -111,6 +118,13 @@ function App() {
   const [showVoiceLanes, setShowVoiceLanes] = useState(false);
   const [pieceTitle, setPieceTitle] = useState('Untitled');
 
+  // View state
+  const currentView = useAppViewStore((s) => s.currentView);
+  const navigateToDashboard = useAppViewStore((s) => s.navigateToDashboard);
+
+  // Audio settings
+  const { soundType, setSoundType } = useAudioStore();
+
   const { pushState, undo, redo } = useHistory();
   useAudioEngine(); // Hook needed for auto-init on first interaction
 
@@ -135,6 +149,11 @@ function App() {
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
+
+  // Sync sound type with audio engine when it changes
+  useEffect(() => {
+    audioEngine.setSoundType(soundType);
+  }, [soundType]);
 
   // Migrate local data when user signs in
   useEffect(() => {
@@ -167,6 +186,13 @@ function App() {
   }, []);
 
   const openAnalyzeModal = useAnalysisStore(state => state.openModal);
+
+  // Listen for openAnalyzeModal events from Dashboard
+  useEffect(() => {
+    const handleOpenAnalyze = () => openAnalyzeModal();
+    window.addEventListener('openAnalyzeModal', handleOpenAnalyze);
+    return () => window.removeEventListener('openAnalyzeModal', handleOpenAnalyze);
+  }, [openAnalyzeModal]);
   const metadata = useAnalysisStore(state => state.metadata);
   const convertedChords = useAnalysisStore(state => state.convertedChords);
   const phraseBoundaries = useAnalysisStore(state => state.phraseBoundaries);
@@ -180,6 +206,9 @@ function App() {
   // Voice lines
   const initializeVoiceLines = useVoiceLineStore(state => state.initializeFromChords);
   const voiceLines = useVoiceLineStore(state => state.voiceLines);
+
+  // Voicing mode
+  const { mode: voicingMode, setMode: setVoicingMode } = useVoicingStore();
 
   // Sync voice lines when chords change and voice lanes are visible
   useEffect(() => {
@@ -308,6 +337,18 @@ function App() {
     pushState(updatedChords);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentKey, currentMode]); // Only run when key or mode changes
+
+  // Re-voice progression when voicing mode changes
+  useEffect(() => {
+    if (chords.length === 0) return;
+    if (voicingMode === 'voice-led') {
+      // Apply voice-leading optimization
+      const revoiced = optimizeProgressionVoicing(chords, currentKey, currentMode);
+      setChords(revoiced);
+      pushState(revoiced);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voicingMode]); // Only run when voicing mode changes
 
   // Voice line undo/redo from store
   const voiceLineUndo = useVoiceLineStore((state) => state.undo);
@@ -597,20 +638,6 @@ function App() {
     saveToHistory(newChords);
   }, [zoom, currentKey, currentMode, chords, saveToHistory]);
 
-  // Add chord from palette at next available position
-  const handleAddChordFromPalette = useCallback((scaleDegree: ScaleDegree) => {
-    // Find the next available position (after the last chord)
-    const lastChordEnd = chords.length > 0
-      ? Math.max(...chords.map(c => c.startBeat + c.duration))
-      : 0;
-
-    // Convert to pixel position for handleAddChord
-    const beatWidth = CANVAS_CONFIG.GRID_BEAT_WIDTH * zoom;
-    const position = { x: lastChordEnd * beatWidth };
-
-    handleAddChord(scaleDegree, position);
-  }, [chords, zoom, handleAddChord]);
-
   // Update chord position - now just updates startBeat
   const handleUpdateChordPosition = useCallback((chordId: string, startBeat: number) => {
     setChords((prevChords) =>
@@ -677,9 +704,48 @@ function App() {
     useVoiceLineStore.getState().initializeFromChords([]);
   }, [chords.length, clearAnalyzedProgression]);
 
+  // Early return for dashboard view
+  if (currentView === 'dashboard') {
+    return (
+      <>
+        <Dashboard />
+        {/* Keep modals available */}
+        <Suspense fallback={null}>
+          <SettingsModal
+            isOpen={showSettingsModal}
+            onClose={() => setShowSettingsModal(false)}
+            onExportMusicXML={handleExportMusicXML}
+            canExport={chords.length > 0}
+          />
+          <SaveProgressionDialog
+            progression={currentProgression}
+            isOpen={showSaveDialog}
+            onClose={() => setShowSaveDialog(false)}
+            onSave={saveProgression}
+          />
+          <MyProgressionsModal />
+          <AnalyzeModal />
+        </Suspense>
+        <WelcomeTutorial />
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+        />
+        <ToastContainer />
+      </>
+    );
+  }
+
   return (
     <div className="app">
       <header className="app-header">
+        <button
+          className="back-to-dashboard"
+          onClick={navigateToDashboard}
+          title="Back to Dashboard"
+        >
+          ←
+        </button>
         <div className="header-brand">
           <span className="header-accent" aria-hidden="true" />
           <h1>Neume</h1>
@@ -805,6 +871,12 @@ function App() {
               <span>Voice Lines</span>
             </button>
           </div>
+
+          <VoicingModeToggle
+            value={voicingMode}
+            onChange={setVoicingMode}
+          />
+
           {showVoiceLanes && <VoiceToggleBar />}
           {showVoiceLanes && (
             <button
@@ -872,6 +944,16 @@ function App() {
               isPlaying={isPlaying}
             />
           </HelpTooltip>
+        </SidebarSection>
+
+        <SidebarDivider />
+
+        {/* Sound Type Toggle */}
+        <SidebarSection>
+          <SoundToggle
+            value={soundType}
+            onChange={setSoundType}
+          />
         </SidebarSection>
 
         <SidebarDivider />

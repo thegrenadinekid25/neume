@@ -1,0 +1,31 @@
+.card {
+  background: transparent;
+  border: 2px dashed var(--warm-sand-dark, #E8E2D6);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--spacing-md, 16px);
+  cursor: pointer;
+  transition: all var(--duration-fast, 150ms) var(--ease-breathe);
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm, 8px);
+}
+
+.card:hover {
+  border-color: var(--warm-gold, #C4A77D);
+  background: rgba(196, 167, 125, 0.05);
+}
+
+.icon {
+  font-size: 2rem;
+  color: var(--warm-stone, #8B8178);
+  line-height: 1;
+}
+
+.label {
+  font-family: var(--font-ui, 'Inter', sans-serif);
+  font-size: 0.875rem;
+  color: var(--warm-stone, #8B8178);
+}

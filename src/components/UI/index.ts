@@ -24,3 +24,5 @@ export { ExpertModeToggle } from './ExpertModeToggle';
 export { ExpertModeProgress } from './ExpertModeProgress';
 
 export { ToastContainer } from './Toast';
+
+export { VoicingModeToggle } from './VoicingModeToggle';

@@ -1,6 +1,7 @@
 import * as Tone from 'tone';
 import { AUDIO_DEFAULTS } from '@/utils/constants';
 import { reverbLoader } from './ReverbLoader';
+import type { SoundType } from '@/types';
 
 /**
  * Salamander Grand Piano sample mappings
@@ -49,6 +50,7 @@ const SALAMANDER_BASE_URL = 'https://tonejs.github.io/audio/salamander/';
  */
 export class AudioEngine {
   private sampler: Tone.Sampler | null = null;
+  private chimeSynth: Tone.PolySynth<Tone.Synth> | null = null;
   private highpass: Tone.Filter;
   private lowpass: Tone.Filter;
   private reverb: Tone.Reverb;
@@ -62,6 +64,7 @@ export class AudioEngine {
   private reverbMix: GainNode | null = null;
   private useConvolutionReverb: boolean = false;
   private reverbWetAmount: number = 0.35;
+  private soundType: SoundType = 'piano';
 
   constructor() {
     // Sampler will be created asynchronously in loadSampler()
@@ -137,6 +140,31 @@ export class AudioEngine {
   }
 
   /**
+   * Create the chime synth with warm sine wave sounds
+   */
+  private createChimeSynth(): void {
+    if (this.chimeSynth) {
+      return; // Already created
+    }
+
+    // Create a warm chime sound with sine oscillators and soft envelope
+    this.chimeSynth = new Tone.PolySynth(Tone.Synth, {
+      oscillator: {
+        type: 'sine',
+      },
+      envelope: {
+        attack: 0.08,    // Soft attack
+        decay: 0.1,
+        sustain: 0.7,    // Holds the tone well
+        release: 0.5,    // Longer release for warm decay
+      },
+      volume: -11, // Reduced to match piano sampler volume
+    }).toDestination();
+
+    console.log('Chime synth created');
+  }
+
+  /**
    * Initialize the audio context
    * Must be called in response to user interaction
    */
@@ -148,6 +176,9 @@ export class AudioEngine {
 
       // Load Salamander Piano samples
       await this.loadSampler();
+
+      // Create chime synth
+      this.createChimeSynth();
 
       // Attempt to setup convolution reverb
       await this.setupConvolutionReverb();
@@ -383,6 +414,31 @@ export class AudioEngine {
    */
   getSynth(): Tone.PolySynth<Tone.Synth> | null {
     return null;
+  }
+
+  /**
+   * Set the current sound type
+   */
+  setSoundType(type: SoundType): void {
+    this.soundType = type;
+  }
+
+  /**
+   * Get the current sound type
+   */
+  getSoundType(): SoundType {
+    return this.soundType;
+  }
+
+  /**
+   * Get the current instrument based on sound type
+   * Returns either the sampler (piano) or chimeSynth (chime)
+   */
+  getCurrentInstrument(): Tone.Sampler | Tone.PolySynth<Tone.Synth> | null {
+    if (this.soundType === 'chime') {
+      return this.chimeSynth;
+    }
+    return this.sampler;
   }
 }
 

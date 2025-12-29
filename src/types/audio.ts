@@ -4,6 +4,11 @@
 export type AudioEngineState = 'uninitialized' | 'ready' | 'playing' | 'error';
 
 /**
+ * Sound type for instrument selection
+ */
+export type SoundType = 'piano' | 'chime';
+
+/**
  * Voice range (SATB)
  */
 export interface VoiceRange {

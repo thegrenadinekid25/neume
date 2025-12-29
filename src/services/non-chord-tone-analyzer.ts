@@ -14,7 +14,7 @@ interface NoteContext {
  * Get pitch classes from a chord
  * Builds a chord name from root and quality, then gets pitches using Tonal
  */
-function getChordPitchClasses(chord: Chord): string[] {
+export function getChordPitchClasses(chord: Chord): string[] {
   try {
     // Build chord name from scale degree
     const chordRootMap: Record<number, string> = {
@@ -94,7 +94,7 @@ function isStepwise(fromMidi: number, toMidi: number): boolean {
 /**
  * Find the chord active at a given beat
  */
-function findChordAtBeat(beat: number, sortedChords: Chord[]): Chord | null {
+export function findChordAtBeat(beat: number, sortedChords: Chord[]): Chord | null {
   for (const chord of sortedChords) {
     if (beat >= chord.startBeat && beat < chord.startBeat + chord.duration) {
       return chord;

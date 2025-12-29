@@ -1,0 +1,12 @@
+.highlights {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--duration-fast, 200ms) var(--ease-breathe);
+  z-index: 0; /* Below staff guides (z-index: 1) and notes (z-index: 20) */
+}
+
+.highlights.visible {
+  opacity: 1;
+}

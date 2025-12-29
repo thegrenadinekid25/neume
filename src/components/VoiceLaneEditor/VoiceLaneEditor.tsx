@@ -80,12 +80,14 @@ export const VoiceLaneEditor: React.FC<VoiceLaneEditorProps> = ({
               <VoiceLane
                 key={voicePart}
                 voiceLine={voiceLine}
+                chords={chords}
                 zoom={zoom}
                 beatWidth={beatWidth}
                 totalBeats={totalBeats}
                 color={voiceLine.color}
                 isPlaying={isPlaying}
                 playheadPosition={playheadPosition}
+                labelsColumnWidth={60}
               />
             );
           })}

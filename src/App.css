@@ -595,3 +595,20 @@
   width: 100%;
   justify-content: flex-start;
 }
+
+/* Back to Dashboard Button */
+.back-to-dashboard {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--warm-charcoal, #3D3632);
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-right: 8px;
+  border-radius: var(--radius-sm, 4px);
+  transition: background var(--duration-fast, 150ms);
+}
+
+.back-to-dashboard:hover {
+  background: var(--warm-sand, #F5F1E8);
+}

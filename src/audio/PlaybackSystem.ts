@@ -36,9 +36,9 @@ export class PlaybackSystem {
     if (chords.length === 0) return;
 
     const sortedChords = [...chords].sort((a, b) => a.startBeat - b.startBeat);
-    const sampler = audioEngine.getSampler();
+    const instrument = audioEngine.getCurrentInstrument();
 
-    if (!sampler) {
+    if (!instrument) {
       console.warn('[Playback] Audio still loading - please wait and try again');
       return;
     }
@@ -72,7 +72,7 @@ export class PlaybackSystem {
           const durationSeconds = (durationBeats / Tone.Transport.bpm.value) * 60;
 
           // Use triggerAttackRelease for clean attack and release
-          sampler.triggerAttackRelease(notes, durationSeconds, time);
+          instrument.triggerAttackRelease(notes, durationSeconds, time);
         }
 
         // Notify visual system
@@ -92,8 +92,8 @@ export class PlaybackSystem {
     this.clearSchedule();
     audioEngine.stopAll();
 
-    const sampler = audioEngine.getSampler();
-    if (!sampler) {
+    const instrument = audioEngine.getCurrentInstrument();
+    if (!instrument) {
       console.warn('[Playback] Audio still loading - please wait and try again');
       return;
     }
@@ -144,7 +144,7 @@ export class PlaybackSystem {
         // Trigger notes grouped by duration
         notesByDuration.forEach((pitches, duration) => {
           const durationSeconds = (duration / Tone.Transport.bpm.value) * 60;
-          sampler.triggerAttackRelease(pitches, durationSeconds, time);
+          instrument.triggerAttackRelease(pitches, durationSeconds, time);
         });
 
         // Notify visual system which notes are playing

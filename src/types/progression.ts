@@ -1,4 +1,5 @@
 import { Chord, MusicalKey, Mode, ChordAnnotation } from './chord';
+import type { SoundType } from './audio';
 
 /**
  * Phrase boundary for visual grouping of chord patterns
@@ -110,6 +111,9 @@ export interface SavedProgression {
   };
 
   buildUpSteps?: BuildUpStep[];
+
+  // Sound type preference (piano or chime)
+  soundType?: SoundType;
 }
 
 /**

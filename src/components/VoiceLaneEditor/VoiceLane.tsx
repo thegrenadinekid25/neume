@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import type { VoiceLine as VoiceLineType, VoicePart } from '@/types';
+import type { VoiceLine as VoiceLineType, VoicePart, Chord } from '@/types';
 import { VOICE_RANGES } from '@/data/voice-ranges';
 import { useVoiceLineStore } from '@/store/voice-line-store';
 import { useCanvasStore } from '@/store/canvas-store';
@@ -8,28 +8,34 @@ import { NoteDot } from './NoteDot';
 import { ThreadConnector } from './ThreadConnector';
 import { RestCloud } from './RestCloud';
 import { StaffGuides } from './StaffGuides';
+import { ChordToneHighlights } from './ChordToneHighlights';
 import styles from './VoiceLane.module.css';
 
 interface VoiceLaneProps {
   voiceLine: VoiceLineType;
+  chords: Chord[];
   zoom: number;
   beatWidth: number;
   totalBeats: number;
   color: string;
   isPlaying: boolean;
   playheadPosition: number;
+  labelsColumnWidth?: number;
 }
 
 export const VoiceLane: React.FC<VoiceLaneProps> = ({
   voiceLine,
+  chords,
   zoom,
   beatWidth,
   totalBeats,
   color,
   isPlaying,
   playheadPosition,
+  labelsColumnWidth = 0,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [hoverX, setHoverX] = useState<number | null>(null);
 
   // Store actions
   const selectNote = useVoiceLineStore((state) => state.selectNote);
@@ -114,6 +120,12 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
   const handleNoteSelect = useCallback((noteId: string, multiSelect: boolean) => {
     selectNote(noteId, multiSelect);
   }, [selectNote]);
+
+  // Handle mouse move for chord tone highlights
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setHoverX(e.clientX - rect.left);
+  }, []);
 
   // Helper to convert Y position back to MIDI (inverse of getY)
   // Snaps to nearest diatonic scale degree
@@ -227,9 +239,27 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
         width: `${laneWidth}px`,
       }}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setHoverX(null);
+      }}
       onDoubleClick={handleLaneDoubleClick}
     >
+      {/* Chord tone highlights (fade in on hover) */}
+      <ChordToneHighlights
+        laneHeight={laneHeight}
+        width={laneWidth}
+        visible={isHovered}
+        hoverX={hoverX}
+        chords={chords}
+        beatWidth={beatWidth}
+        zoom={zoom}
+        voiceRange={{ lowMidi: voiceRange.lowMidi, highMidi: voiceRange.highMidi }}
+        voiceColor={color}
+        labelsColumnWidth={labelsColumnWidth}
+      />
+
       {/* Staff guide lines (fade in on hover) */}
       <StaffGuides
         laneHeight={laneHeight}
