@@ -42,7 +42,7 @@
   font-weight: 600;
   margin: 0;
   color: var(--warm-text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: 0.15em;
 }
 
 .header-hint {

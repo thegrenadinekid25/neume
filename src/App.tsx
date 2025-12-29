@@ -43,6 +43,7 @@ import { useVoicingStore } from '@/store/voicing-store';
 import { analyzeCounterpoint } from '@/services/counterpoint-analyzer';
 import { downloadMusicXML } from '@/services/musicxml-exporter';
 import { generateSATBVoicing } from '@/audio/VoiceLeading';
+import { deconstructProgression } from '@/services/api-service';
 import { optimizeProgressionVoicing } from '@/services/voice-leading-optimizer';
 import { audioEngine } from '@/audio/AudioEngine';
 import type { Chord, MusicalKey, Mode, ScaleDegree, ChordQuality, ChordExtensions, Voices, SavedProgression } from '@/types';
@@ -200,6 +201,8 @@ function App() {
   const analysisResult = useAnalysisStore(state => state.result);
   const clearAnalyzedProgression = useAnalysisStore(state => state.clearAnalyzedProgression);
   const openBuildFromBonesPanel = useBuildFromBonesStore(state => state.openPanel);
+  const setBuildFromBonesLoading = useBuildFromBonesStore(state => state.setLoading);
+  const setBuildFromBonesError = useBuildFromBonesStore(state => state.setError);
   const openCompositionToolsPanel = useCompositionToolsStore(state => state.openPanel);
   const openProgressionsModal = useProgressionsStore(state => state.openModal);
   const openRefineModal = useRefineStore(state => state.openModal);
@@ -466,105 +469,80 @@ function App() {
     }
   }, [chords.length]);
 
-  // Handle Build From Bones - generates smart steps based on actual chord complexity
-  const handleBuildFromBones = useCallback(() => {
-    const steps: Array<{
-      stepNumber: number;
-      stepName: string;
-      description: string;
-      chords: Chord[];
-    }> = [];
+  // Helper to convert scale degree to root note for API communication
+  const scaleDegreeToRoot = useCallback((scaleDegree: number, key: string): string => {
+    const chromaticScale = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const keyToSemitone: Record<string, number> = {
+      'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
+      'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
+      'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+    };
+    const keySemitone = keyToSemitone[key] ?? 0;
+    const majorScaleIntervals = [0, 2, 4, 5, 7, 9, 11];
+    const noteIndex = (keySemitone + majorScaleIntervals[scaleDegree - 1]) % 12;
+    return chromaticScale[noteIndex];
+  }, []);
 
-    // Check what types of complexity exist in the progression
-    const has7ths = chords.some(c => ['dom7', 'maj7', 'min7', 'halfdim7', 'dim7'].includes(c.quality));
-    const hasExtensions = chords.some(c => c.extensions.add9 || c.extensions.add11 || c.extensions.add13);
-    const hasAlterations = chords.some(c => c.extensions.flat9 || c.extensions.sharp9 || c.extensions.sharp11 || c.extensions.flat13);
-    const hasSuspensions = chords.some(c => c.extensions.sus2 || c.extensions.sus4);
-
-    // Step 0: Always start with the skeleton (basic triads)
-    steps.push({
-      stepNumber: 0,
-      stepName: 'Skeleton',
-      description: 'The fundamental harmonic structure - basic triads only',
-      chords: chords.map(c => ({
-        ...c,
-        quality: (c.quality === 'minor' || c.quality === 'min7') ? 'minor' as ChordQuality :
-                 (c.quality === 'diminished' || c.quality === 'halfdim7' || c.quality === 'dim7') ? 'diminished' as ChordQuality :
-                 (c.quality === 'augmented') ? 'augmented' as ChordQuality : 'major' as ChordQuality,
-        extensions: {} as ChordExtensions,
-      })),
-    });
-
-    // Step: Add 7ths (if any chords have 7th qualities)
-    if (has7ths) {
-      steps.push({
-        stepNumber: steps.length,
-        stepName: 'Add 7ths',
-        description: 'Adding 7th tones to deepen the harmonic color',
-        chords: chords.map(c => ({
-          ...c,
-          extensions: {} as ChordExtensions, // Keep 7th quality but strip extensions
-        })),
-      });
+  // Handle Build From Bones - calls backend API for AI-generated step explanations
+  const handleBuildFromBones = useCallback(async () => {
+    if (chords.length === 0) {
+      setBuildFromBonesError('No chords to deconstruct. Add some chords first.');
+      return;
     }
 
-    // Step: Add suspensions (if any)
-    if (hasSuspensions) {
-      steps.push({
-        stepNumber: steps.length,
-        stepName: 'Add Suspensions',
-        description: 'Replacing the 3rd with sus2 or sus4 for tension',
-        chords: chords.map(c => ({
-          ...c,
-          extensions: {
-            sus2: c.extensions.sus2,
-            sus4: c.extensions.sus4,
-          } as ChordExtensions,
-        })),
-      });
-    }
+    // Set loading state and open panel to show spinner
+    setBuildFromBonesLoading(true);
+    openBuildFromBonesPanel([]);
 
-    // Step: Add extensions (9ths, 11ths, 13ths)
-    if (hasExtensions) {
-      steps.push({
-        stepNumber: steps.length,
-        stepName: 'Add Extensions',
-        description: 'Upper structure tones (9ths, 11ths, 13ths) for richness',
-        chords: chords.map(c => ({
-          ...c,
-          extensions: {
-            ...c.extensions,
-            flat9: false,
-            sharp9: false,
-            sharp11: false,
-            flat13: false,
-          } as ChordExtensions,
-        })),
-      });
-    }
+    try {
+      // Convert chords to API format (SimpleChord)
+      const simpleChords = chords.map(c => ({
+        root: scaleDegreeToRoot(c.scaleDegree, c.key),
+        quality: c.quality,
+        extensions: c.extensions ? { ...c.extensions } as Record<string, boolean> : undefined,
+      }));
 
-    // Step: Add alterations (only if different from previous step)
-    if (hasAlterations) {
-      steps.push({
-        stepNumber: steps.length,
-        stepName: 'Add Alterations',
-        description: 'Chromatic alterations (♭9, ♯9, ♯11, ♭13) for color and tension',
-        chords: chords,
-      });
-    }
+      // Get song context from analysis metadata if available
+      const songTitle = metadata?.title;
+      const composer = metadata?.composer;
 
-    // Final step: Full progression (if not already the last step)
-    if (!hasAlterations && (has7ths || hasExtensions || hasSuspensions)) {
-      steps.push({
-        stepNumber: steps.length,
-        stepName: 'Final',
-        description: 'The complete progression with all voicings',
-        chords: chords,
-      });
-    }
+      // Call the backend API
+      const response = await deconstructProgression(
+        simpleChords,
+        currentKey,
+        currentMode,
+        songTitle,
+        composer
+      );
 
-    openBuildFromBonesPanel(steps);
-  }, [chords, openBuildFromBonesPanel]);
+      if (!response.success || !response.steps) {
+        throw new Error(response.error || 'Deconstruction failed');
+      }
+
+      // Convert API response steps to include full chord data with IDs
+      const stepsWithFullChords = response.steps.map(step => ({
+        ...step,
+        chords: step.chords.map((simpleChord, idx) => {
+          // Match with original chord to preserve IDs and other data
+          const originalChord = chords[idx];
+          return {
+            ...originalChord,
+            quality: simpleChord.quality as ChordQuality,
+            extensions: (simpleChord.extensions || {}) as ChordExtensions,
+          };
+        }),
+      }));
+
+      openBuildFromBonesPanel(stepsWithFullChords);
+    } catch (error) {
+      console.error('Build From Bones error:', error);
+      setBuildFromBonesError(
+        error instanceof Error ? error.message : 'Failed to deconstruct progression'
+      );
+    } finally {
+      setBuildFromBonesLoading(false);
+    }
+  }, [chords, currentKey, currentMode, metadata, scaleDegreeToRoot, openBuildFromBonesPanel, setBuildFromBonesLoading, setBuildFromBonesError]);
 
   const chordsWithPlayState = useMemo(() => {
     return chords.map(chord => ({
@@ -783,8 +761,7 @@ function App() {
           ←
         </button>
         <div className="header-brand">
-          <span className="header-accent" aria-hidden="true" />
-          <h1>Neume</h1>
+          <h1>NEUME</h1>
         </div>
         <input
           type="text"
@@ -1101,6 +1078,7 @@ function App() {
             openRefineModal(selectedChordIds);
           }
         }}
+        onBuildFromBones={handleBuildFromBones}
       />
       </div>
 
