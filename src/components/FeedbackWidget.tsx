@@ -132,7 +132,7 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({ onFeedbackSubmit
       ? styles.warning
       : '';
 
-  const feedbackIcon = feedbackType === 'bug' ? '🐛' : feedbackType === 'feature' ? '✨' : '💬';
+  const feedbackIcon = feedbackType === 'bug' ? 'Bug' : feedbackType === 'feature' ? 'Feature' : 'Feedback';
 
   return (
     <>
@@ -145,7 +145,7 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({ onFeedbackSubmit
         title="Send feedback"
         aria-label="Send feedback"
       >
-        💬
+        ?
       </motion.button>
 
       {/* Feedback Modal */}
@@ -206,7 +206,7 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({ onFeedbackSubmit
                         }}
                         aria-pressed={feedbackType === type}
                       >
-                        {type === 'bug' ? '🐛 Bug' : type === 'feature' ? '✨ Feature' : '💬 General'}
+                        {type === 'bug' ? 'Bug' : type === 'feature' ? 'Feature' : 'General'}
                       </button>
                     ))}
                   </div>

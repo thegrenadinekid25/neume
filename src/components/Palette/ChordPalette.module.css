@@ -164,6 +164,51 @@
   text-transform: none;
 }
 
+/* Build From Bones button */
+.buildFromBonesButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--warm-gold);
+  color: white;
+  border: 1px solid var(--warm-gold);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  justify-content: center;
+  transition: background var(--duration-fast) var(--ease-breathe),
+              box-shadow var(--duration-fast) var(--ease-breathe),
+              transform var(--duration-fast) var(--ease-breathe);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.buildFromBonesButton:hover {
+  background: var(--warm-gold-dark, rgba(212, 152, 79, 0.9));
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.buildFromBonesButton:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.buildFromBonesButton:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px white, 0 0 0 4px var(--warm-gold);
+}
+
+.buildFromBonesButton svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
 /* Responsive adjustments */
 @media (max-width: 520px) {
   .palette {

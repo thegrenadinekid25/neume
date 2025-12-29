@@ -7,13 +7,31 @@ import { create } from 'zustand';
 import type { Chord } from '@/types/chord';
 
 /**
- * Represents a single step in the chord progression deconstruction
+ * Layer types in the harmonic deconstruction
+ */
+export type LayerType = 'skeleton' | 'sevenths' | 'suspensions' | 'extensions' | 'alterations';
+
+/**
+ * Represents a single step in the chord progression deconstruction.
+ *
+ * Each step adds a layer of harmonic complexity:
+ * - skeleton: Basic triads (I, IV, V, vi)
+ * - sevenths: Add 7th intervals (Imaj7, IVmaj7, V7)
+ * - suspensions: Add sus2/sus4 (Vsus4, IVsus2)
+ * - extensions: Add 9ths, 11ths, 13ths (Imaj9, IV11)
+ * - alterations: Add chromatic alterations (V7b9, IVmaj7#11)
  */
 export interface DeconstructionStep {
   stepNumber: number;
   stepName: string;
   description: string;
   chords: Chord[];
+  /** The type of harmonic layer this step represents */
+  layerType?: LayerType;
+  /** Indices of chords that changed from the previous step */
+  modifiedIndices?: number[];
+  /** Roman numeral representation of the progression (e.g., "I → IV → V → I") */
+  romanNumerals?: string;
 }
 
 /**

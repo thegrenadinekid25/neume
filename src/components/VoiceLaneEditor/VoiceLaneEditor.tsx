@@ -1,8 +1,9 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { useVoiceLineStore } from '@/store/voice-line-store';
-import { VOICE_ORDER, VOICE_RANGES } from '@/data/voice-ranges';
 import type { Chord } from '@/types/chord';
-import { VoiceLane } from './VoiceLane';
+import { UnifiedStaff } from './UnifiedStaff';
+import { VoiceLegend } from './VoiceLegend';
+import { ChordConflictDialog } from './ChordConflictDialog';
 import styles from './VoiceLaneEditor.module.css';
 
 interface VoiceLaneEditorProps {
@@ -49,48 +50,28 @@ export const VoiceLaneEditor: React.FC<VoiceLaneEditorProps> = ({
     return totalBeats * beatWidth * zoom;
   }, [totalBeats, beatWidth, zoom]);
 
-  // Get enabled voices for label rendering
-  const enabledVoices = VOICE_ORDER.filter((part) => voiceLines[part].enabled);
-
   return (
     <div className={styles.container}>
-      {/* Labels column - fixed on left */}
-      <div className={styles.labelsColumn}>
-        {enabledVoices.map((voicePart) => {
-          const voiceRange = VOICE_RANGES[voicePart];
-          const midiRange = voiceRange.highMidi - voiceRange.lowMidi;
-          const laneHeight = Math.max(80, (midiRange / 19) * 120);
-          return (
-            <div
-              key={voicePart}
-              className={styles.labelRow}
-              style={{ height: laneHeight }}
-            >
-              <span className={styles.labelText}>{voiceRange.label}</span>
-            </div>
-          );
-        })}
+      {/* Chord conflict dialog */}
+      <ChordConflictDialog />
+
+      {/* Voice legend - shows active voices with colors */}
+      <div className={styles.legendWrapper}>
+        <VoiceLegend />
       </div>
-      {/* Lanes area - scrollable */}
-      <div className={styles.lanesWrapper}>
-        <div className={styles.lanesContent} style={{ width: totalWidth }}>
-          {enabledVoices.map((voicePart) => {
-            const voiceLine = voiceLines[voicePart];
-            return (
-              <VoiceLane
-                key={voicePart}
-                voiceLine={voiceLine}
-                chords={chords}
-                zoom={zoom}
-                beatWidth={beatWidth}
-                totalBeats={totalBeats}
-                color={voiceLine.color}
-                isPlaying={isPlaying}
-                playheadPosition={playheadPosition}
-                labelsColumnWidth={60}
-              />
-            );
-          })}
+
+      {/* Unified staff - all voices on one staff */}
+      <div className={styles.staffWrapper}>
+        <div className={styles.staffContent} style={{ width: totalWidth }}>
+          <UnifiedStaff
+            chords={chords}
+            zoom={zoom}
+            beatWidth={beatWidth}
+            totalBeats={totalBeats}
+            isPlaying={isPlaying}
+            playheadPosition={playheadPosition}
+            labelsColumnWidth={0}
+          />
         </div>
       </div>
     </div>

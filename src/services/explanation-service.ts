@@ -291,7 +291,7 @@ export function buildExplanationPrompt(
     composer?: string;
   }
 ): string {
-  let prompt = `You are an expert music theorist and musicologist. Analyze the following chord in its full musical context.\n\n`;
+  let prompt = `You are a music teacher in the spirit of Leonard Bernstein—someone who can help a seasoned composer see something new while making a curious beginner fall in love with harmony. Focus on what the ear hears, not just what theory says. Plain language, occasional wit, genuine insight.\n\n`;
 
   // Song context if available
   if (context.songTitle || context.composer) {

@@ -69,12 +69,18 @@ export type {
 
 export type {
   VoicePart,
+  VoicePart8,
+  AnyVoicePart,
+  VoiceCount,
   VoiceNecklaceConfig,
   NecklaceSettings,
 } from './necklace';
 
 export {
   VOICE_COLORS,
+  VOICE_COLORS_8,
+  VOICE_PART_BASE,
+  VOICE_PART_LABELS,
   DEFAULT_NECKLACE_SETTINGS,
 } from './necklace';
 
@@ -95,6 +101,8 @@ export type {
   MelodicNoteAnalysis,
   MelodicNote,
   VoiceLine,
+  VoiceLines4,
+  VoiceLines8,
   CompositionModeType,
   CompositionMode,
 } from './voice-line';
@@ -137,4 +145,6 @@ export {
 
 export type {
   VoicingMode,
+  VoicingStyle,
+  VoiceCount as VoicingVoiceCount,
 } from './voicing';

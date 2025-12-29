@@ -4,17 +4,8 @@ uvicorn[standard]==0.24.0
 python-multipart==0.0.6
 pydantic==2.5.0
 
-# Audio processing
-essentia>=2.1b6.dev1389
-librosa==0.10.1
-numpy>=1.25
-scipy>=1.11.4
-
-# YouTube
-yt-dlp>=2024.12.23
-
 # AI
-anthropic>=0.39.0
+anthropic==0.39.0
 
 # Utilities
 python-dotenv==1.0.0

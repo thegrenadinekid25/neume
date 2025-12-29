@@ -1,5 +1,5 @@
 import { Note } from 'tonal';
-import type { VoicePart } from '@/types/necklace';
+import type { VoicePart, VoicePart8, AnyVoicePart } from '@/types/necklace';
 
 /**
  * Defines the vocal range for a specific voice type
@@ -53,7 +53,7 @@ export const VOICE_RANGES: Record<VoicePart, VoiceRangeDefinition> = {
     comfortableHigh: 'C5',
     comfortableLowMidi: Note.midi('A3') || 57,
     comfortableHighMidi: Note.midi('C5') || 72,
-    color: '#E85D3D',
+    color: '#6B8FAD',
     label: 'Alto',
   },
   tenor: {
@@ -65,7 +65,7 @@ export const VOICE_RANGES: Record<VoicePart, VoiceRangeDefinition> = {
     comfortableHigh: 'E4',
     comfortableLowMidi: Note.midi('D3') || 50,
     comfortableHighMidi: Note.midi('E4') || 64,
-    color: '#6B9080',
+    color: '#7A9E87',
     label: 'Tenor',
   },
   bass: {
@@ -77,8 +77,111 @@ export const VOICE_RANGES: Record<VoicePart, VoiceRangeDefinition> = {
     comfortableHigh: 'A3',
     comfortableLowMidi: Note.midi('G2') || 43,
     comfortableHighMidi: Note.midi('A3') || 57,
-    color: '#4A6FA5',
+    color: '#8B7355',
     label: 'Bass',
+  },
+};
+
+/**
+ * Voice range definitions for SSAATTBB (double choir)
+ * Part I typically has slightly higher tessitura than Part II
+ */
+export const VOICE_RANGES_8: Record<VoicePart8, VoiceRangeDefinition> = {
+  sopranoI: {
+    low: 'D4',
+    high: 'A5',
+    lowMidi: Note.midi('D4') || 62,
+    highMidi: Note.midi('A5') || 81,
+    comfortableLow: 'F4',
+    comfortableHigh: 'F5',
+    comfortableLowMidi: Note.midi('F4') || 65,
+    comfortableHighMidi: Note.midi('F5') || 77,
+    color: '#D4891F',
+    label: 'Soprano I',
+  },
+  sopranoII: {
+    low: 'C4',
+    high: 'G5',
+    lowMidi: Note.midi('C4') || 60,
+    highMidi: Note.midi('G5') || 79,
+    comfortableLow: 'E4',
+    comfortableHigh: 'E5',
+    comfortableLowMidi: Note.midi('E4') || 64,
+    comfortableHighMidi: Note.midi('E5') || 76,
+    color: '#F2B861',
+    label: 'Soprano II',
+  },
+  altoI: {
+    low: 'A3',
+    high: 'E5',
+    lowMidi: Note.midi('A3') || 57,
+    highMidi: Note.midi('E5') || 76,
+    comfortableLow: 'B3',
+    comfortableHigh: 'D5',
+    comfortableLowMidi: Note.midi('B3') || 59,
+    comfortableHighMidi: Note.midi('D5') || 74,
+    color: '#527A94',
+    label: 'Alto I',
+  },
+  altoII: {
+    low: 'G3',
+    high: 'D5',
+    lowMidi: Note.midi('G3') || 55,
+    highMidi: Note.midi('D5') || 74,
+    comfortableLow: 'A3',
+    comfortableHigh: 'C5',
+    comfortableLowMidi: Note.midi('A3') || 57,
+    comfortableHighMidi: Note.midi('C5') || 72,
+    color: '#8BA8BE',
+    label: 'Alto II',
+  },
+  tenorI: {
+    low: 'D3',
+    high: 'A4',
+    lowMidi: Note.midi('D3') || 50,
+    highMidi: Note.midi('A4') || 69,
+    comfortableLow: 'E3',
+    comfortableHigh: 'F4',
+    comfortableLowMidi: Note.midi('E3') || 52,
+    comfortableHighMidi: Note.midi('F4') || 65,
+    color: '#5E8369',
+    label: 'Tenor I',
+  },
+  tenorII: {
+    low: 'C3',
+    high: 'G4',
+    lowMidi: Note.midi('C3') || 48,
+    highMidi: Note.midi('G4') || 67,
+    comfortableLow: 'D3',
+    comfortableHigh: 'E4',
+    comfortableLowMidi: Note.midi('D3') || 50,
+    comfortableHighMidi: Note.midi('E4') || 64,
+    color: '#96B8A5',
+    label: 'Tenor II',
+  },
+  bassI: {
+    low: 'G2',
+    high: 'D4',
+    lowMidi: Note.midi('G2') || 43,
+    highMidi: Note.midi('D4') || 62,
+    comfortableLow: 'A2',
+    comfortableHigh: 'B3',
+    comfortableLowMidi: Note.midi('A2') || 45,
+    comfortableHighMidi: Note.midi('B3') || 59,
+    color: '#6B5940',
+    label: 'Bass I',
+  },
+  bassII: {
+    low: 'E2',
+    high: 'C4',
+    lowMidi: Note.midi('E2') || 40,
+    highMidi: Note.midi('C4') || 60,
+    comfortableLow: 'G2',
+    comfortableHigh: 'A3',
+    comfortableLowMidi: Note.midi('G2') || 43,
+    comfortableHighMidi: Note.midi('A3') || 57,
+    color: '#A8906E',
+    label: 'Bass II',
   },
 };
 
@@ -86,6 +189,26 @@ export const VOICE_RANGES: Record<VoicePart, VoiceRangeDefinition> = {
  * Standard voice order for SATB layout (top to bottom)
  */
 export const VOICE_ORDER: VoicePart[] = ['soprano', 'alto', 'tenor', 'bass'];
+
+/**
+ * Standard voice order for SSAATTBB layout (top to bottom)
+ */
+export const VOICE_ORDER_8: VoicePart8[] = [
+  'sopranoI', 'sopranoII',
+  'altoI', 'altoII',
+  'tenorI', 'tenorII',
+  'bassI', 'bassII',
+];
+
+/**
+ * Get voice range for any voice part (4 or 8 voice)
+ */
+export function getVoiceRange(voicePart: AnyVoicePart): VoiceRangeDefinition {
+  if (voicePart in VOICE_RANGES) {
+    return VOICE_RANGES[voicePart as VoicePart];
+  }
+  return VOICE_RANGES_8[voicePart as VoicePart8];
+}
 
 /**
  * Check if a MIDI note is within the full range for a given voice part

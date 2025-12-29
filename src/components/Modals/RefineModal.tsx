@@ -329,7 +329,7 @@ export const RefineModal: React.FC = () => {
                       onClick={handleSurpriseMe}
                       disabled={isLoading}
                     >
-                      🎲 Surprise Me
+                      Surprise Me
                     </button>
                   </div>
                 </motion.div>
@@ -365,7 +365,7 @@ export const RefineModal: React.FC = () => {
                       Generating...
                     </>
                   ) : (
-                    '✨ Get Suggestions'
+                    'Get Suggestions'
                   )}
                 </button>
               </div>

@@ -1,20 +1,29 @@
 """
-Chord extraction using Essentia library
-Real music information retrieval - no mocks!
+Chord extraction using Essentia library + RobustChordAnalyzer
+Uses Essentia for HPCP extraction, custom analyzer for chord detection.
+Supports extended chords, inversions, and shell voicings.
 """
-import essentia
 import essentia.standard as es
 import numpy as np
-from typing import Optional, Dict, Tuple
+from typing import Optional, Dict, Tuple, List
+
+from services.chord_analyzer import RobustChordAnalyzer
 
 
 class ChordExtractor:
-    """Extract chords from audio using Essentia's HPCP algorithm."""
+    """
+    Extract chords from audio using Essentia's HPCP + RobustChordAnalyzer.
+
+    This combines:
+    - Essentia's excellent HPCP (Harmonic Pitch Class Profile) extraction
+    - Our custom RobustChordAnalyzer for detecting extended chords, inversions, etc.
+    """
 
     def __init__(self):
         self.sample_rate = 44100
         self.frame_size = 4096
         self.hop_size = 2048
+        self.chord_analyzer = RobustChordAnalyzer()
 
     def extract_chords(
         self,
@@ -23,7 +32,7 @@ class ChordExtractor:
         mode_hint: str = "auto"
     ) -> Dict:
         """
-        Extract chords from audio file using Essentia.
+        Extract chords from audio file.
 
         Args:
             audio_file: Path to audio file (WAV, MP3, etc.)
@@ -57,7 +66,42 @@ class ChordExtractor:
 
         print(f"Detected tempo: {bpm:.1f} BPM ({len(beats)} beats)")
 
-        # 3. Extract chords using HPCP (Harmonic Pitch Class Profile)
+        # 3. Extract HPCP (Harmonic Pitch Class Profile) using Essentia
+        hpcps = self._extract_hpcps(audio)
+        print(f"Extracted {len(hpcps)} HPCP frames")
+
+        # 4. Analyze chords using our RobustChordAnalyzer
+        # Pass detected key/mode for harmonic context disambiguation
+        chord_progression = self.chord_analyzer.analyze_progression(
+            hpcps=hpcps,
+            hop_size=self.hop_size,
+            sample_rate=self.sample_rate,
+            min_duration=0.3,  # Minimum 300ms for a chord
+            key=key,           # Use detected/hinted key for context
+            mode=mode          # Use detected/hinted mode for context
+        )
+
+        # Convert to the expected format (chord field as string)
+        for chord in chord_progression:
+            chord['chord'] = chord.pop('symbol')
+
+        print(f"Detected {len(chord_progression)} chords: {[c['chord'] for c in chord_progression]}")
+
+        return {
+            "key": key,
+            "mode": mode,
+            "tempo": float(bpm),
+            "chords": chord_progression
+        }
+
+    def _extract_hpcps(self, audio: np.ndarray) -> List[np.ndarray]:
+        """
+        Extract HPCP (Harmonic Pitch Class Profile) from audio.
+
+        HPCP is a 12-dimensional vector representing the energy in each
+        pitch class (C, C#, D, ..., B). This is the foundation for
+        chord detection.
+        """
         windowing = es.Windowing(type='blackmanharris62')
         spectrum = es.Spectrum()
         spectral_peaks = es.SpectralPeaks(
@@ -75,74 +119,15 @@ class ChordExtractor:
             windowSize=1.0
         )
 
-        # Chord detector
-        chord_detector = es.ChordsDetection(
-            hopSize=self.hop_size,
-            sampleRate=self.sample_rate
-        )
-
-        # Process audio to get HPCPs
         hpcps = []
         for frame in es.FrameGenerator(audio, frameSize=self.frame_size, hopSize=self.hop_size):
             frame_windowed = windowing(frame)
             frame_spectrum = spectrum(frame_windowed)
             freqs, mags = spectral_peaks(frame_spectrum)
             frame_hpcp = hpcp(freqs, mags)
-            hpcps.append(frame_hpcp)
+            hpcps.append(np.array(frame_hpcp))
 
-        # Detect chords from HPCPs
-        chords, chord_strengths = chord_detector(essentia.array(hpcps))
-
-        print(f"Detected {len(chords)} chord segments")
-
-        # 4. Convert to chord progression with timing
-        chord_progression = []
-        frame_duration = self.hop_size / self.sample_rate  # seconds per frame
-
-        current_chord = None
-        chord_start_time = 0.0
-        chord_start_idx = 0
-
-        for i, (chord_name, strength) in enumerate(zip(chords, chord_strengths)):
-            # Skip 'N' (no chord) or very weak chords
-            if chord_name == 'N' or strength < 0.1:
-                continue
-
-            if chord_name != current_chord:
-                if current_chord is not None:
-                    # Save previous chord
-                    duration = (i - chord_start_idx) * frame_duration
-                    if duration > 0.5:  # Only include chords longer than 0.5s
-                        chord_progression.append({
-                            "startTime": chord_start_time,
-                            "duration": duration,
-                            "chord": current_chord,
-                            "confidence": float(np.mean([chord_strengths[j] for j in range(chord_start_idx, i) if chords[j] == current_chord]))
-                        })
-
-                current_chord = chord_name
-                chord_start_time = i * frame_duration
-                chord_start_idx = i
-
-        # Add final chord
-        if current_chord and current_chord != 'N':
-            duration = (len(chords) - chord_start_idx) * frame_duration
-            if duration > 0.5:
-                chord_progression.append({
-                    "startTime": chord_start_time,
-                    "duration": duration,
-                    "chord": current_chord,
-                    "confidence": float(np.mean([chord_strengths[j] for j in range(chord_start_idx, len(chords)) if chords[j] == current_chord]))
-                })
-
-        print(f"Chord progression: {[c['chord'] for c in chord_progression]}")
-
-        return {
-            "key": key,
-            "mode": mode,
-            "tempo": float(bpm),
-            "chords": chord_progression
-        }
+        return hpcps
 
 
 def parse_chord_label(label: str) -> Tuple[str, str, Dict[str, bool]]:

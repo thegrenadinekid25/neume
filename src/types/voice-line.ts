@@ -1,6 +1,6 @@
-import type { VoicePart } from './necklace';
+import type { VoicePart, VoicePart8, AnyVoicePart } from './necklace';
 
-export type { VoicePart };
+export type { VoicePart, VoicePart8, AnyVoicePart };
 
 /**
  * Accidental modifiers for pitches
@@ -91,13 +91,13 @@ export interface MelodicNote {
 
 /**
  * A complete voice line (melody) in the composition
- * Represents one of the four parts (soprano, alto, tenor, bass)
+ * Can represent 4-voice SATB or 8-voice SSAATTBB parts
  */
-export interface VoiceLine {
+export interface VoiceLine<T extends AnyVoicePart = VoicePart> {
   /** Unique identifier for the voice line */
   id: string;
-  /** Voice part assignment (soprano, alto, tenor, bass) */
-  voicePart: VoicePart;
+  /** Voice part assignment */
+  voicePart: T;
   /** Array of melodic notes in the voice line */
   notes: MelodicNote[];
   /** Whether this voice line is actively used in composition */
@@ -113,6 +113,12 @@ export interface VoiceLine {
   /** Whether the voice line details are collapsed in UI */
   collapsed: boolean;
 }
+
+/** Voice line record for 4-voice SATB */
+export type VoiceLines4 = Record<VoicePart, VoiceLine<VoicePart>>;
+
+/** Voice line record for 8-voice SSAATTBB */
+export type VoiceLines8 = Record<VoicePart8, VoiceLine<VoicePart8>>;
 
 /**
  * Composition mode types

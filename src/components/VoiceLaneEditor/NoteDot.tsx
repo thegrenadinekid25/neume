@@ -19,6 +19,7 @@ interface NoteDotProps {
   onSelect: (id: string, multiSelect: boolean) => void;
   onDrag: (id: string, newY: number) => void;
   onDragEnd: (id: string, finalY: number) => void;
+  onConflictDragStart?: (noteId: string, note: MelodicNote, event: React.MouseEvent<HTMLDivElement>) => void;
 }
 
 const LANE_PADDING = 8;
@@ -35,6 +36,7 @@ export const NoteDot: React.FC<NoteDotProps> = ({
   onSelect,
   onDrag: _onDrag,
   onDragEnd,
+  onConflictDragStart,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -81,10 +83,14 @@ export const NoteDot: React.FC<NoteDotProps> = ({
   // Get pitch name from MIDI
   const pitchName = note.pitch || Note.fromMidi(note.midi) || 'C4';
 
-  const handleDragStart = () => {
+  const handleDragStart = (event: any) => {
     setIsDragging(true);
     dragOffsetRef.current = 0;
     justDraggedRef.current = false;
+    // Call conflict detection hook's drag start
+    if (onConflictDragStart) {
+      onConflictDragStart(note.id, note, event as React.MouseEvent<HTMLDivElement>);
+    }
   };
 
   const handleDrag = (_event: any, info: any) => {
@@ -264,7 +270,10 @@ export const NoteDot: React.FC<NoteDotProps> = ({
       }}
       dragElastic={0}
       dragMomentum={false}
-      onDragStart={handleDragStart}
+      onDragStart={() => {
+        // Create a synthetic event-like object for motion's onDragStart
+        handleDragStart({ clientX: 0, clientY: 0 });
+      }}
       onDrag={handleDrag}
       onDragEnd={handleDragEnd}
       onMouseEnter={() => setIsHovered(true)}

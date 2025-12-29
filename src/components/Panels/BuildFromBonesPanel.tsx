@@ -77,35 +77,51 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ steps, currentStep, onSte
 };
 
 /**
+ * Layer type display info - icons and colors for each layer
+ */
+const LAYER_INFO: Record<string, { icon: string; color: string; label: string }> = {
+  skeleton: { icon: '🎵', color: '#888', label: 'Foundation' },
+  sevenths: { icon: '7', color: '#E8A03E', label: 'Richness' },
+  suspensions: { icon: '~', color: '#6B8FAD', label: 'Tension' },
+  extensions: { icon: '↑', color: '#7A9E87', label: 'Color' },
+  alterations: { icon: '♯♭', color: '#C4756E', label: 'Edge' },
+};
+
+/**
  * Helper component: StepContent
  * Displays the current step's name, description, and progression preview
+ * Now with enhanced display for layerType, modifiedIndices, and romanNumerals
  */
 interface StepContentProps {
   step: DeconstructionStep;
 }
 
 const StepContent: React.FC<StepContentProps> = ({ step }) => {
-  const formatChordName = (scaleDegree: number, quality: string): string => {
-    const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
-    const numeral = romanNumerals[scaleDegree - 1] || 'I';
-
-    if (quality === 'minor' || quality === 'min7') {
-      return numeral.toLowerCase();
-    }
-
-    if (quality === 'dom7') return `${numeral}7`;
-    if (quality === 'maj7') return `${numeral}maj7`;
-    if (quality === 'diminished') return `${numeral}°`;
-    if (quality === 'augmented') return `${numeral}+`;
-
-    return numeral;
-  };
-
+  // Use backend-provided Roman numerals if available, otherwise generate from chords
   const progressionText = useMemo(() => {
+    if (step.romanNumerals) {
+      return step.romanNumerals;
+    }
+    // Fallback to generating from chords
+    const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
     return step.chords
-      .map((chord) => formatChordName(chord.scaleDegree, chord.quality))
+      .map((chord) => {
+        const numeral = romanNumerals[chord.scaleDegree - 1] || 'I';
+        if (chord.quality === 'minor' || chord.quality === 'min7') {
+          return numeral.toLowerCase();
+        }
+        if (chord.quality === 'dom7') return `${numeral}7`;
+        if (chord.quality === 'maj7') return `${numeral}maj7`;
+        if (chord.quality === 'diminished') return `${numeral}°`;
+        if (chord.quality === 'augmented') return `${numeral}+`;
+        return numeral;
+      })
       .join(' → ');
-  }, [step.chords]);
+  }, [step.romanNumerals, step.chords]);
+
+  // Get layer display info
+  const layerInfo = LAYER_INFO[step.layerType || 'skeleton'];
+  const modifiedCount = step.modifiedIndices?.length || 0;
 
   return (
     <div className={styles.stepContent}>
@@ -115,12 +131,34 @@ const StepContent: React.FC<StepContentProps> = ({ step }) => {
         exit={{ opacity: 0, y: -10 }}
         transition={{ duration: 0.2 }}
       >
-        <h3 className={styles.stepTitle}>{step.stepName}</h3>
+        {/* Step header with layer badge */}
+        <div className={styles.stepHeader}>
+          <h3 className={styles.stepTitle}>{step.stepName}</h3>
+          {step.layerType && layerInfo && (
+            <span
+              className={styles.layerBadge}
+              style={{ backgroundColor: layerInfo.color }}
+              title={`Layer: ${layerInfo.label}`}
+            >
+              <span className={styles.layerIcon}>{layerInfo.icon}</span>
+              <span className={styles.layerLabel}>{layerInfo.label}</span>
+            </span>
+          )}
+        </div>
+
+        {/* What changed indicator */}
+        {modifiedCount > 0 && (
+          <p className={styles.modifiedIndicator}>
+            {modifiedCount} chord{modifiedCount !== 1 ? 's' : ''} modified from previous step
+          </p>
+        )}
+
+        {/* AI-generated description */}
         <p className={styles.stepDescription}>{step.description}</p>
 
-        {/* Progression preview */}
+        {/* Progression preview with Roman numerals */}
         <div className={styles.progressionSection}>
-          <p className={styles.progressionLabel}>Progression at this step:</p>
+          <p className={styles.progressionLabel}>Progression:</p>
           <div className={styles.progressionChords}>{progressionText}</div>
         </div>
       </motion.div>
@@ -219,7 +257,7 @@ const GlobalControls: React.FC<GlobalControlsProps> = ({
         onClick={onSave}
         title="Save this build-up to My Progressions"
       >
-        💾 Save This Build-Up
+        Save This Build-Up
       </button>
     </div>
   );
@@ -239,12 +277,15 @@ export const BuildFromBonesPanel: React.FC = () => {
     steps,
     isPlaying,
     playbackMode,
+    isLoading,
+    error,
     closePanel,
     nextStep,
     prevStep,
     jumpToStep,
     setPlaying,
     setPlaybackMode,
+    setError,
   } = useBuildFromBonesStore();
 
   // Track which playback mode is currently active
@@ -332,7 +373,7 @@ export const BuildFromBonesPanel: React.FC = () => {
             {/* Header */}
             <div className={styles.header}>
               <h2 id="build-from-bones-title" className={styles.title}>
-                Build From Bones 🦴
+                Build From Bones
               </h2>
               <button
                 className={styles.closeButton}
@@ -353,8 +394,29 @@ export const BuildFromBonesPanel: React.FC = () => {
               />
             )}
 
+            {/* Loading state */}
+            {isLoading && (
+              <div className={styles.loadingContainer}>
+                <div className={styles.spinner} />
+                <p className={styles.loadingMessage}>Deconstructing progression...</p>
+              </div>
+            )}
+
+            {/* Error state */}
+            {error && !isLoading && (
+              <div className={styles.errorContainer}>
+                <p className={styles.errorMessage}>{error}</p>
+                <button
+                  className={styles.retryButton}
+                  onClick={() => setError(null)}
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
             {/* Main content area */}
-            {totalSteps > 0 && currentStepData ? (
+            {!isLoading && !error && totalSteps > 0 && currentStepData ? (
               <>
                 {/* Step content section */}
                 <StepContent step={currentStepData} />
@@ -377,15 +439,14 @@ export const BuildFromBonesPanel: React.FC = () => {
                   isComparing={isComparing}
                 />
               </>
-            ) : (
+            ) : !isLoading && !error ? (
               /* Empty state */
               <div className={styles.emptyContainer}>
-                <div className={styles.emptyIcon}>🎵</div>
                 <p className={styles.emptyMessage}>
                   Analyze a chord progression to see its step-by-step deconstruction.
                 </p>
               </div>
-            )}
+            ) : null}
           </motion.div>
         </>
       )}

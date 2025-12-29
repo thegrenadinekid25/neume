@@ -18,11 +18,6 @@ EMOTIONAL_MAPPINGS = {
         "composers": ["Whitacre", "Lauridsen"],
         "avoid": ["heavy_bass", "diminished"]
     },
-    "ethereal": {
-        "techniques": ["add9", "sus4", "open_voicing", "maj7"],
-        "composers": ["Lauridsen", "Whitacre", "Pärt"],
-        "avoid": ["tritones", "dense_voicing"]
-    },
     "dark": {
         "techniques": ["minor_mode", "diminished", "low_register"],
         "composers": ["Brahms", "Penderecki"],
@@ -87,6 +82,41 @@ EMOTIONAL_MAPPINGS = {
         "techniques": ["chromatic", "parallel_9ths", "extended_harmony"],
         "composers": ["Debussy", "Ravel"],
         "avoid": ["strict_voice_leading"]
+    },
+    "peaceful": {
+        "techniques": ["sus4", "open_voicing", "maj7", "add9"],
+        "composers": ["Whitacre", "Lauridsen", "Pärt"],
+        "avoid": ["tritones", "diminished", "aggressive_rhythm"]
+    },
+    "intense": {
+        "techniques": ["minor_mode", "V-I", "chromatic", "low_register"],
+        "composers": ["Penderecki", "Shostakovich", "Williams"],
+        "avoid": ["open_voicing", "sparse_voicing"]
+    },
+    "joyful": {
+        "techniques": ["major_mode", "add9", "ascending_bass", "bright_extensions"],
+        "composers": ["Rutter", "Lauridsen", "Whitacre"],
+        "avoid": ["minor_mode", "diminished", "low_register"]
+    },
+    "mysterious": {
+        "techniques": ["chromatic", "modal_mixture", "diminished", "tritone"],
+        "composers": ["Penderecki", "Ligeti", "Whitacre"],
+        "avoid": ["parallel_motion", "open_voicing"]
+    },
+    "angelic": {
+        "techniques": ["maj7", "open_voicing", "add9", "sus4"],
+        "composers": ["Whitacre", "Lauridsen", "Pärt"],
+        "avoid": ["tritones", "dense_voicing", "minor_mode"]
+    },
+    "solemn": {
+        "techniques": ["minor_mode", "diminished", "sus2", "low_register"],
+        "composers": ["Brahms", "Penderecki", "Shostakovich"],
+        "avoid": ["major_mode", "bright_extensions", "ascending_bass"]
+    },
+    "melancholic": {
+        "techniques": ["minor_mode", "modal_mixture", "sus2", "chromatic"],
+        "composers": ["Barber", "Brahms", "Whitacre"],
+        "avoid": ["major_mode", "ascending_bass", "bright_extensions"]
     }
 }
 

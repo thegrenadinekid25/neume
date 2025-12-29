@@ -148,3 +148,54 @@ export async function suggestRefinements(
   }
   return response.json();
 }
+
+/**
+ * Types for deconstruction API
+ */
+export type LayerType = 'skeleton' | 'sevenths' | 'suspensions' | 'extensions' | 'alterations';
+
+export interface DeconstructStep {
+  stepNumber: number;
+  stepName: string;
+  description: string;
+  chords: SimpleChord[];
+  layerType?: LayerType;
+  modifiedIndices?: number[];
+  romanNumerals?: string;
+}
+
+export interface DeconstructResponse {
+  success: boolean;
+  steps?: DeconstructStep[];
+  error?: string;
+}
+
+/**
+ * Deconstruct a chord progression into evolutionary steps with AI-generated explanations
+ */
+export async function deconstructProgression(
+  chords: SimpleChord[],
+  key: string,
+  mode: string,
+  songTitle?: string,
+  composer?: string
+): Promise<DeconstructResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/deconstruct`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chords,
+      key,
+      mode,
+      songTitle,
+      composer,
+    }),
+  });
+
+  await checkRateLimit(response);
+
+  if (!response.ok) {
+    throw new Error('Deconstruction request failed');
+  }
+  return response.json();
+}

@@ -1,11 +1,28 @@
 .container {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   background: transparent;
   margin-bottom: 16px;
   position: relative;
 }
 
+.legendWrapper {
+  padding: 0 8px;
+  border-bottom: 1px solid var(--warm-linen, #EDE8E0);
+}
+
+.staffWrapper {
+  position: relative;
+  overflow: visible;
+  flex: 1;
+}
+
+.staffContent {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Preserved for backward compatibility if needed */
 .labelsColumn {
   display: flex;
   flex-direction: column;

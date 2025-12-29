@@ -4,6 +4,7 @@ import { VOICE_RANGES } from '@/data/voice-ranges';
 import { useVoiceLineStore } from '@/store/voice-line-store';
 import { useCanvasStore } from '@/store/canvas-store';
 import { Note, Scale } from 'tonal';
+import { useVoiceChordConflict } from '@/hooks/useVoiceChordConflict';
 import { NoteDot } from './NoteDot';
 import { ThreadConnector } from './ThreadConnector';
 import { RestCloud } from './RestCloud';
@@ -48,8 +49,36 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
   const currentKey = useCanvasStore((state) => state.currentKey);
   const currentMode = useCanvasStore((state) => state.currentMode);
 
+  // Get current time signature (default to 4/4, which is most common)
+  const currentTimeSignature = '4/4' as const;
+
   const voicePart = voiceLine.voicePart as VoicePart;
   const voiceRange = VOICE_RANGES[voicePart];
+
+  // Initialize voice-chord conflict detection hook
+  const { handleDragStart: hookHandleDragStart, handleDragEnd: hookHandleDragEnd } = useVoiceChordConflict(
+    voicePart,
+    currentTimeSignature,
+    {
+      enabled: true,
+      minSeverity: 'warning',
+      onNoteUpdate: (noteId, newMidi) => {
+        const note = voiceLine.notes.find(n => n.id === noteId);
+        if (note) {
+          const newPitch = Note.fromMidi(newMidi) || 'C4';
+          updateNote(voicePart, noteId, { midi: newMidi, pitch: newPitch });
+        }
+      },
+      onChordChange: (newChordKey) => {
+        // Note: Chord changing would require parent component coordination
+        // For now, this is a placeholder for future implementation
+        console.log('User requested chord change to:', newChordKey);
+      },
+      onCancel: () => {
+        // Note already reverted in hook via onNoteUpdate with originalMidi
+      },
+    }
+  );
 
   // Get all diatonic MIDI values within voice range for snapping
   const diatonicMidiValues = useMemo(() => {
@@ -165,12 +194,30 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
     updateNote(voicePart, noteId, { midi: newMidi, pitch: newPitch });
   }, [yToMidi, updateNote, voicePart]);
 
-  // Handle note drag end (finalize position)
+  // Handle note drag end (finalize position with conflict detection)
   const handleNoteDragEnd = useCallback((noteId: string, finalY: number) => {
+    const note = voiceLine.notes.find(n => n.id === noteId);
+    if (!note) return;
+
     const newMidi = yToMidi(finalY);
     const newPitch = Note.fromMidi(newMidi) || 'C4';
-    updateNote(voicePart, noteId, { midi: newMidi, pitch: newPitch });
-  }, [yToMidi, updateNote, voicePart]);
+
+    // Find the current chord for this note
+    const noteChord = chords.find(c => c.startBeat <= note.startBeat && c.startBeat + c.duration > note.startBeat);
+    if (!noteChord) {
+      // No chord found, just update the note
+      updateNote(voicePart, noteId, { midi: newMidi, pitch: newPitch });
+      return;
+    }
+
+    // Get adjacent notes
+    const noteIndex = voiceLine.notes.findIndex(n => n.id === noteId);
+    const prevNote = noteIndex > 0 ? voiceLine.notes[noteIndex - 1] : undefined;
+    const nextNote = noteIndex < voiceLine.notes.length - 1 ? voiceLine.notes[noteIndex + 1] : undefined;
+
+    // Call the conflict detection hook with all necessary parameters
+    hookHandleDragEnd(note, newMidi, noteChord, prevNote, nextNote, note.startBeat);
+  }, [yToMidi, updateNote, voicePart, voiceLine.notes, chords, hookHandleDragEnd]);
 
   // Handle double-click on lane to create a new note
   const handleLaneDoubleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -302,6 +349,7 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
           onSelect={handleNoteSelect}
           onDrag={handleNoteDrag}
           onDragEnd={handleNoteDragEnd}
+          onConflictDragStart={hookHandleDragStart}
         />
       ))}
     </div>

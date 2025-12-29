@@ -95,7 +95,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
             {!supabaseConfigured && (
               <div className={styles.configWarning}>
-                <span className={styles.warningIcon}>⚠️</span>
+                <span className={styles.warningIcon}>Warning:</span>
                 <div>
                   <strong>Cloud features not configured</strong>
                   <p>Copy .env.local.example to .env.local and add your Supabase credentials.</p>

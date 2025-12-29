@@ -1,26 +1,32 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import { Note } from 'tonal';
-import type { VoiceLine, MelodicNote, VoicePart, CompositionMode, Accidental } from '@/types';
+import type { MelodicNote, VoicePart, VoicePart8, AnyVoicePart, CompositionMode, Accidental, VoiceLines4, VoiceLines8 } from '@/types';
 import type { Chord } from '@/types/chord';
+import type { VoiceCount } from '@/types/voicing';
 import { DEFAULT_MELODIC_NOTE_VISUAL_STATE, DEFAULT_COMPOSITION_MODE } from '@/types/voice-line';
-import { VOICE_RANGES } from '@/data/voice-ranges';
+import { VOICE_RANGES, VOICE_RANGES_8, VOICE_ORDER, VOICE_ORDER_8 } from '@/data/voice-ranges';
 import { analyzeVoiceLine } from '@/services/non-chord-tone-analyzer';
 
 interface VoiceLineState {
-  voiceLines: Record<VoicePart, VoiceLine>;
+  // 4-voice SATB lines (default)
+  voiceLines: VoiceLines4;
+  // 8-voice SSAATTBB lines
+  voiceLines8: VoiceLines8;
+  // Current voice count mode
+  voiceCount: VoiceCount;
   compositionMode: CompositionMode;
   selectedNoteIds: string[];
-  activeVoicePart: VoicePart | null;
+  activeVoicePart: AnyVoicePart | null;
   hoveredNoteId: string | null;
   playingNoteIds: string[];
   isInitialized: boolean;
-  // History for undo/redo
-  _history: Array<Record<VoicePart, VoiceLine>>;
+  // History for undo/redo (4-voice only for now)
+  _history: Array<VoiceLines4>;
   _historyIndex: number;
 }
 
-function createDefaultVoiceLines(): Record<VoicePart, VoiceLine> {
+function createDefaultVoiceLines(): VoiceLines4 {
   const parts: VoicePart[] = ['soprano', 'alto', 'tenor', 'bass'];
   const entries = parts.map(part => [part, {
     id: uuidv4(),
@@ -33,15 +39,48 @@ function createDefaultVoiceLines(): Record<VoicePart, VoiceLine> {
     opacity: 1,
     collapsed: false,
   }] as const);
-  return Object.fromEntries(entries) as Record<VoicePart, VoiceLine>;
+  return Object.fromEntries(entries) as VoiceLines4;
+}
+
+function createDefaultVoiceLines8(): VoiceLines8 {
+  const parts: VoicePart8[] = [
+    'sopranoI', 'sopranoII',
+    'altoI', 'altoII',
+    'tenorI', 'tenorII',
+    'bassI', 'bassII',
+  ];
+  const entries = parts.map(part => [part, {
+    id: uuidv4(),
+    voicePart: part,
+    notes: [] as MelodicNote[],
+    enabled: true,
+    muted: false,
+    solo: false,
+    color: VOICE_RANGES_8[part].color,
+    opacity: 1,
+    collapsed: false,
+  }] as const);
+  return Object.fromEntries(entries) as VoiceLines8;
 }
 
 const MAX_HISTORY_SIZE = 50;
 
-// Deep clone voice lines for history
-function cloneVoiceLines(voiceLines: Record<VoicePart, VoiceLine>): Record<VoicePart, VoiceLine> {
-  const cloned: Record<VoicePart, VoiceLine> = {} as Record<VoicePart, VoiceLine>;
+// Deep clone voice lines for history (4-voice)
+function cloneVoiceLines(voiceLines: VoiceLines4): VoiceLines4 {
+  const cloned: VoiceLines4 = {} as VoiceLines4;
   for (const part of Object.keys(voiceLines) as VoicePart[]) {
+    cloned[part] = {
+      ...voiceLines[part],
+      notes: voiceLines[part].notes.map(note => ({ ...note, visualState: { ...note.visualState }, analysis: { ...note.analysis } })),
+    };
+  }
+  return cloned;
+}
+
+// Deep clone voice lines for 8-voice (exported for future 8-voice editing)
+export function cloneVoiceLines8(voiceLines: VoiceLines8): VoiceLines8 {
+  const cloned: VoiceLines8 = {} as VoiceLines8;
+  for (const part of Object.keys(voiceLines) as VoicePart8[]) {
     cloned[part] = {
       ...voiceLines[part],
       notes: voiceLines[part].notes.map(note => ({ ...note, visualState: { ...note.visualState }, analysis: { ...note.analysis } })),
@@ -60,7 +99,7 @@ export const useVoiceLineStore = create<VoiceLineState & {
   clearSelection: () => void;
   cycleAccidental: (part: VoicePart, noteId: string) => void;
   cycleNoteState: (part: VoicePart, noteId: string) => void;
-  setActiveVoice: (part: VoicePart | null) => void;
+  setActiveVoice: (part: AnyVoicePart | null) => void;
   toggleVoiceEnabled: (part: VoicePart) => void;
   toggleVoiceMuted: (part: VoicePart) => void;
   setVoiceEnabled: (part: VoicePart, enabled: boolean) => void;
@@ -69,6 +108,9 @@ export const useVoiceLineStore = create<VoiceLineState & {
   setCompositionMode: (mode: CompositionMode) => void;
   setPlayingNotes: (noteIds: string[]) => void;
   setNoteHovered: (noteId: string | null) => void;
+  // Voice count actions
+  setVoiceCount: (count: VoiceCount) => void;
+  getActiveVoiceParts: () => AnyVoicePart[];
   // Analysis actions
   analyzeAllNotes: (chords: Chord[]) => void;
   resetNotesToChord: (chord: Chord) => void;
@@ -81,6 +123,8 @@ export const useVoiceLineStore = create<VoiceLineState & {
 }>(
   (set, get) => ({
     voiceLines: createDefaultVoiceLines(),
+    voiceLines8: createDefaultVoiceLines8(),
+    voiceCount: 4,
     compositionMode: DEFAULT_COMPOSITION_MODE,
     selectedNoteIds: [],
     activeVoicePart: null,
@@ -311,7 +355,7 @@ export const useVoiceLineStore = create<VoiceLineState & {
       });
     },
 
-    setActiveVoice: (part: VoicePart | null) => {
+    setActiveVoice: (part: AnyVoicePart | null) => {
       set({ activeVoicePart: part });
     },
 
@@ -534,6 +578,19 @@ export const useVoiceLineStore = create<VoiceLineState & {
     canRedo: () => {
       const state = get();
       return state._historyIndex < state._history.length - 1;
+    },
+
+    // Voice count actions
+    setVoiceCount: (count: VoiceCount) => {
+      set({ voiceCount: count });
+    },
+
+    getActiveVoiceParts: () => {
+      const state = get();
+      if (state.voiceCount === 8) {
+        return VOICE_ORDER_8;
+      }
+      return VOICE_ORDER;
     },
   })
 );

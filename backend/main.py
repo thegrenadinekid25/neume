@@ -40,10 +40,20 @@ from models.schemas import (
     ChordInsightRequest,
     ChordInsightResponse,
 )
-from services.youtube_downloader import YouTubeDownloader, YouTubeDownloaderError
-from services.chord_extractor import ChordExtractor, parse_chord_label
 from services.deconstructor import ProgressionDeconstructor
 from services.emotional_mapper import EmotionalMapper
+
+# Optional audio processing imports (require essentia/librosa)
+AUDIO_AVAILABLE = False
+try:
+    from services.youtube_downloader import YouTubeDownloader, YouTubeDownloaderError
+    from services.chord_extractor import ChordExtractor, parse_chord_label
+    AUDIO_AVAILABLE = True
+except ImportError as e:
+    print(f"Audio processing unavailable: {e}")
+    print("AI endpoints will still work. Install audio deps with: pip install -r requirements.txt")
+    YouTubeDownloader = None
+    ChordExtractor = None
 
 # Load environment variables
 load_dotenv()
@@ -102,8 +112,8 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
 
 # Initialize services
-youtube_downloader = YouTubeDownloader(output_dir="./temp")
-chord_extractor = ChordExtractor()
+youtube_downloader = YouTubeDownloader(output_dir="./temp") if AUDIO_AVAILABLE else None
+chord_extractor = ChordExtractor() if AUDIO_AVAILABLE else None
 progression_deconstructor = ProgressionDeconstructor()
 emotional_mapper = EmotionalMapper()
 
@@ -140,22 +150,32 @@ async def root():
 
 @app.post("/api/analyze", response_model=AnalyzeResponse)
 @limiter.limit("10/hour")
-async def analyze_audio(request_obj: Request, request: AnalyzeRequest):
+async def analyze_audio(request: Request, body: AnalyzeRequest):
     """Analyze audio and extract chord progression."""
+    if not AUDIO_AVAILABLE:
+        return AnalyzeResponse(
+            success=False,
+            error=ErrorData(
+                code="AUDIO_UNAVAILABLE",
+                message="Audio processing dependencies not installed. Install essentia/librosa.",
+                retryable=False
+            )
+        )
+
     try:
         audio_file = None
         title = "Unknown"
         source_url = None
 
-        if request.type == "youtube":
-            if not request.videoId:
+        if body.type == "youtube":
+            if not body.videoId:
                 raise HTTPException(status_code=400, detail="videoId required for YouTube")
 
             try:
-                download_result = await youtube_downloader.download_audio(request.videoId)
+                download_result = await youtube_downloader.download_audio(body.videoId)
                 audio_file = download_result["filepath"]
                 title = download_result["title"]
-                source_url = request.youtubeUrl
+                source_url = body.youtubeUrl
             except YouTubeDownloaderError as e:
                 return AnalyzeResponse(
                     success=False,
@@ -175,11 +195,11 @@ async def analyze_audio(request_obj: Request, request: AnalyzeRequest):
                     )
                 )
 
-        elif request.type == "audio":
-            if not request.uploadId:
+        elif body.type == "audio":
+            if not body.uploadId:
                 raise HTTPException(status_code=400, detail="uploadId required for audio file")
 
-            audio_file = f"./temp/{request.uploadId}.wav"
+            audio_file = f"./temp/{body.uploadId}.wav"
             if not os.path.exists(audio_file):
                 raise HTTPException(status_code=404, detail="Uploaded file not found")
             title = "Uploaded Audio"
@@ -189,8 +209,8 @@ async def analyze_audio(request_obj: Request, request: AnalyzeRequest):
 
         analysis = chord_extractor.extract_chords(
             audio_file,
-            key_hint=request.keyHint,
-            mode_hint=request.modeHint
+            key_hint=body.keyHint,
+            mode_hint=body.modeHint
         )
 
         tempo = analysis["tempo"]
@@ -211,8 +231,8 @@ async def analyze_audio(request_obj: Request, request: AnalyzeRequest):
                 confidence=chord_data["confidence"]
             ))
 
-        if request.type == "youtube" and request.videoId:
-            youtube_downloader.cleanup(request.videoId)
+        if body.type == "youtube" and body.videoId:
+            youtube_downloader.cleanup(body.videoId)
 
         return AnalyzeResponse(
             success=True,
@@ -328,7 +348,19 @@ def build_explanation_prompt(
     composer: str | None
 ) -> str:
     """Build prompt for Claude API."""
-    prompt = "You are an expert music theorist and musicologist. Analyze the following chord in its full musical context.\n\n"
+    prompt = """You are a beloved music teacher in the spirit of Leonard Bernstein—someone who can illuminate the deepest musical truths while making a child's eyes light up with understanding.
+
+VOICE & STYLE:
+- Speak with warmth and genuine wonder at the music, but never gush or sentimentalize
+- Use plain language that reveals rather than obscures—if a technical term helps, explain what it DOES to the listener
+- A touch of wry wit is welcome when it illuminates the point
+- Be specific to THIS music, THIS moment—no generic textbook definitions
+- When you mention composers (Palestrina, Bach, Brahms, Lauridsen, Whitacre), tell us what makes their approach distinctive
+- Remember: the goal is insight that changes how someone HEARS, not just what they know
+
+Analyze the following chord in its full musical context.
+
+"""
 
     # Song context if available
     if song_title or composer:
@@ -400,7 +432,7 @@ def build_explanation_prompt(
 
 @app.post("/api/explain", response_model=ExplainResponse)
 @limiter.limit("30/hour")
-async def explain_chord(request_obj: Request, request: ExplainRequest):
+async def explain_chord(request: Request, body: ExplainRequest):
     """Get AI-powered explanation for a chord choice."""
     api_key = os.getenv("CLAUDE_API_KEY")
 
@@ -413,12 +445,12 @@ async def explain_chord(request_obj: Request, request: ExplainRequest):
     try:
         # Build the prompt
         prompt = build_explanation_prompt(
-            chord=request.chord,
-            prev_chord=request.prevChord,
-            next_chord=request.nextChord,
-            full_progression=request.fullProgression,
-            song_title=request.songContext.title if request.songContext else None,
-            composer=request.songContext.composer if request.songContext else None
+            chord=body.chord,
+            prev_chord=body.prevChord,
+            next_chord=body.nextChord,
+            full_progression=body.fullProgression,
+            song_title=body.songContext.title if body.songContext else None,
+            composer=body.songContext.composer if body.songContext else None
         )
 
         # Call Claude API
@@ -473,7 +505,7 @@ async def explain_chord(request_obj: Request, request: ExplainRequest):
 
 @app.post("/api/deconstruct", response_model=DeconstructResponse)
 @limiter.limit("20/hour")
-async def deconstruct_progression(request_obj: Request, request: DeconstructRequest):
+async def deconstruct_progression(request: Request, body: DeconstructRequest):
     """
     Analyze a chord progression and return its step-by-step evolution.
 
@@ -512,16 +544,16 @@ async def deconstruct_progression(request_obj: Request, request: DeconstructRequ
                 "quality": chord.quality,
                 "extensions": chord.extensions or {}
             }
-            for chord in request.chords
+            for chord in body.chords
         ]
 
         # Perform deconstruction with optional song context
         steps_data = await progression_deconstructor.deconstruct(
             chord_dicts,
-            request.key,
-            request.mode,
-            song_title=request.songTitle,
-            composer=request.composer
+            body.key,
+            body.mode,
+            song_title=body.songTitle,
+            composer=body.composer
         )
 
         # Convert to DeconstructStep objects
@@ -537,7 +569,10 @@ async def deconstruct_progression(request_obj: Request, request: DeconstructRequ
                         extensions=c.get("extensions")
                     )
                     for c in step["chords"]
-                ]
+                ],
+                layerType=step.get("layerType"),
+                modifiedIndices=step.get("modifiedIndices"),
+                romanNumerals=step.get("romanNumerals"),
             )
             for step in steps_data
         ]
@@ -641,22 +676,21 @@ async def build_suggestion_explanation(
     if not api_key:
         return "The added extension creates a harmonic shift. Listen carefully to the sound difference."
 
-    prompt = f"""You are an expert music theorist explaining chord refinements.
+    prompt = f"""You're helping a composer find exactly the sound they're after. Think Leonard Bernstein explaining to both a concert hall and a living room—warm, wise, never condescending.
 
-A composer wants their chord to sound: "{intent}"
+The composer wants: "{intent}"
 
-Original chord: {from_chord.root} {from_chord.quality}
-Modified chord: {to_chord.root} {to_chord.quality}
-Technique applied: {technique}
+We're suggesting: {from_chord.root} {from_chord.quality} → {to_chord.root} {to_chord.quality}
+Technique: {technique}
 Key: {key} {mode}
-Relevant composers: {', '.join(composers)}
+Think of: {', '.join(composers)}
 
-Provide a concise, educational explanation (1-2 sentences) of:
-1. What this technique does to the sound
-2. Why it matches the emotional intent
-3. Which composer(s) use this technique
+In 1-2 sentences, explain:
+- What this change DOES to the sound (not just what it IS)
+- Why it delivers the feeling they're after
+- If a composer like Lauridsen or Whitacre uses this trick, say so—but tell us WHY it works for them
 
-Keep it conversational and engaging. No markdown formatting."""
+Be vivid but not flowery. A touch of wit is fine. No jargon without explaining it. No markdown."""
 
     try:
         client = anthropic.Anthropic(api_key=api_key)
@@ -703,7 +737,7 @@ def calculate_relevance_score(technique: str, intent: str, avoid_list: List[str]
 
 @app.post("/api/suggest", response_model=SuggestResponse)
 @limiter.limit("20/hour")
-async def suggest_refinements(request_obj: Request, request: SuggestRequest):
+async def suggest_refinements(request: Request, body: SuggestRequest):
     """
     Generate chord refinement suggestions based on emotional intent.
 
@@ -740,9 +774,9 @@ async def suggest_refinements(request_obj: Request, request: SuggestRequest):
     """
     try:
         # Get techniques based on emotional intent
-        techniques = emotional_mapper.get_techniques(request.intent)
-        composers = emotional_mapper.get_composers(request.intent)
-        avoid = emotional_mapper.should_avoid(request.intent)
+        techniques = emotional_mapper.get_techniques(body.intent)
+        composers = emotional_mapper.get_composers(body.intent)
+        avoid = emotional_mapper.should_avoid(body.intent)
 
         if not techniques:
             return SuggestResponse(
@@ -754,7 +788,7 @@ async def suggest_refinements(request_obj: Request, request: SuggestRequest):
         suggestion_id = 0
 
         # Generate suggestions for each chord and technique combination
-        for chord_idx, chord in enumerate(request.chords):
+        for chord_idx, chord in enumerate(body.chords):
             for technique in techniques[:3]:  # Limit to 3 techniques per chord
                 if suggestion_id >= 6:  # Overall limit to 6 suggestions
                     break
@@ -763,17 +797,17 @@ async def suggest_refinements(request_obj: Request, request: SuggestRequest):
                 modified_chord = apply_technique(chord, technique)
 
                 # Calculate relevance
-                relevance = calculate_relevance_score(technique, request.intent, avoid)
+                relevance = calculate_relevance_score(technique, body.intent, avoid)
 
                 # Generate AI explanation
                 explanation = await build_suggestion_explanation(
                     from_chord=chord,
                     to_chord=modified_chord,
                     technique=technique,
-                    intent=request.intent,
+                    intent=body.intent,
                     composers=composers,
-                    key=request.key,
-                    mode=request.mode
+                    key=body.key,
+                    mode=body.mode
                 )
 
                 # Create suggestion
@@ -816,7 +850,18 @@ def build_chord_insight_prompt(
     annotations: list | None
 ) -> str:
     """Build prompt for chord insight analysis."""
-    prompt = "You are an expert music theorist providing deep insight into a specific moment in a chord progression.\n\n"
+    prompt = """Channel your inner Leonard Bernstein: someone who can make a seasoned composer think harder AND help a curious beginner fall in love with why music works the way it does.
+
+YOUR APPROACH:
+- Focus on THIS moment, THIS sound—what makes it special or surprising
+- Plain language first; if a technical term helps, explain what it DOES to the ear
+- A bit of wit is welcome when it makes the insight stick
+- Name-drop composers when relevant, but tell us WHAT they do differently, not just that they exist
+- The goal: someone walks away hearing this music differently, not just knowing more facts
+
+Provide insight into a specific moment in this progression.
+
+"""
 
     # Song context
     if song_title or composer:
@@ -857,10 +902,10 @@ def build_chord_insight_prompt(
 
     prompt += "## Analysis Request\n"
     prompt += "Provide a focused, educational analysis of this specific moment. Cover:\n"
-    prompt += "1. Why this chord/moment is musically interesting or effective\n"
-    prompt += "2. The harmonic function and voice leading at play\n"
-    prompt += "3. Similar techniques used by other composers\n"
-    prompt += "4. Learning suggestions for the student\n\n"
+    prompt += "1. Why this chord/moment is musically interesting or effective in choral texture\n"
+    prompt += "2. The harmonic function and SATB voice leading at play\n"
+    prompt += "3. Similar techniques used by choral composers (Palestrina, Victoria, Bach, Brahms, Lauridsen, Whitacre)\n"
+    prompt += "4. Practical application tips for the composer\n\n"
 
     prompt += "Respond with valid JSON:\n"
     prompt += "{\n"
@@ -875,7 +920,7 @@ def build_chord_insight_prompt(
 
 @app.post("/api/chord-insight", response_model=ChordInsightResponse)
 @limiter.limit("30/hour")
-async def get_chord_insight(request_obj: Request, request: ChordInsightRequest):
+async def get_chord_insight(request: Request, body: ChordInsightRequest):
     """
     Get AI-powered insight for selected chord(s).
 
@@ -890,7 +935,7 @@ async def get_chord_insight(request_obj: Request, request: ChordInsightRequest):
             error="Claude API key not configured"
         )
 
-    if not request.selectedIndices:
+    if not body.selectedIndices:
         return ChordInsightResponse(
             success=False,
             error="No chords selected for analysis"
@@ -899,13 +944,13 @@ async def get_chord_insight(request_obj: Request, request: ChordInsightRequest):
     try:
         # Build the prompt
         prompt = build_chord_insight_prompt(
-            chords=request.chords,
-            selected_indices=request.selectedIndices,
-            key=request.key,
-            mode=request.mode,
-            song_title=request.songTitle,
-            composer=request.composer,
-            annotations=request.annotations
+            chords=body.chords,
+            selected_indices=body.selectedIndices,
+            key=body.key,
+            mode=body.mode,
+            song_title=body.songTitle,
+            composer=body.composer,
+            annotations=body.annotations
         )
 
         # Call Claude API

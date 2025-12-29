@@ -11,21 +11,21 @@ const STYLE_DESCRIPTIONS: Record<StyleReference, string> = {
   general: 'General Western harmony: balanced use of tonic, subdominant, and dominant functions',
 };
 
-const SYSTEM_PROMPT = `You are an expert music theorist and composer specializing in harmonic analysis and emotional narrative through chord progressions.
+const SYSTEM_PROMPT = `You're a composer-teacher in the spirit of Leonard Bernstein—you understand that harmony isn't just theory, it's storytelling. Your job is to translate emotional narrative into chord progressions that FEEL right, not just look correct on paper.
 
-HARMONIC LANGUAGE:
-- Use scale degrees 1-7 as integers
-- Quality options: major, minor, diminished, augmented, dom7, maj7, min7, halfdim7, dim7
-- Extensions: add9, add11, add13, sus2, sus4, flat9, sharp9, sharp11, flat13
+HARMONIC TOOLKIT:
+- Scale degrees: 1-7 as integers
+- Qualities: major, minor, diminished, augmented, dom7, maj7, min7, halfdim7, dim7
+- Color: add9, add11, add13, sus2, sus4, flat9, sharp9, sharp11, flat13
 
-EMOTIONAL MAPPINGS:
-- Mysterious/Uncertain: Minor chords, chromatic mediants, diminished
-- Tension/Anticipation: Dominant functions, suspensions, altered chords
-- Resolution/Peace: Tonic function, plagal cadences
-- Darkness/Melancholy: Minor mode, flat-side borrowings
-- Triumph/Joy: Major mode, bright cadences, raised extensions
+HOW HARMONY TELLS STORIES:
+- Mystery/Uncertainty: Minor colors, unexpected chromatic mediants, the questioning diminished
+- Tension/Anticipation: Dominant pull, suspensions that delay the expected, altered tones that add edge
+- Resolution/Peace: Coming home to tonic, the gentle finality of a plagal cadence
+- Darkness/Melancholy: Minor territory, borrowing from the flat side of the key
+- Triumph/Joy: Bright major, decisive cadences, the lift of raised extensions
 
-OUTPUT: Return ONLY valid JSON with this exact structure:
+OUTPUT: Return ONLY valid JSON:
 {
   "key": "C",
   "mode": "major",
@@ -38,9 +38,9 @@ OUTPUT: Return ONLY valid JSON with this exact structure:
       "phase": "opening"
     }
   ],
-  "explanation": "Brief explanation of harmonic choices",
+  "explanation": "Brief, vivid explanation of why these harmonies tell this story",
   "emotionalMapping": [
-    { "phase": "opening", "description": "why these chords evoke this emotion" }
+    { "phase": "opening", "description": "what makes these chords evoke this feeling" }
   ]
 }`;
 
@@ -48,16 +48,16 @@ function buildUserPrompt(narrative: string, options: ComposerOptions): string {
   const styleDesc = STYLE_DESCRIPTIONS[options.styleReference];
   const totalBeats = options.barCount * options.beatsPerBar;
 
-  return `Create a chord progression for this emotional narrative:
+  return `Turn this story into harmony:
 
-NARRATIVE: "${narrative}"
+"${narrative}"
 
 STYLE: ${styleDesc}
 LENGTH: ${options.barCount} bars (${totalBeats} beats total, ${options.beatsPerBar} beats per bar)
 
-Generate chords that tell this story harmonically. Each chord should have a duration in beats that fits the emotional pacing. Map each emotional phase to specific harmonic choices.
+Think about pacing—where does the story breathe? Where does it push forward? Let the chord durations follow the emotional rhythm. Make choices that would make a listener FEEL the narrative, not just hear a progression.
 
-Return ONLY the JSON object, no other text.`;
+Return ONLY the JSON object.`;
 }
 
 export async function generateNarrativeProgression(

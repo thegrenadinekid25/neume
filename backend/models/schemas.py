@@ -142,11 +142,22 @@ class DeconstructRequest(BaseModel):
 
 
 class DeconstructStep(BaseModel):
-    """A single step in the deconstruction process"""
+    """A single step in the deconstruction process
+
+    Each step represents a layer of harmonic complexity:
+    - skeleton: Basic triads
+    - sevenths: Added 7th intervals
+    - suspensions: Added sus2/sus4
+    - extensions: Added 9ths, 11ths, 13ths
+    - alterations: Added chromatic alterations
+    """
     stepNumber: int
     stepName: str
     description: str
     chords: List[SimpleChord]
+    layerType: Optional[str] = None  # skeleton, sevenths, suspensions, extensions, alterations
+    modifiedIndices: Optional[List[int]] = None  # Which chord indices changed from previous step
+    romanNumerals: Optional[str] = None  # Roman numeral progression string
 
 
 class DeconstructResponse(BaseModel):

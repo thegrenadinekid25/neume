@@ -438,7 +438,7 @@ export const MyProgressionsModal: React.FC = () => {
                 </div>
               ) : (
                 <div className={styles.emptyState}>
-                  <div className={styles.emptyIcon}>🎼</div>
+                  <div className={styles.emptyIcon}></div>
                   <div className={styles.emptyTitle}>No progressions saved</div>
                   <div className={styles.emptyText}>
                     {searchQuery

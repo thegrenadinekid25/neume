@@ -48,6 +48,7 @@ interface DroppableCanvasProps {
   onSave?: () => void;
   onAnalyze?: () => void;
   onRefine?: () => void;
+  onBuildFromBones?: () => void;
 }
 
 export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
@@ -84,6 +85,7 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
   onSave,
   onAnalyze,
   onRefine,
+  onBuildFromBones,
 }) => {
   const { sensors } = useDragDrop();
   const [activeChord, setActiveChord] = useState<Chord | null>(null);
@@ -426,7 +428,12 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
         )}
 
         {/* Chord Palette */}
-        <ChordPalette mode={currentMode} onAddChord={handlePaletteAddChord} />
+        <ChordPalette
+          mode={currentMode}
+          onAddChord={handlePaletteAddChord}
+          onBuildFromBones={onBuildFromBones}
+          hasChords={chords.length > 0}
+        />
       </div>
 
       {/* Drag Overlay */}

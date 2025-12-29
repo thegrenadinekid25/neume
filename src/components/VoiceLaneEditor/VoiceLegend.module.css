@@ -1,0 +1,45 @@
+.voiceLegend {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  flex-wrap: wrap;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.legendItem:hover {
+  background: color-mix(in srgb, var(--warm-sand, #F5F1E8) 50%, transparent);
+}
+
+.legendItem.active {
+  background: color-mix(in srgb, var(--warm-sand, #F5F1E8) 80%, transparent);
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legendLabel {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--warm-text-secondary, #7A7067);
+  transition: color 150ms ease;
+}
+
+.legendItem.active .legendLabel {
+  font-weight: 700;
+}

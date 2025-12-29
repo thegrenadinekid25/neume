@@ -9,6 +9,8 @@ import styles from './ChordPalette.module.css';
 interface ChordPaletteProps {
   mode: Mode;
   onAddChord: (scaleDegree: ScaleDegree) => void;
+  onBuildFromBones?: () => void;
+  hasChords?: boolean;
 }
 
 // Scale degree info for the palette
@@ -33,8 +35,9 @@ const SCALE_DEGREES: Array<{
  * Shows at bottom center, expands on hover to reveal all 7 scale degrees
  * Click on a chord to add it at the next available position
  * Drag a chord to place it at a specific position on the canvas
+ * When chords exist, displays a "Build From Bones" button for deconstruction analysis
  */
-export const ChordPalette: React.FC<ChordPaletteProps> = ({ mode, onAddChord }) => {
+export const ChordPalette: React.FC<ChordPaletteProps> = ({ mode, onAddChord, onBuildFromBones, hasChords }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDraggingFromPalette, setIsDraggingFromPalette] = useState(false);
 
@@ -124,6 +127,30 @@ export const ChordPalette: React.FC<ChordPaletteProps> = ({ mode, onAddChord }) 
                 />
               ))}
             </div>
+            {hasChords && onBuildFromBones && (
+              <button
+                onClick={onBuildFromBones}
+                className={styles.buildFromBonesButton}
+                title="Analyze progression with AI deconstruction"
+                aria-label="Build From Bones"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 2v20M2 12h20" />
+                  <circle cx="12" cy="12" r="8" />
+                  <circle cx="12" cy="12" r="3" fill="currentColor" />
+                </svg>
+                <span>Build From Bones</span>
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
