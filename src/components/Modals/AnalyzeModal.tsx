@@ -8,9 +8,10 @@ import { useAppViewStore } from '@/store/app-view-store';
 import type { AnalysisInput } from '@/types/analysis';
 import styles from './AnalyzeModal.module.css';
 
-// Supported score file formats and max file size (10MB)
-const SUPPORTED_FORMATS = ['.mid', '.midi', '.musicxml', '.mxl', '.xml'];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+// Supported score file formats and max file sizes
+const SUPPORTED_FORMATS = ['.mid', '.midi', '.musicxml', '.mxl', '.xml', '.pdf'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB for MIDI/MusicXML
+const MAX_PDF_SIZE = 20 * 1024 * 1024; // 20MB for PDF
 
 export const AnalyzeModal: React.FC = () => {
   const {
@@ -60,10 +61,11 @@ export const AnalyzeModal: React.FC = () => {
   }, [isModalOpen]);
 
   // Get file format from filename
-  const getFileFormat = (filename: string): 'midi' | 'musicxml' | null => {
+  const getFileFormat = (filename: string): 'midi' | 'musicxml' | 'pdf' | null => {
     const ext = filename.toLowerCase().split('.').pop();
     if (ext === 'mid' || ext === 'midi') return 'midi';
     if (ext === 'musicxml' || ext === 'mxl' || ext === 'xml') return 'musicxml';
+    if (ext === 'pdf') return 'pdf';
     return null;
   };
 
@@ -88,10 +90,15 @@ export const AnalyzeModal: React.FC = () => {
       return;
     }
 
-    if (file.size > MAX_FILE_SIZE) {
+    // Use larger limit for PDFs
+    const isPdf = fileExtension === '.pdf';
+    const maxSize = isPdf ? MAX_PDF_SIZE : MAX_FILE_SIZE;
+    const maxSizeLabel = isPdf ? '20MB' : '10MB';
+
+    if (file.size > maxSize) {
       setError({
         code: 'FILE_TOO_LARGE',
-        message: 'File is too large. Maximum size is 10MB.',
+        message: `File is too large. Maximum size is ${maxSizeLabel}.`,
         retryable: false,
       });
       return;
@@ -397,15 +404,21 @@ export const AnalyzeModal: React.FC = () => {
                   )}
 
                   <div className={styles.helpText}>
-                    Supported: MIDI (.mid) and MusicXML (.musicxml, .mxl)
+                    Supported: MIDI (.mid), MusicXML (.musicxml, .mxl), PDF sheet music (.pdf)
                   </div>
+
+                  {importFile?.name.toLowerCase().endsWith('.pdf') && (
+                    <div className={styles.pdfWarning}>
+                      PDF processing takes 30-60 seconds and works best on clean, typeset scores.
+                    </div>
+                  )}
 
                   <div className={styles.helpText}>
                     <strong>Where to find score files:</strong>
                     <br />
                     Export from Sibelius, Finale, Dorico, MuseScore
                     <br />
-                    Download MIDI from musescore.com
+                    Download MIDI from musescore.com or PDF from IMSLP
                   </div>
 
                   {/* Advanced Options */}

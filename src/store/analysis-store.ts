@@ -129,7 +129,47 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
 
         // Parse file based on format
         let parsedResult;
-        if (input.importFormat === 'midi') {
+
+        // PDF: Route to backend for Audiveris OMR processing
+        if (input.importFormat === 'pdf') {
+          set({
+            progress: {
+              stage: 'processing',
+              progress: 10,
+              message: 'Running optical music recognition (this takes 30-60 seconds)...',
+            },
+          });
+
+          const formData = new FormData();
+          formData.append('file', input.importFile);
+
+          const response = await fetch(`${API_BASE_URL}/api/analyze/pdf`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          const data = await response.json();
+
+          if (!data.success) {
+            throw new Error(data.error || 'PDF analysis failed');
+          }
+
+          // Decode MusicXML from base64
+          set({
+            progress: {
+              stage: 'analyzing',
+              progress: 60,
+              message: 'Extracting chords from notation...',
+            },
+          });
+
+          const musicxmlBytes = Uint8Array.from(atob(data.musicxml), c => c.charCodeAt(0));
+          const musicxmlBlob = new Blob([musicxmlBytes], { type: 'application/xml' });
+          const musicxmlFile = new File([musicxmlBlob], data.filename || 'converted.mxl');
+
+          // Parse with existing MusicXML parser
+          parsedResult = await parseMusicXMLFile(musicxmlFile);
+        } else if (input.importFormat === 'midi') {
           parsedResult = await parseMidiFile(input.importFile);
         } else if (input.importFormat === 'musicxml') {
           parsedResult = await parseMusicXMLFile(input.importFile);

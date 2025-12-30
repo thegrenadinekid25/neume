@@ -4,7 +4,7 @@
 
 export type UploadType = 'youtube' | 'audio' | 'file';
 
-export type ImportFileFormat = 'midi' | 'musicxml';
+export type ImportFileFormat = 'midi' | 'musicxml' | 'pdf';
 
 export interface AnalysisInput {
   type: UploadType;

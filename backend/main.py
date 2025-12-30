@@ -3,7 +3,7 @@ Neume Chord Extraction API
 FastAPI backend for analyzing music and extracting chord progressions
 """
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter
@@ -11,6 +11,8 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import os
 import json
+import base64
+import subprocess
 from datetime import datetime
 from dotenv import load_dotenv
 import anthropic
@@ -33,6 +35,7 @@ from models.schemas import (
 )
 from services.deconstructor import ProgressionDeconstructor
 from services.emotional_mapper import EmotionalMapper
+from services.omr_service import OMRService, OMRError
 
 # Load environment variables
 load_dotenv()
@@ -103,6 +106,7 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 # Initialize services
 progression_deconstructor = ProgressionDeconstructor()
 emotional_mapper = EmotionalMapper()
+omr_service = OMRService()
 
 
 @app.on_event("startup")
@@ -138,6 +142,41 @@ async def health_check():
     return {"status": "healthy", "service": "neume-api", "version": "1.0.0"}
 
 
+@app.post("/api/analyze/pdf")
+@limiter.limit("10/hour")
+async def analyze_pdf(request: Request, file: UploadFile = File(...)):
+    """
+    Convert PDF sheet music to MusicXML via Audiveris OMR.
+
+    Accepts a PDF file containing sheet music, processes it through
+    Audiveris optical music recognition, and returns MusicXML data
+    that can be parsed by the frontend.
+    """
+    # Validate file type
+    if not file.filename or not file.filename.lower().endswith('.pdf'):
+        return {"success": False, "error": "File must be a PDF"}
+
+    # Read file contents (limit 20MB)
+    contents = await file.read()
+    if len(contents) > 20 * 1024 * 1024:
+        return {"success": False, "error": "PDF too large (max 20MB)"}
+
+    try:
+        # Process PDF through Audiveris
+        musicxml_bytes = await omr_service.process_pdf(contents)
+
+        # Return MusicXML as base64 for easy transport
+        return {
+            "success": True,
+            "musicxml": base64.b64encode(musicxml_bytes).decode('utf-8'),
+            "filename": file.filename.replace('.pdf', '.mxl')
+        }
+    except OMRError as e:
+        return {"success": False, "error": str(e)}
+    except subprocess.TimeoutExpired:
+        return {"success": False, "error": "PDF processing timed out (max 2 minutes). Try a smaller or simpler PDF."}
+    except Exception as e:
+        return {"success": False, "error": f"PDF analysis failed: {str(e)}"}
 
 
 # Scale degree names for explanation prompts
