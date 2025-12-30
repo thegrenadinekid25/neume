@@ -74,19 +74,29 @@ app = FastAPI(
 # Add rate limiter to app state
 app.state.limiter = limiter
 
-# CORS configuration
+# CORS configuration - supports both development and production origins
+# Set CORS_ORIGINS env var to comma-separated URLs for production
+default_origins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:3002",
+    "http://127.0.0.1:5173",
+]
+
+cors_origins_env = os.getenv("CORS_ORIGINS", "")
+if cors_origins_env:
+    production_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+    allowed_origins = default_origins + production_origins
+else:
+    allowed_origins = default_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:3002",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-        "http://127.0.0.1:3002",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -144,8 +154,14 @@ async def validate_api_key():
 
 @app.get("/")
 async def root():
-    """Health check endpoint"""
+    """Root endpoint"""
     return {"status": "ok", "service": "Neume Chord Extraction API"}
+
+
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint for Railway deployment"""
+    return {"status": "healthy", "service": "neume-api", "version": "1.0.0"}
 
 
 @app.post("/api/analyze", response_model=AnalyzeResponse)

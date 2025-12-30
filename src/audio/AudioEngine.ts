@@ -326,9 +326,15 @@ export class AudioEngine {
    * Stop all currently playing notes
    */
   stopAll(): void {
-    if (this.isInitialized && this.sampler) {
+    if (this.isInitialized) {
       // Release all notes in the sampler
-      this.sampler.releaseAll();
+      if (this.sampler) {
+        this.sampler.releaseAll();
+      }
+      // Also release chime synth notes to prevent stuck notes
+      if (this.chimeSynth) {
+        this.chimeSynth.releaseAll();
+      }
     }
   }
 

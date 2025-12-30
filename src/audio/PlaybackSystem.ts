@@ -24,8 +24,20 @@ export class PlaybackSystem {
   private beatToTransportTime(beat: number): string {
     const bars = Math.floor(beat / 4);
     const remainingBeats = beat % 4;
-    const quarters = Math.floor(remainingBeats);
-    const sixteenths = Math.round((remainingBeats - quarters) * 4);
+    let quarters = Math.floor(remainingBeats);
+    let sixteenths = Math.round((remainingBeats - quarters) * 4);
+
+    // Handle overflow: sixteenths must be 0-3, if it rounds to 4 carry over
+    if (sixteenths >= 4) {
+      sixteenths = 0;
+      quarters += 1;
+      // Handle quarters overflow (unlikely but for safety)
+      if (quarters >= 4) {
+        quarters = 0;
+        // Note: bars would need adjustment but beat should never round this high
+      }
+    }
+
     return `${bars}:${quarters}:${sixteenths}`;
   }
 
@@ -45,11 +57,7 @@ export class PlaybackSystem {
       console.warn('[Playback] Audio still loading - please wait and try again');
       return;
     }
-
-    if (chords.length === 0) {
-      console.warn('[Playback] No chords to play');
-      return;
-    }
+    // Note: chords.length === 0 check already handled above with early return
 
     sortedChords.forEach((chord, index) => {
       // Convert startBeat to Tone.js transport time

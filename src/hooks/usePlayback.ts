@@ -42,6 +42,9 @@ export function usePlayback(
 
   // Set up playback callbacks
   useEffect(() => {
+    // Track timeouts for cleanup to prevent memory leaks
+    const timeoutIds: NodeJS.Timeout[] = [];
+
     playbackSystem.setPlayheadCallback((beat: number) => {
       setPlayheadPosition(beat);
     });
@@ -49,18 +52,20 @@ export function usePlayback(
     playbackSystem.setChordTriggerCallback((chordId: string) => {
       setCurrentChordId(chordId);
       // Clear after a short delay for visual feedback
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         setCurrentChordId(null);
       }, 200);
+      timeoutIds.push(timeoutId);
     });
 
     // Set up note trigger callback for voice lines
     playbackSystem.setNoteTriggerCallback((noteIds: string[]) => {
       setPlayingNotes(noteIds);
       // Clear after duration (visual feedback)
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         setPlayingNotes([]);
       }, 300);
+      timeoutIds.push(timeoutId);
     });
 
     // Handle playback end - sync state when playhead reaches end
@@ -72,6 +77,8 @@ export function usePlayback(
     });
 
     return () => {
+      // Clear all pending timeouts to prevent memory leaks
+      timeoutIds.forEach(id => clearTimeout(id));
       playbackSystem.dispose();
     };
   }, [setPlayingNotes]);
