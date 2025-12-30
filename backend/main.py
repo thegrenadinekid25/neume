@@ -236,7 +236,10 @@ async def analyze_audio(request: Request, body: AnalyzeRequest):
         for chord_data in analysis["chords"]:
             start_beat = chord_data["startTime"] * beats_per_second
             duration_beats = chord_data["duration"] * beats_per_second
-            root, quality, extensions = parse_chord_label(chord_data["chord"])
+            # Use structured data from analyzer instead of re-parsing symbol
+            root = chord_data["root"]
+            quality = chord_data["quality"]
+            extensions = chord_data.get("extensions", {})
 
             chords.append(ChordData(
                 startBeat=round(start_beat, 2),

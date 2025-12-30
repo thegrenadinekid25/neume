@@ -87,8 +87,19 @@ class ChordExtractor:
 
         # 4. Analyze chords using our RobustChordAnalyzer
         # Pass detected key/mode for harmonic context disambiguation
-        # Use shorter minimum duration to capture more harmonic detail
-        min_chord_duration = 0.2  # 200ms - capture faster harmonic changes
+        # Adaptive minimum duration based on tempo to filter passing tones
+        beat_duration = 60.0 / bpm  # seconds per beat
+        if bpm < 70:
+            # Slow pieces (like O Magnum): require ~1.5 beats minimum
+            min_beats = 1.5
+        elif bpm < 100:
+            # Medium tempo: require ~1 beat minimum
+            min_beats = 1.0
+        else:
+            # Fast pieces: require ~0.75 beats minimum
+            min_beats = 0.75
+        min_chord_duration = beat_duration * min_beats
+        print(f"Adaptive min chord duration: {min_chord_duration:.2f}s ({min_beats} beats at {bpm:.0f} BPM)")
 
         chord_progression = self.chord_analyzer.analyze_progression(
             hpcps=hpcps,

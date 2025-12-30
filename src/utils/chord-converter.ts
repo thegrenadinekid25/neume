@@ -334,22 +334,31 @@ export function quantizeProgression(
     console.log('[Quantize] Original:', chords.length, '→ Snapped:', snapped.length, '→ Deduplicated:', deduplicated.length);
   }
 
-  // Step 3: Re-index chords sequentially with consistent duration
-  // Instead of preserving absolute beat positions from the audio (which can be hundreds of beats),
-  // we assign sequential positions starting from beat 1 with a default duration of 2 beats each.
-  // This makes the progression readable on the canvas.
-  const DEFAULT_DURATION = 2; // 2 beats per chord (half note feel)
+  // Step 3: Preserve actual timing but normalize to start at beat 1
+  // This keeps the real harmonic rhythm from the audio analysis
+  const firstBeat = deduplicated[0]?.startBeat || 0;
 
   const quantized: Chord[] = deduplicated.map((chord, index) => {
-    const newStartBeat = 1 + (index * DEFAULT_DURATION); // Sequential: beat 1, 3, 5, 7...
+    // Shift to start at beat 1 but preserve relative timing
+    const newStartBeat = 1 + (chord.startBeat - firstBeat);
+
+    // Calculate duration as time until next chord (or use original duration for last chord)
+    let duration: number;
+    if (index < deduplicated.length - 1) {
+      const nextChord = deduplicated[index + 1];
+      duration = Math.max(1, Math.round(nextChord.startBeat - chord.startBeat));
+    } else {
+      // Last chord: use original duration or default to 2 beats
+      duration = Math.max(1, Math.round(chord.duration || 2));
+    }
 
     return {
       ...chord,
       id: uuidv4(),
-      startBeat: newStartBeat,
-      duration: DEFAULT_DURATION,
+      startBeat: Math.round(newStartBeat),
+      duration,
       position: {
-        x: newStartBeat * CANVAS_CONFIG.GRID_BEAT_WIDTH,
+        x: Math.round(newStartBeat) * CANVAS_CONFIG.GRID_BEAT_WIDTH,
         y: chord.position.y,
       },
     };
