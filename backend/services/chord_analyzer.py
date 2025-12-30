@@ -19,9 +19,16 @@ from dataclasses import dataclass
 PITCH_CLASSES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
 # Enharmonic equivalents for cleaner output
-ENHARMONIC = {
-    'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb'
+# Prefer flats for Db, Eb, Ab, Bb (more common in music)
+# Keep sharps for F# and C# (common in sharp keys like D, A, E major)
+ENHARMONIC_TO_FLAT = {
+    'D#': 'Eb', 'G#': 'Ab', 'A#': 'Bb'
 }
+
+
+def normalize_enharmonic(note: str) -> str:
+    """Normalize note spelling to prefer common enharmonic equivalents."""
+    return ENHARMONIC_TO_FLAT.get(note, note)
 
 
 @dataclass
@@ -57,14 +64,15 @@ CHORD_TEMPLATES = [
     # Full 13th (rare - too many notes)
     ChordTemplate("maj13", [0, 4, 11, 9, 2], [7, 5], [3, 10], 102),
     ChordTemplate("13", [0, 4, 10, 9, 2], [7, 5], [3, 11], 101),
-    ChordTemplate("min13", [0, 3, 10, 9, 2], [7, 5], [4, 11], 100),
+    ChordTemplate("min13", [0, 3, 10, 9, 2], [7, 5], [4, 8, 11], 100),
     # Shell 13th: root-3-7-13 (most common - 4 notes for SATB)
     ChordTemplate("maj13", [0, 4, 11, 9], [7], [3, 10], 99),
     ChordTemplate("13", [0, 4, 10, 9], [7], [3, 11], 98),
-    ChordTemplate("min13", [0, 3, 10, 9], [7], [4, 11], 97),
+    ChordTemplate("min13", [0, 3, 10, 9], [7], [4, 8, 11], 97),
     # Rootless 13th: 3-7-9-13 (common in piano/jazz)
-    ChordTemplate("maj13", [4, 11, 9, 2], [0, 7], [3, 10], 96),
-    ChordTemplate("13", [4, 10, 9, 2], [0, 7], [3, 11], 95),
+    # LOW PRIORITY - only match as fallback when no rooted chord fits
+    ChordTemplate("maj13", [4, 11, 9, 2], [0, 7], [3, 10], 24),
+    ChordTemplate("13", [4, 10, 9, 2], [0, 7], [3, 11], 23),
 
     # ============================================================
     # 11TH CHORDS - The 3rd often OMITTED (clashes with 11th in major/dom)
@@ -72,19 +80,20 @@ CHORD_TEMPLATES = [
     # Full 11th with all notes
     ChordTemplate("maj11", [0, 4, 11, 2, 5], [7], [3, 10], 93),
     ChordTemplate("11", [0, 4, 10, 2, 5], [7], [3, 11], 92),
-    ChordTemplate("min11", [0, 3, 10, 2, 5], [7], [4, 11], 91),
+    ChordTemplate("min11", [0, 3, 10, 2, 5], [7], [4, 8, 11], 91),
     # Shell 11th with 3rd: root-3-7-11 (4 notes)
     ChordTemplate("maj11", [0, 4, 11, 5], [7, 2], [3, 10], 90),
     ChordTemplate("11", [0, 4, 10, 5], [7, 2], [3, 11], 89),
-    ChordTemplate("min11", [0, 3, 10, 5], [7, 2], [4, 11], 88),
+    ChordTemplate("min11", [0, 3, 10, 5], [7, 2], [4, 8, 11], 88),
     # Shell 11th WITHOUT 3rd: root-7-11 (Lauridsen/quartal style)
     # This avoids the E-F clash in major chords
     ChordTemplate("maj11", [0, 11, 5], [7, 2], [3, 4, 10], 87),
     ChordTemplate("11", [0, 10, 5], [7, 2], [3, 4, 11], 86),
     # Rootless 11th: 3-7-9-11 or 7-9-11 (piano voicings)
-    ChordTemplate("maj11", [4, 11, 2, 5], [0, 7], [3, 10], 85),
-    ChordTemplate("11", [4, 10, 2, 5], [0, 7], [3, 11], 84),
-    ChordTemplate("min11", [3, 10, 2, 5], [0, 7], [4, 11], 83),
+    # LOW PRIORITY - only match as fallback when no rooted chord fits
+    ChordTemplate("maj11", [4, 11, 2, 5], [0, 7], [3, 10], 22),
+    ChordTemplate("11", [4, 10, 2, 5], [0, 7], [3, 11], 21),
+    ChordTemplate("min11", [3, 10, 2, 5], [0, 7], [4, 8, 11], 20),
 
     # ============================================================
     # 9TH CHORDS - Essential: 3rd, 7th, 9th. 5th and root often omitted
@@ -92,18 +101,19 @@ CHORD_TEMPLATES = [
     # Full 9th
     ChordTemplate("maj9", [0, 4, 7, 11, 2], [], [3, 10], 82),
     ChordTemplate("9", [0, 4, 7, 10, 2], [], [3, 11], 81),
-    ChordTemplate("min9", [0, 3, 7, 10, 2], [], [4, 11], 80),
+    ChordTemplate("min9", [0, 3, 7, 10, 2], [], [4, 8, 11], 80),
     # Shell 9th: root-3-7-9 (most common - no 5th)
     ChordTemplate("maj9", [0, 4, 11, 2], [7], [3, 10], 79),
     ChordTemplate("9", [0, 4, 10, 2], [7], [3, 11], 78),
-    ChordTemplate("min9", [0, 3, 10, 2], [7], [4, 11], 77),
+    ChordTemplate("min9", [0, 3, 10, 2], [7], [4, 8, 11], 77),
     # Rootless 9th: 3-5-7-9 or 3-7-9 (piano voicings)
-    ChordTemplate("maj9", [4, 11, 2], [0, 7], [3, 10], 76),
-    ChordTemplate("9", [4, 10, 2], [0, 7], [3, 11], 75),
-    ChordTemplate("min9", [3, 10, 2], [0, 7], [4, 11], 74),
+    # LOW PRIORITY - only match as fallback when no rooted chord fits
+    ChordTemplate("maj9", [4, 11, 2], [0, 7], [3, 10], 19),
+    ChordTemplate("9", [4, 10, 2], [0, 7], [3, 11], 18),
+    ChordTemplate("min9", [3, 10, 2], [0, 7], [4, 8, 11], 17),
     # Add9 (no 7th)
     ChordTemplate("add9", [0, 4, 2], [7], [3, 10, 11], 73),
-    ChordTemplate("madd9", [0, 3, 2], [7], [4, 10, 11], 72),
+    ChordTemplate("madd9", [0, 3, 2], [7], [4, 8, 10, 11], 72),
 
     # ============================================================
     # 7TH CHORDS - Essential: 3rd, 7th. 5th almost always omitted
@@ -111,19 +121,21 @@ CHORD_TEMPLATES = [
     # Full 7th
     ChordTemplate("maj7", [0, 4, 7, 11], [], [3, 10], 71),
     ChordTemplate("dom7", [0, 4, 7, 10], [], [3, 11], 70),
-    ChordTemplate("min7", [0, 3, 7, 10], [], [4, 11], 69),
+    ChordTemplate("min7", [0, 3, 7, 10], [], [4, 8, 11], 69),
     # Shell 7th: root-3-7 (most common)
     ChordTemplate("maj7", [0, 4, 11], [7], [3, 10], 68),
     ChordTemplate("dom7", [0, 4, 10], [7], [3, 11], 67),
-    ChordTemplate("min7", [0, 3, 10], [7], [4, 11], 66),
+    ChordTemplate("min7", [0, 3, 10], [7], [4, 8, 11], 66),
     # Rootless 7th: just 3-7 (guide tones only)
-    ChordTemplate("maj7", [4, 11], [0, 7], [3, 10], 65),
-    ChordTemplate("dom7", [4, 10], [0, 7], [3, 11], 64),
-    ChordTemplate("min7", [3, 10], [0, 7], [4, 11], 63),
+    # LOW PRIORITY - these should only match as fallback when no rooted chord fits
+    # Priority lowered from 63-65 to 15-17 to prevent matching when root is clearly absent
+    ChordTemplate("maj7", [4, 11], [0, 7], [3, 10], 17),
+    ChordTemplate("dom7", [4, 10], [0, 7], [3, 11], 16),
+    ChordTemplate("min7", [3, 10], [0, 7], [4, 8, 11], 15),
     # Special 7th chords (need specific intervals)
     ChordTemplate("m7b5", [0, 3, 6, 10], [], [4, 7, 11], 62),  # Half-dim needs b5
     ChordTemplate("dim7", [0, 3, 6, 9], [], [4, 7, 10, 11], 61),
-    ChordTemplate("minmaj7", [0, 3, 11], [7], [4, 10], 60),
+    ChordTemplate("minmaj7", [0, 3, 11], [7], [4, 8, 10], 60),
     ChordTemplate("aug7", [0, 4, 8, 10], [], [3, 7, 11], 59),
 
     # ============================================================
@@ -149,8 +161,11 @@ CHORD_TEMPLATES = [
     ChordTemplate("dim", [0, 3, 6], [], [4, 7], 57),  # Bdim shouldn't become G7/B
     ChordTemplate("major", [0, 4, 7], [], [3], 56),   # Full triad - high priority
     ChordTemplate("major", [0, 4], [7], [3], 55),    # Triad without 5th
-    ChordTemplate("minor", [0, 3, 7], [], [4], 54),   # Full minor triad
-    ChordTemplate("minor", [0, 3], [7], [4], 53),    # Minor without 5th
+    # Minor triads - forbid interval 4 (M3) and interval 8 (m6/Aug5)
+    # The interval 8 forbid prevents C/E from being detected as Em
+    # (C is interval 8 from E, so Em shouldn't match when C is present)
+    ChordTemplate("minor", [0, 3, 7], [], [4, 8], 54),   # Full minor triad
+    ChordTemplate("minor", [0, 3], [7], [4, 8], 53),    # Minor without 5th
     ChordTemplate("power", [0, 7], [], [3, 4], 5),
 ]
 
@@ -288,7 +303,8 @@ class ChordResult:
             'bass': self.bass,
             'confidence': self.confidence,
             'symbol': self.to_symbol(),
-            'originalQuality': self.quality  # Preserve for debugging/display
+            'originalQuality': self.quality,  # Preserve for debugging/display
+            'detectedIntervals': self.all_intervals  # Actual pitch classes detected from audio
         }
 
 
@@ -305,25 +321,62 @@ class RobustChordAnalyzer:
 
     # Scale degree priorities - how likely each chord is in major/minor keys
     # Higher = more common/expected
+    # IMPORTANT: Include all extended chord types to prevent bias toward basic chords
     DIATONIC_PRIORITY = {
         'major': {
-            0: {'major': 100, 'maj7': 95, 'maj9': 90},      # I
-            2: {'minor': 100, 'min7': 95, 'min9': 90},      # ii
-            4: {'minor': 100, 'min7': 95},                   # iii
-            5: {'major': 100, 'maj7': 95},                   # IV
-            7: {'major': 100, 'dom7': 95, '9': 90, '13': 85}, # V
-            9: {'minor': 100, 'min7': 95},                   # vi
-            11: {'dim': 100, 'm7b5': 95, 'dim7': 90},        # vii°
+            0: {  # I - tonic
+                'major': 100, 'maj7': 95, 'maj9': 90, 'maj11': 85, 'maj13': 80,
+                'add9': 95, 'sus4': 85, 'sus2': 85, 'power': 70,
+            },
+            2: {  # ii
+                'minor': 100, 'min7': 95, 'min9': 90, 'min11': 85, 'min13': 80,
+                'madd9': 90, 'sus4': 75, 'sus2': 75,
+            },
+            4: {  # iii
+                'minor': 100, 'min7': 95, 'min9': 90, 'min11': 85,
+            },
+            5: {  # IV
+                'major': 100, 'maj7': 95, 'maj9': 90, 'maj11': 85, 'maj13': 80,
+                'add9': 95, 'sus4': 80, 'sus2': 80,
+            },
+            7: {  # V - dominant
+                'major': 100, 'dom7': 98, '9': 95, '11': 90, '13': 90,
+                '7sus4': 92, '7sus2': 88, 'sus4': 85, 'add9': 88,
+            },
+            9: {  # vi
+                'minor': 100, 'min7': 95, 'min9': 90, 'min11': 85,
+                'madd9': 88,
+            },
+            11: {  # vii°
+                'dim': 100, 'm7b5': 95, 'dim7': 90,
+            },
         },
         'minor': {
-            0: {'minor': 100, 'min7': 95, 'minmaj7': 85},   # i
-            2: {'dim': 100, 'm7b5': 95},                     # ii°
-            3: {'major': 100, 'maj7': 95},                   # III
-            5: {'minor': 100, 'min7': 95},                   # iv
-            7: {'minor': 80, 'dom7': 100, 'major': 90},     # v/V (often major)
-            8: {'major': 100, 'maj7': 95},                   # VI
-            10: {'major': 100, 'dom7': 95},                  # VII
-            11: {'dim': 100, 'dim7': 95},                    # vii° (in harmonic minor)
+            0: {  # i - tonic
+                'minor': 100, 'min7': 95, 'minmaj7': 85, 'min9': 90, 'min11': 85,
+                'madd9': 90, 'sus4': 80, 'sus2': 80,
+            },
+            2: {  # ii°
+                'dim': 100, 'm7b5': 95,
+            },
+            3: {  # III
+                'major': 100, 'maj7': 95, 'maj9': 90, 'add9': 88,
+            },
+            5: {  # iv
+                'minor': 100, 'min7': 95, 'min9': 90, 'madd9': 85,
+            },
+            7: {  # v/V (often major in harmonic minor)
+                'minor': 80, 'dom7': 100, 'major': 95, '9': 90, '7sus4': 88,
+            },
+            8: {  # VI
+                'major': 100, 'maj7': 95, 'maj9': 90, 'add9': 88,
+            },
+            10: {  # VII
+                'major': 100, 'dom7': 95, '9': 90,
+            },
+            11: {  # vii° (in harmonic minor)
+                'dim': 100, 'dim7': 95,
+            },
         }
     }
 
@@ -403,7 +456,7 @@ class RobustChordAnalyzer:
             mode: 'major' or 'minor'
 
         Returns:
-            Bonus score (0.0 to 0.5)
+            Bonus score (0.0 to 0.2)
         """
         if mode not in self.DIATONIC_PRIORITY:
             return 0.0
@@ -415,8 +468,11 @@ class RobustChordAnalyzer:
         degree_qualities = self.DIATONIC_PRIORITY[mode].get(scale_degree, {})
         priority = degree_qualities.get(quality, 0)
 
-        # Convert to bonus (0-100 → 0-0.5)
-        return priority * 0.005
+        # Convert to bonus (0-100 → 0-0.2)
+        # Reduced from 0.005 to 0.002 so acoustic evidence takes precedence
+        # The diatonic bonus helps with disambiguation but shouldn't override
+        # clear pitch evidence from the audio
+        return priority * 0.002
 
     def _get_active_intervals(self, hpcp: np.ndarray, root: int) -> List[int]:
         """Get intervals present relative to a root."""
@@ -539,9 +595,9 @@ class RobustChordAnalyzer:
             # Take best match for this root
             ct, score = matches[0]
 
-            # Boost score if root matches bass (more common)
+            # Boost score if root matches bass (more common in root position chords)
             if root_idx == bass_idx:
-                score *= 1.2
+                score *= 1.15
 
             # Apply diatonic bonus if key context is available
             if key_idx is not None and mode:
@@ -550,10 +606,11 @@ class RobustChordAnalyzer:
 
             if score > best_score:
                 best_score = score
-                root_name = PITCH_CLASSES[root_idx]
+                root_name = normalize_enharmonic(PITCH_CLASSES[root_idx])
 
                 # Only report bass if it's different from root (inversion)
-                reported_bass = bass_name if bass_idx != root_idx else None
+                # Apply enharmonic normalization to bass as well
+                reported_bass = normalize_enharmonic(bass_name) if bass_idx != root_idx else None
 
                 best_result = ChordResult(
                     root=root_name,

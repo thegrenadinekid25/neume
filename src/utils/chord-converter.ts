@@ -105,6 +105,66 @@ export function convertExtensions(extensionsRecord: Record<string, boolean>): Ch
 }
 
 /**
+ * Pitch class names for conversion
+ */
+const PITCH_CLASSES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+/**
+ * Convert detected intervals to SATB voices
+ * Uses the actual pitch classes from audio analysis rather than generating new voicings
+ */
+function intervalsToVoices(
+  root: string,
+  intervals: number[]
+): { soprano: string; alto: string; tenor: string; bass: string } {
+  // Get root pitch class index
+  const rootIdx = PITCH_CLASSES.indexOf(root.replace(/[0-9]/g, '').replace('b', '#'));
+  const normalizedRoot = rootIdx >= 0 ? rootIdx : 0;
+
+  // Convert intervals to pitch classes
+  const pitchClasses = intervals.map(interval => (normalizedRoot + interval) % 12);
+
+  // Sort by pitch class (lowest to highest in terms of common voicing)
+  // For SATB, we want: bass (lowest), tenor, alto, soprano (highest)
+  const sortedPitches = [...new Set(pitchClasses)].sort((a, b) => a - b);
+
+  // Assign to voices with appropriate octaves
+  // Bass: octave 2-3, Tenor: octave 3-4, Alto: octave 4, Soprano: octave 4-5
+  const numPitches = sortedPitches.length;
+
+  let bass: string, tenor: string, alto: string, soprano: string;
+
+  if (numPitches >= 4) {
+    // 4+ notes: assign directly
+    bass = PITCH_CLASSES[sortedPitches[0]] + '2';
+    tenor = PITCH_CLASSES[sortedPitches[1]] + '3';
+    alto = PITCH_CLASSES[sortedPitches[2]] + '4';
+    soprano = PITCH_CLASSES[sortedPitches[numPitches - 1]] + '5';
+  } else if (numPitches === 3) {
+    // 3 notes: double the root
+    bass = PITCH_CLASSES[sortedPitches[0]] + '2';
+    tenor = PITCH_CLASSES[sortedPitches[0]] + '3'; // Double bass note
+    alto = PITCH_CLASSES[sortedPitches[1]] + '4';
+    soprano = PITCH_CLASSES[sortedPitches[2]] + '5';
+  } else if (numPitches === 2) {
+    // 2 notes: double both
+    bass = PITCH_CLASSES[sortedPitches[0]] + '2';
+    tenor = PITCH_CLASSES[sortedPitches[1]] + '3';
+    alto = PITCH_CLASSES[sortedPitches[0]] + '4';
+    soprano = PITCH_CLASSES[sortedPitches[1]] + '5';
+  } else {
+    // 1 or 0 notes: use root
+    const rootNote = PITCH_CLASSES[normalizedRoot];
+    bass = rootNote + '2';
+    tenor = rootNote + '3';
+    alto = rootNote + '4';
+    soprano = rootNote + '5';
+  }
+
+  return { soprano, alto, tenor, bass };
+}
+
+/**
  * Convert a backend AnalyzedChord to a frontend Chord
  * @param analyzed The analyzed chord from the backend
  * @param key The musical key
@@ -135,8 +195,37 @@ export function convertAnalyzedChordToChord(
   // Calculate x position based on startBeat
   const positionX = analyzed.startBeat * CANVAS_CONFIG.GRID_BEAT_WIDTH;
 
-  // Create a temporary chord object for voice leading generation
-  const tempChord: Chord = {
+  // Generate voices - use detected intervals if available, otherwise generate
+  let voices: { soprano: string; alto: string; tenor: string; bass: string };
+
+  if (analyzed.detectedIntervals && analyzed.detectedIntervals.length > 0) {
+    // Use the actual pitches detected from the audio
+    voices = intervalsToVoices(analyzed.root, analyzed.detectedIntervals);
+  } else {
+    // Fall back to generated voicing
+    const tempChord: Chord = {
+      id,
+      scaleDegree,
+      quality,
+      extensions,
+      key,
+      mode,
+      isChromatic: false,
+      voices: { soprano: 'C5', alto: 'G4', tenor: 'E3', bass: 'C3' },
+      startBeat: analyzed.startBeat,
+      duration: analyzed.duration,
+      position: { x: positionX, y: 150 },
+      size: DEFAULT_CHORD_SIZE,
+      selected: false,
+      playing: false,
+      source: 'analyzed',
+      createdAt: new Date().toISOString(),
+    };
+    voices = generateSATBVoicing(tempChord, previousVoices);
+  }
+
+  // Return complete chord
+  return {
     id,
     scaleDegree,
     quality,
@@ -144,7 +233,7 @@ export function convertAnalyzedChordToChord(
     key,
     mode,
     isChromatic: false,
-    voices: { soprano: 'C5', alto: 'G4', tenor: 'E3', bass: 'C3' }, // Temporary
+    voices,
     startBeat: analyzed.startBeat,
     duration: analyzed.duration,
     position: { x: positionX, y: 150 },
@@ -153,15 +242,6 @@ export function convertAnalyzedChordToChord(
     playing: false,
     source: 'analyzed',
     createdAt: new Date().toISOString(),
-  };
-
-  // Generate SATB voices using voice leading if available
-  const voices = generateSATBVoicing(tempChord, previousVoices);
-
-  // Return complete chord with generated voices
-  return {
-    ...tempChord,
-    voices,
   };
 }
 
@@ -254,19 +334,22 @@ export function quantizeProgression(
     console.log('[Quantize] Original:', chords.length, '→ Snapped:', snapped.length, '→ Deduplicated:', deduplicated.length);
   }
 
-  // Step 3: Calculate durations based on gaps to next chord
-  const quantized: Chord[] = deduplicated.map((chord, index, arr) => {
-    const nextChord = arr[index + 1];
-    const duration = nextChord
-      ? nextChord.startBeat - chord.startBeat
-      : Math.max(2, beatsPerMeasure); // Last chord gets reasonable duration
+  // Step 3: Re-index chords sequentially with consistent duration
+  // Instead of preserving absolute beat positions from the audio (which can be hundreds of beats),
+  // we assign sequential positions starting from beat 1 with a default duration of 2 beats each.
+  // This makes the progression readable on the canvas.
+  const DEFAULT_DURATION = 2; // 2 beats per chord (half note feel)
+
+  const quantized: Chord[] = deduplicated.map((chord, index) => {
+    const newStartBeat = 1 + (index * DEFAULT_DURATION); // Sequential: beat 1, 3, 5, 7...
 
     return {
       ...chord,
       id: uuidv4(),
-      duration: Math.max(1, duration), // Minimum 1 beat
+      startBeat: newStartBeat,
+      duration: DEFAULT_DURATION,
       position: {
-        x: chord.startBeat * CANVAS_CONFIG.GRID_BEAT_WIDTH,
+        x: newStartBeat * CANVAS_CONFIG.GRID_BEAT_WIDTH,
         y: chord.position.y,
       },
     };

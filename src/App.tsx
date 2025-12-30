@@ -8,7 +8,7 @@ import { KeySelector, ModeToggle, BeatsSelector } from '@/components/UI/MusicalS
 import { VoicingModeToggle } from '@/components/UI/VoicingModeToggle';
 import { HELP_CONTENT } from '@/data/help-content';
 import { WhyThisPanel, BuildFromBonesPanel, CompositionToolsPanel, SnapshotsPanel, CritiquePanel } from '@/components/Panels';
-import { PulseRingTempo } from '@/components/Controls';
+import { PulseRingTempo, SoundToggle } from '@/components/Controls';
 import { WelcomeTutorial } from '@/components/Tutorial/WelcomeTutorial';
 import { Sidebar, SidebarSection, SidebarDivider, SidebarSpacer } from '@/components/Sidebar';
 import { AuthModal, UserMenu } from '@/components/Auth';
@@ -129,7 +129,7 @@ function App() {
   const navigateToDashboard = useAppViewStore((s) => s.navigateToDashboard);
 
   // Audio settings
-  const { soundType } = useAudioStore();
+  const { soundType, setSoundType } = useAudioStore();
 
   const { pushState, undo, redo } = useHistory();
   useAudioEngine(); // Hook needed for auto-init on first interaction
@@ -1039,6 +1039,7 @@ function App() {
               isPlaying={isPlaying}
             />
           </HelpTooltip>
+          <SoundToggle value={soundType} onChange={setSoundType} />
         </SidebarSection>
 
         <SidebarDivider />

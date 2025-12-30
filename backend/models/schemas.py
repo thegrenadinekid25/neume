@@ -27,6 +27,7 @@ class ChordData(BaseModel):
     quality: str
     extensions: Dict[str, bool]
     confidence: float
+    detectedIntervals: Optional[List[int]] = None  # Actual pitch classes from audio (0-11)
 
 
 class AnalysisResultData(BaseModel):

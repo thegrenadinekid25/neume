@@ -244,7 +244,8 @@ async def analyze_audio(request: Request, body: AnalyzeRequest):
                 root=root,
                 quality=quality,
                 extensions=extensions,
-                confidence=chord_data["confidence"]
+                confidence=chord_data["confidence"],
+                detectedIntervals=chord_data.get("detectedIntervals")
             ))
 
         if body.type == "youtube" and body.videoId:
@@ -256,7 +257,7 @@ async def analyze_audio(request: Request, body: AnalyzeRequest):
                 title=title,
                 key=analysis["key"],
                 mode=analysis["mode"],
-                tempo=analysis["tempo"],
+                tempo=round(analysis["tempo"]),
                 timeSignature="4/4",
                 chords=chords,
                 sourceUrl=source_url,

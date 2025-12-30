@@ -64,7 +64,22 @@ class ChordExtractor:
         rhythm_extractor = es.RhythmExtractor2013()
         bpm, beats, beats_confidence, _, beats_intervals = rhythm_extractor(audio)
 
-        print(f"Detected tempo: {bpm:.1f} BPM ({len(beats)} beats)")
+        print(f"Raw detected tempo: {bpm:.1f} BPM ({len(beats)} beats)")
+
+        # Tempo octave correction for slow pieces
+        # RhythmExtractor often detects 2x the actual tempo for slow music
+        # If BPM > 100, check if halving it makes more sense
+        if bpm > 100:
+            # Heuristic: if very few beats detected per second of audio, tempo is likely too fast
+            audio_duration = len(audio) / self.sample_rate
+            beats_per_second = len(beats) / audio_duration if audio_duration > 0 else 0
+
+            # If there's roughly 1-2 beats per second but BPM says 120+, likely double-time error
+            if beats_per_second < 3 and bpm > 100:
+                bpm = bpm / 2
+                print(f"Tempo corrected (octave halved): {bpm:.1f} BPM")
+
+        print(f"Final tempo: {bpm:.1f} BPM")
 
         # 3. Extract HPCP (Harmonic Pitch Class Profile) using Essentia
         hpcps = self._extract_hpcps(audio)
@@ -72,11 +87,14 @@ class ChordExtractor:
 
         # 4. Analyze chords using our RobustChordAnalyzer
         # Pass detected key/mode for harmonic context disambiguation
+        # Use shorter minimum duration to capture more harmonic detail
+        min_chord_duration = 0.2  # 200ms - capture faster harmonic changes
+
         chord_progression = self.chord_analyzer.analyze_progression(
             hpcps=hpcps,
             hop_size=self.hop_size,
             sample_rate=self.sample_rate,
-            min_duration=0.3,  # Minimum 300ms for a chord
+            min_duration=min_chord_duration,
             key=key,           # Use detected/hinted key for context
             mode=mode          # Use detected/hinted mode for context
         )

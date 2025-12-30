@@ -50,4 +50,5 @@ export interface AnalyzedChord {
   quality: string;
   extensions: Record<string, boolean>;
   confidence: number;
+  detectedIntervals?: number[];  // Actual pitch classes (0-11) detected from audio
 }
