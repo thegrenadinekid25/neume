@@ -19,6 +19,7 @@ import { useAppViewStore } from '@/store/app-view-store';
 import { showConfirmation, showDestructiveConfirm } from '@/store/confirmation-store';
 import { useCritiqueStore } from '@/store/critique-store';
 import { Dashboard } from '@/components/Dashboard';
+import { LandingPage } from '@/components/LandingPage';
 
 // Lazy load modals for code splitting
 const KeyboardShortcutsGuide = lazy(() => import('@/components/UI/KeyboardShortcutsGuide').then(m => ({ default: m.KeyboardShortcutsGuide })));
@@ -765,6 +766,22 @@ function App() {
 
   // Early return for dashboard view
   if (currentView === 'dashboard') {
+    // Show landing page for unauthenticated users
+    if (!user) {
+      return (
+        <>
+          <LandingPage onSignInClick={() => setShowAuthModal(true)} />
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+          />
+          <ToastContainer />
+          <ConfirmationDialog />
+        </>
+      );
+    }
+
+    // Show dashboard for authenticated users
     return (
       <>
         <Dashboard />
