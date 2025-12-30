@@ -1,8 +1,11 @@
 import React, { useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useWhyThisStore, type ChordExplanation } from '@/store/why-this-store';
+import { useWhyThisStore } from '@/store/why-this-store';
 import { getChordExplanation } from '@/services/explanation-service';
+import { useAudioEngine } from '@/hooks/useAudioEngine';
+import { shouldShowEvolution } from '@/utils/chord-helpers';
+import { generateEvolutionSteps, type EvolutionStep } from '@/utils/evolution-generator';
 import styles from './WhyThisPanel.module.css';
 
 /**
@@ -45,7 +48,6 @@ export const WhyThisPanel: React.FC = () => {
     error,
     isPlayingIsolated,
     isPlayingInProgression,
-    isPlayingEvolution,
     closePanel,
     setExplanation,
     setLoading,
@@ -54,6 +56,9 @@ export const WhyThisPanel: React.FC = () => {
     setPlayingInProgression,
     setPlayingEvolution,
   } = useWhyThisStore();
+
+  // Audio engine for playback
+  const { playChord, isReady } = useAudioEngine();
 
   // Fetch explanation when panel opens with a new chord
   useEffect(() => {
@@ -108,26 +113,85 @@ export const WhyThisPanel: React.FC = () => {
     }
   }, [selectedChord, previousChord, nextChord, fullProgression, songContext, setExplanation, setLoading, setError]);
 
-  // Playback handlers (placeholder - will integrate with audio engine)
+  // Play just this chord in isolation
   const handlePlayIsolated = useCallback(() => {
-    setPlayingIsolated(!isPlayingIsolated);
-    // TODO: Integrate with audio engine
-  }, [isPlayingIsolated, setPlayingIsolated]);
+    if (!selectedChord || !isReady) return;
 
-  const handlePlayInProgression = useCallback(() => {
-    setPlayingInProgression(!isPlayingInProgression);
-    // TODO: Integrate with audio engine
-  }, [isPlayingInProgression, setPlayingInProgression]);
+    setPlayingIsolated(true);
 
-  const handlePlayEvolution = useCallback(() => {
-    setPlayingEvolution(!isPlayingEvolution);
-    // TODO: Integrate with audio engine
-  }, [isPlayingEvolution, setPlayingEvolution]);
+    const notes = [
+      selectedChord.voices.bass,
+      selectedChord.voices.tenor,
+      selectedChord.voices.alto,
+      selectedChord.voices.soprano,
+    ].filter(Boolean);
+
+    if (notes.length > 0) {
+      playChord(notes, 2);
+    }
+
+    setTimeout(() => setPlayingIsolated(false), 2000);
+  }, [selectedChord, isReady, playChord, setPlayingIsolated]);
+
+  // Play previous → selected → next chord sequence
+  const handlePlayInProgression = useCallback(async () => {
+    if (!selectedChord || !isReady) return;
+
+    setPlayingInProgression(true);
+
+    const chordsToPlay = [previousChord, selectedChord, nextChord].filter(Boolean) as typeof selectedChord[];
+    const chordDuration = 1500;
+    const gap = 200;
+
+    for (let i = 0; i < chordsToPlay.length; i++) {
+      const chord = chordsToPlay[i];
+      const notes = [
+        chord.voices.bass,
+        chord.voices.tenor,
+        chord.voices.alto,
+        chord.voices.soprano,
+      ].filter(Boolean);
+
+      if (notes.length > 0) {
+        playChord(notes, chordDuration / 1000);
+      }
+
+      if (i < chordsToPlay.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, chordDuration + gap));
+      }
+    }
+
+    setTimeout(() => setPlayingInProgression(false), chordDuration);
+  }, [previousChord, selectedChord, nextChord, isReady, playChord, setPlayingInProgression]);
+
+  // Play an evolution step
+  const handlePlayEvolutionStep = useCallback((step: EvolutionStep) => {
+    if (!isReady) return;
+
+    setPlayingEvolution(true);
+
+    const notes = [
+      step.chord.voices.bass,
+      step.chord.voices.tenor,
+      step.chord.voices.alto,
+      step.chord.voices.soprano,
+    ].filter(Boolean);
+
+    if (notes.length > 0) {
+      playChord(notes, 2);
+    }
+
+    setTimeout(() => setPlayingEvolution(false), 2000);
+  }, [isReady, playChord, setPlayingEvolution]);
 
   // Get chord display name
   const chordName = selectedChord
     ? getChordDisplayName(selectedChord.scaleDegree, selectedChord.quality)
     : '';
+
+  // Determine if we should show evolution and generate steps
+  const showEvolution = selectedChord && shouldShowEvolution(selectedChord.quality);
+  const evolutionSteps = showEvolution ? generateEvolutionSteps(selectedChord) : [];
 
   const content = (
     <AnimatePresence>
@@ -238,12 +302,15 @@ export const WhyThisPanel: React.FC = () => {
                     </section>
                   )}
 
-                  {/* Evolution Chain Section */}
-                  {explanation.evolutionSteps && explanation.evolutionSteps.length > 0 && (
+                  {/* Evolution Chain Section - only for complex chords */}
+                  {showEvolution && evolutionSteps.length > 0 && (
                     <section className={styles.section}>
-                      <h3 className={styles.sectionTitle}>Evolution Chain</h3>
+                      <h3 className={styles.sectionTitle}>Evolution</h3>
+                      <p className={styles.sectionSubtitle}>
+                        How this chord builds from simpler foundations
+                      </p>
                       <div className={styles.evolutionChain}>
-                        {explanation.evolutionSteps.map((step: ChordExplanation['evolutionSteps'][0], index: number) => (
+                        {evolutionSteps.map((step, index) => (
                           <div key={index} className={styles.evolutionStep}>
                             <div className={styles.stepNumber}>{index + 1}</div>
                             <div className={styles.stepContent}>
@@ -254,7 +321,15 @@ export const WhyThisPanel: React.FC = () => {
                                 {step.description}
                               </div>
                             </div>
-                            {index < explanation.evolutionSteps.length - 1 && (
+                            <button
+                              className={`${styles.playButton} ${styles.stepPlay}`}
+                              onClick={() => handlePlayEvolutionStep(step)}
+                              disabled={!isReady}
+                              aria-label={`Play ${step.name}`}
+                            >
+                              <span className={styles.playIcon}>▶</span>
+                            </button>
+                            {index < evolutionSteps.length - 1 && (
                               <div className={styles.stepArrow}>→</div>
                             )}
                           </div>
@@ -270,6 +345,7 @@ export const WhyThisPanel: React.FC = () => {
                       <button
                         className={`${styles.playButton} ${styles.primary} ${isPlayingIsolated ? styles.playing : ''}`}
                         onClick={handlePlayIsolated}
+                        disabled={!isReady}
                         title="Play this chord in isolation"
                       >
                         <span className={styles.playIcon}>{isPlayingIsolated ? '■' : '▶'}</span>
@@ -278,18 +354,11 @@ export const WhyThisPanel: React.FC = () => {
                       <button
                         className={`${styles.playButton} ${styles.secondary} ${isPlayingInProgression ? styles.playing : ''}`}
                         onClick={handlePlayInProgression}
-                        title="Play this chord in the progression context"
+                        disabled={!isReady}
+                        title="Play previous → this → next chord"
                       >
                         <span className={styles.playIcon}>{isPlayingInProgression ? '■' : '▶'}</span>
-                        In Progression
-                      </button>
-                      <button
-                        className={`${styles.playButton} ${styles.secondary} ${isPlayingEvolution ? styles.playing : ''}`}
-                        onClick={handlePlayEvolution}
-                        title="Play the evolution chain"
-                      >
-                        <span className={styles.playIcon}>{isPlayingEvolution ? '■' : '▶'}</span>
-                        Evolution
+                        In Context
                       </button>
                     </div>
                   </section>

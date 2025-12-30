@@ -291,3 +291,25 @@ export function getChordIdentifier(chord: { scaleDegree: number; quality: string
     : '';
   return `${chord.scaleDegree}-${chord.quality}${extParts ? '-' + extParts : ''}`;
 }
+
+/**
+ * Check if a chord quality is complex enough to show evolution steps
+ * Evolution shows how a chord builds from simpler foundations
+ * Only show for 7th chords, extended chords, and altered chords
+ */
+export function shouldShowEvolution(quality: ChordQuality): boolean {
+  const complexQualities: ChordQuality[] = [
+    // 7th chords
+    'dom7', 'maj7', 'min7', 'halfdim7', 'dim7',
+    // Extended chords
+    'dom9', 'maj9', 'min9',
+    'dom11', 'min11',
+    'dom13', 'maj13', 'min13',
+    // Altered chords
+    'alt', 'dom7b9', 'dom7sharp9', 'dom7sharp11',
+    // Augmented/Diminished (as triads, these are altered)
+    'augmented', 'diminished',
+  ];
+
+  return complexQualities.includes(quality);
+}
