@@ -89,7 +89,7 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   deconstructionError: null,
 
   // Modal actions
-  openModal: () => set({ isModalOpen: true, error: null, result: null, showResultsView: false }),
+  openModal: () => set({ isModalOpen: true, error: null, result: null, progress: null, showResultsView: false }),
   closeModal: () => {
     const { isAnalyzing, isDeconstructing } = get();
     if (!isAnalyzing && !isDeconstructing) {
