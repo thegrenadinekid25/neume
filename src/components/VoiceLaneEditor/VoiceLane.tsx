@@ -6,11 +6,14 @@ import { useVoiceLineStore } from '@/store/voice-line-store';
 import { useCanvasStore } from '@/store/canvas-store';
 import { Note, Scale } from 'tonal';
 import { useVoiceChordConflict } from '@/hooks/useVoiceChordConflict';
+import { useSmartSnap } from '@/hooks/useSmartSnap';
 import { NoteDot } from './NoteDot';
 import { ThreadConnector } from './ThreadConnector';
 import { RestCloud } from './RestCloud';
 import { StaffGuides } from './StaffGuides';
 import { ChordToneHighlights } from './ChordToneHighlights';
+import { SnapIndicator } from './SnapIndicator';
+import { SnapGuideLines } from './SnapGuideLines';
 import styles from './VoiceLane.module.css';
 
 interface VoiceLaneProps {
@@ -38,6 +41,7 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [hoverX, setHoverX] = useState<number | null>(null);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
 
   // Store actions
   const selectNote = useVoiceLineStore((state) => state.selectNote);
@@ -46,7 +50,15 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
   const selectedNoteIds = useVoiceLineStore((state) => state.selectedNoteIds);
   const playingNoteIds = useVoiceLineStore((state) => state.playingNoteIds);
   const selectedNoteValue = useVoiceLineStore((state) => state.selectedNoteValue);
-  const snapResolution = useVoiceLineStore((state) => state.snapResolution);
+
+  // Smart snap: zoom-based baseline + hold-to-refine
+  const {
+    snapResolution,
+    startHold,
+    endHold,
+    isHolding,
+    refinementLevel,
+  } = useSmartSnap({ zoom });
 
   // Get current key/mode for diatonic snapping
   const currentKey = useCanvasStore((state) => state.currentKey);
@@ -155,10 +167,11 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
     selectNote(noteId, multiSelect);
   }, [selectNote]);
 
-  // Handle mouse move for chord tone highlights
+  // Handle mouse move for chord tone highlights and snap indicator
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setHoverX(e.clientX - rect.left);
+    setMousePos({ x: e.clientX, y: e.clientY });
   }, []);
 
   // Helper to convert Y position back to MIDI (inverse of getY)
@@ -313,6 +326,16 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
         labelsColumnWidth={labelsColumnWidth}
       />
 
+      {/* Snap guide lines (visible during drag) */}
+      <SnapGuideLines
+        isVisible={isHolding}
+        snapResolution={snapResolution}
+        beatWidth={beatWidth}
+        zoom={zoom}
+        totalBeats={totalBeats}
+        laneHeight={laneHeight}
+      />
+
       {/* Staff guide lines (fade in on hover) */}
       <StaffGuides
         laneHeight={laneHeight}
@@ -356,8 +379,18 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
           onDrag={handleNoteDrag}
           onDragEnd={handleNoteDragEnd}
           onConflictDragStart={hookHandleDragStart}
+          onHoldStart={startHold}
+          onHoldEnd={endHold}
         />
       ))}
+
+      {/* Smart snap indicator */}
+      <SnapIndicator
+        snapResolution={snapResolution}
+        refinementLevel={refinementLevel}
+        isVisible={isHolding}
+        position={mousePos || undefined}
+      />
     </div>
   );
 };

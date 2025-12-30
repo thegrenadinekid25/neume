@@ -21,6 +21,8 @@ interface NoteDotProps {
   onDrag: (id: string, newY: number) => void;
   onDragEnd: (id: string, finalY: number) => void;
   onConflictDragStart?: (noteId: string, note: MelodicNote, event: React.MouseEvent<HTMLDivElement>) => void;
+  onHoldStart?: () => void;
+  onHoldEnd?: () => void;
 }
 
 const LANE_PADDING = 8;
@@ -38,6 +40,8 @@ export const NoteDot: React.FC<NoteDotProps> = ({
   onDrag: _onDrag,
   onDragEnd,
   onConflictDragStart,
+  onHoldStart,
+  onHoldEnd,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -88,6 +92,8 @@ export const NoteDot: React.FC<NoteDotProps> = ({
     setIsDragging(true);
     dragOffsetRef.current = 0;
     justDraggedRef.current = false;
+    // Start hold tracking for smart snap
+    onHoldStart?.();
     // Call conflict detection hook's drag start
     if (onConflictDragStart) {
       onConflictDragStart(note.id, note, event as React.MouseEvent<HTMLDivElement>);
@@ -103,6 +109,8 @@ export const NoteDot: React.FC<NoteDotProps> = ({
   const handleDragEnd = () => {
     setIsDragging(false);
     justDraggedRef.current = true;
+    // End hold tracking for smart snap
+    onHoldEnd?.();
     // Calculate final Y position and update store
     const finalY = Math.max(constraints.minY, Math.min(constraints.maxY, y + dragOffsetRef.current));
     onDragEnd(note.id, finalY);

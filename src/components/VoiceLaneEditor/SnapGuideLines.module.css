@@ -1,0 +1,47 @@
+.container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.beatLine {
+  stroke: var(--warm-text-tertiary, rgba(61, 53, 48, 0.4));
+  stroke-width: 1;
+  stroke-dasharray: none;
+}
+
+.subdivisionLine {
+  stroke: var(--warm-text-tertiary, rgba(61, 53, 48, 0.2));
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+}
+
+.beatLabel {
+  font-family: var(--font-ui, 'Space Grotesk', sans-serif);
+  font-size: 10px;
+  fill: var(--warm-text-tertiary, rgba(61, 53, 48, 0.5));
+  font-weight: 500;
+}
+
+.resolutionBadge {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  background: var(--warm-gold, #E8A03E);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--font-ui, 'Space Grotesk', sans-serif);
+  font-size: 10px;
+  font-weight: 600;
+  z-index: 10;
+}
