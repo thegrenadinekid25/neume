@@ -12,12 +12,19 @@
   z-index: calc(var(--z-modal) - 1);
 }
 
+/* Modal wrapper for centering */
+.modalWrapper {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  pointer-events: none;
+}
+
 /* Modal container */
 .modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   background: var(--warm-cream);
   border-radius: 16px;
   padding: 40px;
@@ -25,8 +32,9 @@
   max-width: 420px;
   max-height: 90vh;
   overflow-y: auto;
-  z-index: var(--z-modal);
   box-shadow: 0 25px 50px -12px rgba(61, 53, 48, 0.25);
+  pointer-events: auto;
+  position: relative;
 }
 
 /* Close button */
