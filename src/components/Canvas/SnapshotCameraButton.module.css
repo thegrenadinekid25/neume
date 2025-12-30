@@ -1,0 +1,37 @@
+.cameraButton {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--warm-sand, #F5F1E8);
+  color: var(--warm-stone, #8B8178);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  z-index: 100;
+}
+
+.cameraButton:hover:not(:disabled) {
+  background: var(--warm-cream, #FAF8F5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.cameraButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cameraButton.hasSelection {
+  background: var(--warm-gold, #C4A77D);
+  color: white;
+}
+
+.cameraButton.hasSelection:hover {
+  background: var(--warm-gold-dark, #B08D5B);
+}

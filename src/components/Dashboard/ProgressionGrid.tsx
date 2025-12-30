@@ -7,6 +7,7 @@ interface ProgressionGridProps {
   progressions: SavedProgression[];
   loading: boolean;
   onOpen: (progression: SavedProgression) => void;
+  onDelete?: (progression: SavedProgression) => void;
   onCreateNew: () => void;
 }
 
@@ -14,6 +15,7 @@ export const ProgressionGrid: React.FC<ProgressionGridProps> = ({
   progressions,
   loading,
   onOpen,
+  onDelete,
   onCreateNew,
 }) => {
   if (loading) {
@@ -28,6 +30,7 @@ export const ProgressionGrid: React.FC<ProgressionGridProps> = ({
           key={progression.id}
           progression={progression}
           onOpen={() => onOpen(progression)}
+          onDelete={onDelete ? () => onDelete(progression) : undefined}
         />
       ))}
     </div>

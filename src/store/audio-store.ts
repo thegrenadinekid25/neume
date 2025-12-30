@@ -7,6 +7,6 @@ interface AudioState {
 }
 
 export const useAudioStore = create<AudioState>((set) => ({
-  soundType: 'piano',
+  soundType: 'chime',
   setSoundType: (type: SoundType) => set({ soundType: type }),
 }));

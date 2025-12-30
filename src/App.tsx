@@ -8,7 +8,7 @@ import { KeySelector, ModeToggle, BeatsSelector } from '@/components/UI/MusicalS
 import { VoicingModeToggle } from '@/components/UI/VoicingModeToggle';
 import { HELP_CONTENT } from '@/data/help-content';
 import { WhyThisPanel, BuildFromBonesPanel, CompositionToolsPanel, SnapshotsPanel, CritiquePanel } from '@/components/Panels';
-import { PulseRingTempo, SoundToggle } from '@/components/Controls';
+import { PulseRingTempo } from '@/components/Controls';
 import { WelcomeTutorial } from '@/components/Tutorial/WelcomeTutorial';
 import { Sidebar, SidebarSection, SidebarDivider, SidebarSpacer } from '@/components/Sidebar';
 import { AuthModal, UserMenu } from '@/components/Auth';
@@ -44,7 +44,6 @@ import { useTutorialStore } from '@/store/tutorial-store';
 import { useVoiceLineStore } from '@/store/voice-line-store';
 import { useCompositionToolsStore } from '@/store/composition-tools-store';
 import { useVoicingStore } from '@/store/voicing-store';
-import { useSnapshotsStore } from '@/store/snapshots-store';
 import { analyzeCounterpoint } from '@/services/counterpoint-analyzer';
 import { downloadMusicXML } from '@/services/musicxml-exporter';
 import { generateSATBVoicing } from '@/audio/VoiceLeading';
@@ -130,7 +129,7 @@ function App() {
   const navigateToDashboard = useAppViewStore((s) => s.navigateToDashboard);
 
   // Audio settings
-  const { soundType, setSoundType } = useAudioStore();
+  const { soundType } = useAudioStore();
 
   const { pushState, undo, redo } = useHistory();
   useAudioEngine(); // Hook needed for auto-init on first interaction
@@ -213,7 +212,6 @@ function App() {
   const openCompositionToolsPanel = useCompositionToolsStore(state => state.openPanel);
   const openProgressionsModal = useProgressionsStore(state => state.openModal);
   const openRefineModal = useRefineStore(state => state.openModal);
-  const openSnapshotsPanel = useSnapshotsStore(state => state.openPanel);
 
   // Voice lines
   const initializeVoiceLines = useVoiceLineStore(state => state.initializeFromChords);
@@ -1045,16 +1043,6 @@ function App() {
 
         <SidebarDivider />
 
-        {/* Sound Type Toggle */}
-        <SidebarSection>
-          <SoundToggle
-            value={soundType}
-            onChange={setSoundType}
-          />
-        </SidebarSection>
-
-        <SidebarDivider />
-
         {/* Action Buttons */}
         <SidebarSection className="actions-section">
           <HelpTooltip
@@ -1086,26 +1074,6 @@ function App() {
               )}
             </button>
           </HelpTooltip>
-
-          <button
-            onClick={openSnapshotsPanel}
-            className="action-button snapshots-button"
-            style={{
-              marginTop: '8px',
-              background: 'transparent',
-              color: 'var(--warm-text-primary)',
-              borderColor: 'var(--warm-gold)',
-              width: '100%',
-            }}
-            aria-label="Snapshots"
-            title="Browse and insert chord snapshots"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-              <circle cx="12" cy="13" r="4" />
-            </svg>
-            <span>Snapshots</span>
-          </button>
         </SidebarSection>
 
         <SidebarSpacer />

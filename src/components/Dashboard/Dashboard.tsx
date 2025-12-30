@@ -9,7 +9,7 @@ import { RecentSection } from './RecentSection';
 import styles from './Dashboard.module.css';
 
 export const Dashboard: React.FC = () => {
-  const { savedProgressions, isLoading, loadProgressions } = useProgressionsStore();
+  const { savedProgressions, isLoading, loadProgressions, deleteProgression } = useProgressionsStore();
   const navigateToCanvas = useAppViewStore((s) => s.navigateToCanvas);
   const { user, profile, signOut } = useAuthStore();
   const [recentProgressions, setRecentProgressions] = useState<any[]>([]);
@@ -31,6 +31,12 @@ export const Dashboard: React.FC = () => {
     navigateToCanvas();
   };
 
+  const handleDeleteProgression = async (progression: any) => {
+    await deleteProgression(progression.id);
+    // Refresh recent progressions after delete
+    progressionStorage.getRecent(5).then(setRecentProgressions);
+  };
+
   return (
     <div className={styles.dashboard}>
       <header className={styles.header}>
@@ -50,6 +56,7 @@ export const Dashboard: React.FC = () => {
             progressions={savedProgressions}
             loading={isLoading}
             onOpen={handleOpenProgression}
+            onDelete={handleDeleteProgression}
             onCreateNew={handleCreateNew}
           />
         </section>

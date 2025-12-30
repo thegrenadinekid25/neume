@@ -10,6 +10,7 @@ interface ChordPaletteProps {
   mode: Mode;
   onAddChord: (scaleDegree: ScaleDegree) => void;
   onBuildFromBones?: () => void;
+  onOpenSnapshots?: () => void;
   hasChords?: boolean;
 }
 
@@ -37,7 +38,7 @@ const SCALE_DEGREES: Array<{
  * Drag a chord to place it at a specific position on the canvas
  * When chords exist, displays a "Build From Bones" button for deconstruction analysis
  */
-export const ChordPalette: React.FC<ChordPaletteProps> = ({ mode, onAddChord, onBuildFromBones, hasChords }) => {
+export const ChordPalette: React.FC<ChordPaletteProps> = ({ mode, onAddChord, onBuildFromBones, onOpenSnapshots, hasChords }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDraggingFromPalette, setIsDraggingFromPalette] = useState(false);
 
@@ -149,6 +150,29 @@ export const ChordPalette: React.FC<ChordPaletteProps> = ({ mode, onAddChord, on
                   <circle cx="12" cy="12" r="3" fill="currentColor" />
                 </svg>
                 <span>Build From Bones</span>
+              </button>
+            )}
+            {onOpenSnapshots && (
+              <button
+                onClick={onOpenSnapshots}
+                className={styles.snapshotsButton}
+                title="Add chords from snapshots"
+                aria-label="Add from Snapshots"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+                <span>From Snapshots</span>
               </button>
             )}
           </motion.div>

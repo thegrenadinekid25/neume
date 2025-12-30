@@ -7,7 +7,9 @@ import { Canvas } from './Canvas';
 import { DraggableChord } from './DraggableChord';
 import { ChordShape } from './ChordShape';
 import { SelectionBox } from './SelectionBox';
+import { SnapshotCameraButton } from './SnapshotCameraButton';
 import { ChordPalette } from '@/components/Palette/ChordPalette';
+import { useSnapshotsStore } from '@/store/snapshots-store';
 import type { Chord, ScaleDegree, MusicalKey, Mode } from '@/types';
 import type { PhraseBoundary } from '@/types/progression';
 import type { SongContext } from '@/store/why-this-store';
@@ -90,6 +92,7 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
   onBuildFromBones,
 }) => {
   const { sensors } = useDragDrop();
+  const openSnapshotsPanel = useSnapshotsStore((state) => state.openPanel);
   const [activeChord, setActiveChord] = useState<Chord | null>(null);
   const [activePaletteItem, setActivePaletteItem] = useState<{ scaleDegree: ScaleDegree } | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -436,7 +439,14 @@ export const DroppableCanvas: React.FC<DroppableCanvasProps> = ({
           mode={currentMode}
           onAddChord={handlePaletteAddChord}
           onBuildFromBones={onBuildFromBones}
+          onOpenSnapshots={openSnapshotsPanel}
           hasChords={chords.length > 0}
+        />
+
+        {/* Snapshot Camera Button */}
+        <SnapshotCameraButton
+          hasSelection={selectedChordIds.length > 0}
+          onSaveSnapshot={onSaveSnapshot || (() => {})}
         />
       </div>
 
