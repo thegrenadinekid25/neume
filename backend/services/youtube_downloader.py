@@ -44,7 +44,7 @@ class YouTubeDownloader:
         output_path = os.path.join(self.output_dir, f"{video_id}.wav")
 
         ydl_opts = {
-            'format': 'bestaudio/best',
+            'format': 'bestaudio[ext=m4a]/bestaudio/best',  # Fallback chain
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'wav',
@@ -52,9 +52,13 @@ class YouTubeDownloader:
             'outtmpl': output_path.replace('.wav', ''),
             'quiet': True,
             'no_warnings': True,
-            'socket_timeout': 30,
-            'retries': 3,
-            'fragment_retries': 3,
+            # Improved settings for long videos
+            'socket_timeout': 120,           # Increased from 30
+            'retries': 5,                    # Increased from 3
+            'fragment_retries': 5,           # Increased from 3
+            'http_chunk_size': 10485760,     # 10MB chunks
+            'socket_keepalive': True,        # Maintain connection
+            'skip_unavailable_fragments': True,
         }
 
         try:

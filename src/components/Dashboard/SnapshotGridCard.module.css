@@ -7,7 +7,7 @@
   cursor: pointer;
   transition: all var(--duration-fast, 150ms) var(--ease-breathe);
   text-align: left;
-  min-height: 120px;
+  min-height: 160px;
   display: flex;
   flex-direction: column;
 }
@@ -66,7 +66,28 @@
   font-family: var(--font-ui, 'Inter', sans-serif);
   font-size: 0.75rem;
   color: var(--warm-stone, #8B8178);
+  margin-bottom: var(--spacing-sm, 8px);
+}
+
+.chordPreview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   margin-bottom: auto;
+  padding: var(--spacing-sm, 8px) 0;
+}
+
+.chordDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  opacity: 0.85;
+  transition: opacity var(--duration-fast, 150ms) ease;
+}
+
+.chordDot:hover {
+  opacity: 1;
 }
 
 .date {

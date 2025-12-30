@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useProgressionsStore } from '@/store/progressions-store';
+import { useSnapshotsStore } from '@/store/snapshots-store';
 import { useAppViewStore } from '@/store/app-view-store';
 import { useAuthStore } from '@/store/auth-store';
 import { progressionStorage } from '@/services/progression-storage';
 import { ProgressionGrid } from './ProgressionGrid';
+import { SnapshotsGrid } from './SnapshotsGrid';
 import { ExploreSection } from './ExploreSection';
 import { RecentSection } from './RecentSection';
+import type { Snapshot } from '@/types';
 import styles from './Dashboard.module.css';
 
 export const Dashboard: React.FC = () => {
   const { savedProgressions, isLoading, loadProgressions, deleteProgression } = useProgressionsStore();
+  const { snapshots, isLoading: snapshotsLoading, loadSnapshots, deleteSnapshot, openPanel: openSnapshotsPanel } = useSnapshotsStore();
   const navigateToCanvas = useAppViewStore((s) => s.navigateToCanvas);
   const { user, profile, signOut } = useAuthStore();
   const [recentProgressions, setRecentProgressions] = useState<any[]>([]);
@@ -18,8 +22,9 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     loadProgressions();
+    loadSnapshots();
     progressionStorage.getRecent(5).then(setRecentProgressions);
-  }, [loadProgressions]);
+  }, [loadProgressions, loadSnapshots]);
 
   const handleOpenProgression = (progression: any) => {
     // Dispatch event for App.tsx to load the progression
@@ -32,9 +37,20 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleDeleteProgression = async (progression: any) => {
+    if (!window.confirm(`Delete "${progression.title}"? This cannot be undone.`)) return;
     await deleteProgression(progression.id);
     // Refresh recent progressions after delete
     progressionStorage.getRecent(5).then(setRecentProgressions);
+  };
+
+  const handleOpenSnapshot = (_snapshot: Snapshot) => {
+    // Open the snapshots panel
+    openSnapshotsPanel();
+  };
+
+  const handleDeleteSnapshot = async (snapshot: Snapshot) => {
+    if (!window.confirm(`Delete snapshot "${snapshot.name}"? This cannot be undone.`)) return;
+    await deleteSnapshot(snapshot.id);
   };
 
   return (
@@ -58,6 +74,16 @@ export const Dashboard: React.FC = () => {
             onOpen={handleOpenProgression}
             onDelete={handleDeleteProgression}
             onCreateNew={handleCreateNew}
+          />
+        </section>
+
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>My Snapshots</h2>
+          <SnapshotsGrid
+            snapshots={snapshots}
+            loading={snapshotsLoading}
+            onOpen={handleOpenSnapshot}
+            onDelete={handleDeleteSnapshot}
           />
         </section>
 
