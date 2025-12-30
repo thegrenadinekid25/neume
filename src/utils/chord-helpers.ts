@@ -111,12 +111,12 @@ export function getChordBadgeText(
     }
   }
 
-  // For extensions, prioritize in order of common usage
+  // For extensions, show the highest extension (13 > 11 > 9) since higher implies lower in jazz
+  if (extensions.add13) return BADGE_LABELS.add13;
+  if (extensions.add11) return BADGE_LABELS.add11;
+  if (extensions.add9) return BADGE_LABELS.add9;
   if (extensions.sus4) return BADGE_LABELS.sus4;
   if (extensions.sus2) return BADGE_LABELS.sus2;
-  if (extensions.add9) return BADGE_LABELS.add9;
-  if (extensions.add11) return BADGE_LABELS.add11;
-  if (extensions.add13) return BADGE_LABELS.add13;
 
   // For alterations
   if (extensions.flat9) return BADGE_LABELS.flat9;

@@ -17,9 +17,13 @@ interface NoteDotProps {
   isPlaying: boolean;
   voicePart: VoicePart;
   laneHeight: number;
+  laneWidth: number;
+  beatWidth: number;
+  zoom: number;
+  snapResolution: number;
   onSelect: (id: string, multiSelect: boolean) => void;
   onDrag: (id: string, newY: number) => void;
-  onDragEnd: (id: string, finalY: number) => void;
+  onDragEnd: (id: string, finalY: number, finalX?: number) => void;
   onConflictDragStart?: (noteId: string, note: MelodicNote, event: React.MouseEvent<HTMLDivElement>) => void;
   onHoldStart?: () => void;
   onHoldEnd?: () => void;
@@ -36,6 +40,10 @@ export const NoteDot: React.FC<NoteDotProps> = ({
   isPlaying,
   voicePart,
   laneHeight,
+  laneWidth,
+  beatWidth,
+  zoom,
+  snapResolution,
   onSelect,
   onDrag: _onDrag,
   onDragEnd,
@@ -47,9 +55,12 @@ export const NoteDot: React.FC<NoteDotProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isEditingLyric, setIsEditingLyric] = useState(false);
   const [lyricInput, setLyricInput] = useState(note.text || '');
-  const dragOffsetRef = useRef(0); // Track cumulative drag offset
+  const dragOffsetRef = useRef({ x: 0, y: 0 }); // Track cumulative drag offset
   const justDraggedRef = useRef(false); // Prevent click after drag
   const lyricInputRef = useRef<HTMLInputElement>(null);
+
+  // Calculate scaled beat width for snapping
+  const scaledBeatWidth = beatWidth * zoom;
 
   // Get syllable assignment from text-setting store
   const getAssignmentForNote = useTextSettingStore((state) => state.getAssignmentForNote);
@@ -78,19 +89,25 @@ export const NoteDot: React.FC<NoteDotProps> = ({
     }
   }, [note.text, isEditingLyric]);
 
-  // Calculate Y constraints based on lane height
+  // Calculate drag constraints based on lane dimensions
   const constraints = useMemo(() => {
     const minY = LANE_PADDING; // Top of usable area
     const maxY = laneHeight - LANE_PADDING; // Bottom of usable area
-    return { minY, maxY };
-  }, [laneHeight]);
+    const minX = 0; // Left edge
+    const maxX = laneWidth; // Right edge
+    return { minY, maxY, minX, maxX };
+  }, [laneHeight, laneWidth]);
 
   // Get pitch name from MIDI
   const pitchName = note.pitch || Note.fromMidi(note.midi) || 'C4';
 
-  const handleDragStart = (event: any) => {
+  const handleDragStart = (event: any, info: any) => {
+    // Stop propagation to prevent canvas drag
+    if (event?.stopPropagation) event.stopPropagation();
+    if (info?.event?.stopPropagation) info.event.stopPropagation();
+
     setIsDragging(true);
-    dragOffsetRef.current = 0;
+    dragOffsetRef.current = { x: 0, y: 0 };
     justDraggedRef.current = false;
     // Start hold tracking for smart snap
     onHoldStart?.();
@@ -102,19 +119,42 @@ export const NoteDot: React.FC<NoteDotProps> = ({
 
   const handleDrag = (_event: any, info: any) => {
     // Track the offset but don't update store during drag
-    // info.offset.y gives total offset from drag start
-    dragOffsetRef.current = info.offset.y;
+    dragOffsetRef.current = { x: info.offset.x, y: info.offset.y };
   };
 
   const handleDragEnd = () => {
     setIsDragging(false);
     justDraggedRef.current = true;
-    // End hold tracking for smart snap
+
+    // Calculate final Y position (pitch)
+    const finalY = Math.max(constraints.minY, Math.min(constraints.maxY, y + dragOffsetRef.current.y));
+
+    // Calculate final X position with snap
+    // Use the visual offset from drag to get the target beat
+    const offsetBeats = dragOffsetRef.current.x / scaledBeatWidth;
+    const targetBeat = note.startBeat + offsetBeats;
+
+    // Snap the target beat to the current resolution
+    const snappedBeat = Math.max(0, Math.round(targetBeat / snapResolution) * snapResolution);
+    const finalX = snappedBeat * scaledBeatWidth;
+
+    console.log('SNAP DEBUG:', {
+      dragOffsetX: dragOffsetRef.current.x,
+      scaledBeatWidth,
+      offsetBeats,
+      noteStartBeat: note.startBeat,
+      targetBeat,
+      snapResolution,
+      snappedBeat,
+      finalX,
+    });
+
+    // End hold tracking AFTER calculating snap (so we use the refined resolution)
     onHoldEnd?.();
-    // Calculate final Y position and update store
-    const finalY = Math.max(constraints.minY, Math.min(constraints.maxY, y + dragOffsetRef.current));
-    onDragEnd(note.id, finalY);
-    dragOffsetRef.current = 0;
+
+    onDragEnd(note.id, finalY, finalX);
+    dragOffsetRef.current = { x: 0, y: 0 };
+
     // Reset the flag after a short delay to allow click event to be ignored
     setTimeout(() => {
       justDraggedRef.current = false;
@@ -284,29 +324,31 @@ export const NoteDot: React.FC<NoteDotProps> = ({
     .filter(Boolean)
     .join(' ');
 
-  // Use a key that includes midi to force remount after drag updates position
+  // Use a key that includes midi AND startBeat to force remount after drag updates position
   // This resets Framer Motion's internal transform state
-  const motionKey = `${note.id}-${note.midi}`;
+  const motionKey = `${note.id}-${note.midi}-${note.startBeat}`;
 
   return (
     <motion.div
       key={motionKey}
       className={wrapperClasses}
+      data-no-pan="true"
       style={{
         left: `${x}px`,
         top: `${y}px`,
         color: color, // Used by currentColor for border
       }}
-      drag="y"
+      drag
       dragConstraints={{
         top: constraints.minY - y,
         bottom: constraints.maxY - y,
+        left: constraints.minX - x,
+        right: constraints.maxX - x,
       }}
       dragElastic={0}
       dragMomentum={false}
-      onDragStart={() => {
-        // Create a synthetic event-like object for motion's onDragStart
-        handleDragStart({ clientX: 0, clientY: 0 });
+      onDragStart={(event, info) => {
+        handleDragStart(event, info);
       }}
       onDrag={handleDrag}
       onDragEnd={handleDragEnd}

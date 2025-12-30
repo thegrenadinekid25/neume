@@ -172,6 +172,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({
     const target = e.target as HTMLElement;
     if (target.closest('[data-chord="true"]')) return;
     if (target.closest('[data-voice]')) return; // Don't pan when interacting with voice lanes
+    if (target.closest('[data-no-pan]')) return; // Don't pan when dragging notes
 
     // Only left mouse button
     if (e.button !== 0) return;

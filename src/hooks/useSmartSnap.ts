@@ -9,8 +9,8 @@ import type { SnapResolution } from '@/types/voice-line';
  * - Holding while dragging progressively refines the snap
  */
 
-// Snap levels from coarse to fine
-const SNAP_LEVELS: SnapResolution[] = [1, 0.5, 0.25, 0.125, 0];
+// Snap levels from coarse to fine (16th is the finest)
+const SNAP_LEVELS: SnapResolution[] = [1, 0.5, 0.25, 0.125];
 
 // Time thresholds for hold-to-refine (in ms)
 const HOLD_THRESHOLDS = [0, 400, 800, 1200, 1600]; // Each level after 400ms

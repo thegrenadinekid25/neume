@@ -35,9 +35,8 @@ export const SnapGuideLines: React.FC<SnapGuideLinesProps> = ({
 }) => {
   // Generate line positions based on snap resolution
   const lines = useMemo(() => {
-    if (snapResolution === 0) return []; // Free mode = no lines
 
-    const result: Array<{ x: number; isBeat: boolean; label?: string }> = [];
+    const result: Array<{ x: number; isBeat: boolean }> = [];
     const step = snapResolution;
     const scaledBeatWidth = beatWidth * zoom;
 
@@ -45,10 +44,7 @@ export const SnapGuideLines: React.FC<SnapGuideLinesProps> = ({
       const x = beat * scaledBeatWidth;
       const isBeat = beat % 1 === 0; // Full beat marker
 
-      // Add label only at full beats for cleaner display
-      const label = isBeat ? `${Math.floor(beat) + 1}` : undefined;
-
-      result.push({ x, isBeat, label });
+      result.push({ x, isBeat });
     }
 
     return result;
@@ -59,7 +55,7 @@ export const SnapGuideLines: React.FC<SnapGuideLinesProps> = ({
 
   return (
     <AnimatePresence>
-      {isVisible && snapResolution !== 0 && (
+      {isVisible && (
         <motion.div
           className={styles.container}
           initial={{ opacity: 0 }}
@@ -76,24 +72,14 @@ export const SnapGuideLines: React.FC<SnapGuideLinesProps> = ({
           {/* Guide lines */}
           <svg className={styles.svg} width="100%" height={laneHeight}>
             {lines.map((line, index) => (
-              <g key={index}>
-                <line
-                  x1={line.x}
-                  y1={0}
-                  x2={line.x}
-                  y2={laneHeight}
-                  className={line.isBeat ? styles.beatLine : styles.subdivisionLine}
-                />
-                {line.label && (
-                  <text
-                    x={line.x + 4}
-                    y={14}
-                    className={styles.beatLabel}
-                  >
-                    {line.label}
-                  </text>
-                )}
-              </g>
+              <line
+                key={index}
+                x1={line.x}
+                y1={0}
+                x2={line.x}
+                y2={laneHeight}
+                className={line.isBeat ? styles.beatLine : styles.subdivisionLine}
+              />
             ))}
           </svg>
         </motion.div>

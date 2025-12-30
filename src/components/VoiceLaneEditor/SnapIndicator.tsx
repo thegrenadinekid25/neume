@@ -15,7 +15,6 @@ const SNAP_LABELS: Record<SnapResolution, string> = {
   0.5: '½',
   0.25: '¼',
   0.125: '16th',
-  0: 'Free',
 };
 
 /**

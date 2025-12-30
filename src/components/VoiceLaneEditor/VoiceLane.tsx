@@ -146,9 +146,7 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
   // Helper to convert X position back to beat with snap resolution
   const xToBeat = useCallback((x: number) => {
     const beat = x / (beatWidth * zoom);
-    // If snapResolution is 0, return exact beat without snapping
-    if (snapResolution === 0) return beat;
-    // Otherwise, snap to the nearest resolution increment
+    // Snap to the nearest resolution increment
     return Math.round(beat / snapResolution) * snapResolution;
   }, [beatWidth, zoom, snapResolution]);
 
@@ -213,18 +211,26 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
   }, [yToMidi, updateNote, voicePart]);
 
   // Handle note drag end (finalize position with conflict detection)
-  const handleNoteDragEnd = useCallback((noteId: string, finalY: number) => {
+  const handleNoteDragEnd = useCallback((noteId: string, finalY: number, finalX?: number) => {
     const note = voiceLine.notes.find(n => n.id === noteId);
     if (!note) return;
 
     const newMidi = yToMidi(finalY);
     const newPitch = Note.fromMidi(newMidi) || 'C4';
 
-    // Find the current chord for this note
-    const noteChord = chords.find(c => c.startBeat <= note.startBeat && c.startBeat + c.duration > note.startBeat);
+    // Calculate new beat position if X was provided
+    let newStartBeat = note.startBeat;
+    if (finalX !== undefined) {
+      newStartBeat = finalX / (beatWidth * zoom);
+      // Ensure non-negative
+      newStartBeat = Math.max(0, newStartBeat);
+    }
+
+    // Find the current chord for this note (using new position)
+    const noteChord = chords.find(c => c.startBeat <= newStartBeat && c.startBeat + c.duration > newStartBeat);
     if (!noteChord) {
       // No chord found, just update the note
-      updateNote(voicePart, noteId, { midi: newMidi, pitch: newPitch });
+      updateNote(voicePart, noteId, { midi: newMidi, pitch: newPitch, startBeat: newStartBeat });
       return;
     }
 
@@ -233,9 +239,14 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
     const prevNote = noteIndex > 0 ? voiceLine.notes[noteIndex - 1] : undefined;
     const nextNote = noteIndex < voiceLine.notes.length - 1 ? voiceLine.notes[noteIndex + 1] : undefined;
 
+    // Update beat position first if changed
+    if (newStartBeat !== note.startBeat) {
+      updateNote(voicePart, noteId, { startBeat: newStartBeat });
+    }
+
     // Call the conflict detection hook with all necessary parameters
-    hookHandleDragEnd(note, newMidi, noteChord, prevNote, nextNote, note.startBeat);
-  }, [yToMidi, updateNote, voicePart, voiceLine.notes, chords, hookHandleDragEnd]);
+    hookHandleDragEnd(note, newMidi, noteChord, prevNote, nextNote, newStartBeat);
+  }, [yToMidi, updateNote, voicePart, voiceLine.notes, chords, hookHandleDragEnd, beatWidth, zoom]);
 
   // Handle double-click on lane to create a new note
   const handleLaneDoubleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -375,6 +386,10 @@ export const VoiceLane: React.FC<VoiceLaneProps> = ({
           isPlaying={isNotePlaying(note.id)}
           voicePart={voicePart}
           laneHeight={laneHeight}
+          laneWidth={laneWidth}
+          beatWidth={beatWidth}
+          zoom={zoom}
+          snapResolution={snapResolution}
           onSelect={handleNoteSelect}
           onDrag={handleNoteDrag}
           onDragEnd={handleNoteDragEnd}

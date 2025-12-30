@@ -6,11 +6,14 @@ import { VOICE_ORDER, VOICE_RANGES } from '@/data/voice-ranges';
 import { useVoiceLineStore } from '@/store/voice-line-store';
 import { useCanvasStore } from '@/store/canvas-store';
 import { useVoiceChordConflict } from '@/hooks/useVoiceChordConflict';
+import { useSmartSnap } from '@/hooks/useSmartSnap';
 import { NoteDot } from './NoteDot';
 import { ThreadConnector } from './ThreadConnector';
 import { RestCloud } from './RestCloud';
 import { StaffGuides } from './StaffGuides';
 import { ChordToneHighlights } from './ChordToneHighlights';
+import { SnapGuideLines } from './SnapGuideLines';
+import { SnapIndicator } from './SnapIndicator';
 import styles from './UnifiedStaff.module.css';
 
 interface UnifiedStaffProps {
@@ -37,6 +40,7 @@ export const UnifiedStaff: React.FC<UnifiedStaffProps> = ({
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [hoverX, setHoverX] = useState<number | null>(null);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
 
   // Store state
   const voiceLines = useVoiceLineStore((state) => state.voiceLines);
@@ -47,7 +51,15 @@ export const UnifiedStaff: React.FC<UnifiedStaffProps> = ({
   const playingNoteIds = useVoiceLineStore((state) => state.playingNoteIds);
   const activeVoicePart = useVoiceLineStore((state) => state.activeVoicePart);
   const selectedNoteValue = useVoiceLineStore((state) => state.selectedNoteValue);
-  const snapResolution = useVoiceLineStore((state) => state.snapResolution);
+
+  // Smart snap: zoom-based baseline + hold-to-refine
+  const {
+    snapResolution,
+    startHold,
+    endHold,
+    isHolding,
+    refinementLevel,
+  } = useSmartSnap({ zoom });
 
   // Get current key/mode for diatonic snapping
   const currentKey = useCanvasStore((state) => state.currentKey);
@@ -125,9 +137,7 @@ export const UnifiedStaff: React.FC<UnifiedStaffProps> = ({
   // Helper to convert X position back to beat with snap resolution
   const xToBeat = useCallback((x: number) => {
     const beat = x / (beatWidth * zoom);
-    // If snapResolution is 0, return exact beat without snapping
-    if (snapResolution === 0) return beat;
-    // Otherwise, snap to the nearest resolution increment
+    // Snap to the nearest resolution increment
     return Math.round(beat / snapResolution) * snapResolution;
   }, [beatWidth, zoom, snapResolution]);
 
@@ -186,10 +196,11 @@ export const UnifiedStaff: React.FC<UnifiedStaffProps> = ({
     }
   );
 
-  // Handle mouse move for chord tone highlights
+  // Handle mouse move for chord tone highlights and snap indicator
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setHoverX(e.clientX - rect.left);
+    setMousePos({ x: e.clientX, y: e.clientY });
   }, []);
 
   // Handle note selection
@@ -209,7 +220,7 @@ export const UnifiedStaff: React.FC<UnifiedStaffProps> = ({
   }, [yToMidi, updateNote]);
 
   // Handle note drag end with conflict detection
-  const handleNoteDragEnd = useCallback((voicePart: VoicePart, noteId: string, finalY: number) => {
+  const handleNoteDragEnd = useCallback((voicePart: VoicePart, noteId: string, finalY: number, finalX?: number) => {
     const voiceLine = voiceLines[voicePart];
     const note = voiceLine.notes.find(n => n.id === noteId);
     if (!note) return;
@@ -219,9 +230,16 @@ export const UnifiedStaff: React.FC<UnifiedStaffProps> = ({
     const clampedMidi = Math.max(voiceRange.lowMidi, Math.min(voiceRange.highMidi, newMidi));
     const newPitch = Note.fromMidi(clampedMidi) || 'C4';
 
-    const noteChord = chords.find(c => c.startBeat <= note.startBeat && c.startBeat + c.duration > note.startBeat);
+    // Calculate new beat position if X was provided
+    let newStartBeat = note.startBeat;
+    if (finalX !== undefined) {
+      newStartBeat = finalX / (beatWidth * zoom);
+      newStartBeat = Math.max(0, newStartBeat);
+    }
+
+    const noteChord = chords.find(c => c.startBeat <= newStartBeat && c.startBeat + c.duration > newStartBeat);
     if (!noteChord) {
-      updateNote(voicePart, noteId, { midi: clampedMidi, pitch: newPitch });
+      updateNote(voicePart, noteId, { midi: clampedMidi, pitch: newPitch, startBeat: newStartBeat });
       return;
     }
 
@@ -229,13 +247,18 @@ export const UnifiedStaff: React.FC<UnifiedStaffProps> = ({
     const prevNote = noteIndex > 0 ? voiceLine.notes[noteIndex - 1] : undefined;
     const nextNote = noteIndex < voiceLine.notes.length - 1 ? voiceLine.notes[noteIndex + 1] : undefined;
 
+    // Update beat position if changed
+    if (newStartBeat !== note.startBeat) {
+      updateNote(voicePart, noteId, { startBeat: newStartBeat });
+    }
+
     // Only use conflict detection for active voice
     if (voicePart === effectiveActiveVoice) {
-      hookHandleDragEnd(note, clampedMidi, noteChord, prevNote, nextNote, note.startBeat);
+      hookHandleDragEnd(note, clampedMidi, noteChord, prevNote, nextNote, newStartBeat);
     } else {
       updateNote(voicePart, noteId, { midi: clampedMidi, pitch: newPitch });
     }
-  }, [yToMidi, updateNote, voiceLines, chords, effectiveActiveVoice, hookHandleDragEnd]);
+  }, [yToMidi, updateNote, voiceLines, chords, effectiveActiveVoice, hookHandleDragEnd, beatWidth, zoom]);
 
   // Handle double-click to add note to active voice
   const handleLaneDoubleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -384,6 +407,16 @@ export const UnifiedStaff: React.FC<UnifiedStaffProps> = ({
         visible={isHovered}
       />
 
+      {/* Snap guide lines (visible during drag) */}
+      <SnapGuideLines
+        isVisible={isHolding}
+        snapResolution={snapResolution}
+        beatWidth={beatWidth}
+        zoom={zoom}
+        totalBeats={totalBeats}
+        laneHeight={laneHeight}
+      />
+
       {/* Thread connectors - one per enabled voice */}
       {enabledVoices.map((voicePart) => {
         const voiceLine = voiceLines[voicePart];
@@ -426,13 +459,27 @@ export const UnifiedStaff: React.FC<UnifiedStaffProps> = ({
             isPlaying={isNotePlaying(note)}
             voicePart={voicePart}
             laneHeight={laneHeight}
+            laneWidth={laneWidth}
+            beatWidth={beatWidth}
+            zoom={zoom}
+            snapResolution={snapResolution}
             onSelect={handleNoteSelect}
             onDrag={(noteId, newY) => handleNoteDrag(voicePart, noteId, newY)}
-            onDragEnd={(noteId, finalY) => handleNoteDragEnd(voicePart, noteId, finalY)}
+            onDragEnd={(noteId, finalY, finalX) => handleNoteDragEnd(voicePart, noteId, finalY, finalX)}
             onConflictDragStart={voicePart === effectiveActiveVoice ? hookHandleDragStart : undefined}
+            onHoldStart={startHold}
+            onHoldEnd={endHold}
           />
         );
       })}
+
+      {/* Smart snap indicator */}
+      <SnapIndicator
+        snapResolution={snapResolution}
+        refinementLevel={refinementLevel}
+        isVisible={isHolding}
+        position={mousePos || undefined}
+      />
     </div>
   );
 };

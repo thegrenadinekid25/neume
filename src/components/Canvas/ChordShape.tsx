@@ -62,9 +62,9 @@ const ChordShapeComponent: React.FC<ChordShapeProps> = ({
   const isOutlinedShape = chord.scaleDegree === 6 || chord.scaleDegree === 7;
   const isDottedShape = chord.scaleDegree === 6;
 
-  // For outlined shapes: stroke with the color, no fill (or light fill)
+  // For outlined shapes: stroke with the color, white fill
   // For filled shapes: fill with color, stroke only when selected
-  const fillColor = isOutlinedShape ? 'rgba(255,255,255,0.9)' : baseColor;
+  const fillColor = isOutlinedShape ? '#FFFFFF' : baseColor;
   const defaultStrokeColor = isOutlinedShape ? baseColor : 'none';
   const strokeColor = isSelected ? UI_COLORS.primaryAction : defaultStrokeColor;
   const strokeWidth = isOutlinedShape ? 2.5 : (isSelected ? 3.5 : 2.5);

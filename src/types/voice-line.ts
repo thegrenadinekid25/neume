@@ -197,7 +197,6 @@ export const NOTE_VALUE_TO_BEATS: Record<NoteValue, number> = {
 
 /**
  * Snap resolution options for note placement
- * 1 = whole beat, 0.5 = half beat, 0.25 = quarter beat, etc.
- * 0 = no snapping (free positioning)
+ * 1 = whole beat, 0.5 = half beat, 0.25 = quarter beat, 0.125 = 16th
  */
-export type SnapResolution = 1 | 0.5 | 0.25 | 0.125 | 0;
+export type SnapResolution = 1 | 0.5 | 0.25 | 0.125;
