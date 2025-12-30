@@ -60,6 +60,13 @@ class ChordExtractor:
 
         print(f"Key: {key} {mode} (detected: {detected_key} {detected_scale}, strength: {key_strength:.2f})")
 
+        # 1b. Find HPCP rotation to align with detected key
+        # The HPCP may be shifted due to non-standard tuning or audio processing
+        # We find the rotation needed to align HPCP with the key's triad
+        hpcp_rotation = self._find_hpcp_rotation(audio, key, mode)
+        if hpcp_rotation != 0:
+            print(f"HPCP rotation: {hpcp_rotation} semitones (aligning to {key})")
+
         # 2. Detect tempo (BPM)
         rhythm_extractor = es.RhythmExtractor2013()
         bpm, beats, beats_confidence, _, beats_intervals = rhythm_extractor(audio)
@@ -85,20 +92,25 @@ class ChordExtractor:
         hpcps = self._extract_hpcps(audio)
         print(f"Extracted {len(hpcps)} HPCP frames")
 
+        # Apply rotation to align HPCP with detected key
+        if hpcp_rotation != 0:
+            hpcps = [np.roll(h, -hpcp_rotation) for h in hpcps]
+            print(f"Applied {hpcp_rotation}-semitone rotation to {len(hpcps)} frames")
+
         # 4. Analyze chords using our RobustChordAnalyzer
         # Pass detected key/mode for harmonic context disambiguation
         # Adaptive minimum duration based on tempo to filter passing tones
         beat_duration = 60.0 / bpm  # seconds per beat
         if bpm < 70:
-            # Slow pieces (like O Magnum): require ~1.5 beats minimum
-            min_beats = 1.5
-        elif bpm < 100:
-            # Medium tempo: require ~1 beat minimum
-            min_beats = 1.0
-        else:
-            # Fast pieces: require ~0.75 beats minimum
+            # Slow pieces (like O Magnum): require ~0.75 beats minimum
             min_beats = 0.75
-        min_chord_duration = beat_duration * min_beats
+        elif bpm < 100:
+            # Medium tempo: require ~0.5 beats minimum
+            min_beats = 0.5
+        else:
+            # Fast pieces: require ~0.4 beats minimum
+            min_beats = 0.4
+        min_chord_duration = max(0.3, beat_duration * min_beats)  # At least 300ms
         print(f"Adaptive min chord duration: {min_chord_duration:.2f}s ({min_beats} beats at {bpm:.0f} BPM)")
 
         chord_progression = self.chord_analyzer.analyze_progression(
@@ -123,13 +135,84 @@ class ChordExtractor:
             "chords": chord_progression
         }
 
-    def _extract_hpcps(self, audio: np.ndarray) -> List[np.ndarray]:
+    def _find_hpcp_rotation(self, audio: np.ndarray, key: str, mode: str) -> int:
+        """
+        Find the optimal rotation to align HPCP with the detected key.
+
+        The HPCP algorithm may not align with absolute pitch due to:
+        - Non-standard tuning (baroque, etc.)
+        - Audio processing in the recording
+        - Sample rate/format issues
+
+        We try all 12 rotations and pick the one where the HPCP
+        best correlates with the expected key triad.
+
+        Returns the number of semitones to rotate HPCP left.
+        """
+        # Pitch class indices: C=0, C#=1, D=2, etc.
+        pitch_class_map = {
+            'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
+            'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
+            'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+        }
+
+        key_root = pitch_class_map.get(key, 0)
+
+        # Build expected triad indices (relative to key root at position 0)
+        if mode == 'minor':
+            # Minor: root, minor 3rd (+3), perfect 5th (+7)
+            triad = [key_root, (key_root + 3) % 12, (key_root + 7) % 12]
+        else:
+            # Major: root, major 3rd (+4), perfect 5th (+7)
+            triad = [key_root, (key_root + 4) % 12, (key_root + 7) % 12]
+
+        # Sample audio
+        sample_duration = min(30, len(audio) / self.sample_rate)
+        sample_frames = int(sample_duration * self.sample_rate)
+        audio_sample = audio[:sample_frames]
+
+        # Extract HPCPs at standard reference
+        hpcps = self._extract_hpcps(audio_sample, reference_frequency=440.0)
+        if not hpcps:
+            return 0
+
+        # Average HPCP
+        avg_hpcp = np.mean(hpcps, axis=0)
+        if np.max(avg_hpcp) > 0:
+            avg_hpcp = avg_hpcp / np.max(avg_hpcp)
+
+        # Try all 12 rotations and find the best match to the expected key triad
+        best_rotation = 0
+        best_score = -1
+
+        for rotation in range(12):
+            rotated = np.roll(avg_hpcp, -rotation)
+            # Score: sum of energy at triad positions
+            score = sum(rotated[pc] for pc in triad)
+
+            if score > best_score:
+                best_score = score
+                best_rotation = rotation
+
+        # Only return rotation if it significantly improves the score
+        # (Check if rotation=0 is already good enough)
+        unrotated_score = sum(avg_hpcp[pc] for pc in triad)
+        if best_score > unrotated_score * 1.1:  # At least 10% improvement
+            return best_rotation
+
+        return 0
+
+    def _extract_hpcps(self, audio: np.ndarray, reference_frequency: float = 440.0) -> List[np.ndarray]:
         """
         Extract HPCP (Harmonic Pitch Class Profile) from audio.
 
         HPCP is a 12-dimensional vector representing the energy in each
         pitch class (C, C#, D, ..., B). This is the foundation for
         chord detection.
+
+        Args:
+            audio: Audio samples
+            reference_frequency: Reference frequency for A4 (default 440Hz)
         """
         windowing = es.Windowing(type='blackmanharris62')
         spectrum = es.Spectrum()
@@ -143,7 +226,7 @@ class ChordExtractor:
 
         hpcp = es.HPCP(
             size=12,  # 12 pitch classes
-            referenceFrequency=440,
+            referenceFrequency=reference_frequency,
             harmonics=8,
             windowSize=1.0
         )
