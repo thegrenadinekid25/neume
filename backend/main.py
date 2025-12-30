@@ -3,29 +3,20 @@ Neume Chord Extraction API
 FastAPI backend for analyzing music and extracting chord progressions
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-import uuid
 import os
 import json
-import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime
 from dotenv import load_dotenv
 import anthropic
 from typing import List
 
 from models.schemas import (
-    AnalyzeRequest,
-    AnalyzeResponse,
-    UploadResponse,
-    StatusResponse,
-    ChordData,
-    AnalysisResultData,
-    ErrorData,
     ExplainRequest,
     ExplainResponse,
     ExplainChordData,
@@ -42,18 +33,6 @@ from models.schemas import (
 )
 from services.deconstructor import ProgressionDeconstructor
 from services.emotional_mapper import EmotionalMapper
-
-# Optional audio processing imports (require essentia/librosa)
-AUDIO_AVAILABLE = False
-try:
-    from services.youtube_downloader import YouTubeDownloader, YouTubeDownloaderError
-    from services.chord_extractor import ChordExtractor, parse_chord_label
-    AUDIO_AVAILABLE = True
-except ImportError as e:
-    print(f"Audio processing unavailable: {e}")
-    print("AI endpoints will still work. Install audio deps with: pip install -r requirements.txt")
-    YouTubeDownloader = None
-    ChordExtractor = None
 
 # Load environment variables
 load_dotenv()
@@ -122,13 +101,8 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
 
 # Initialize services
-youtube_downloader = YouTubeDownloader(output_dir="./temp") if AUDIO_AVAILABLE else None
-chord_extractor = ChordExtractor() if AUDIO_AVAILABLE else None
 progression_deconstructor = ProgressionDeconstructor()
 emotional_mapper = EmotionalMapper()
-
-# Ensure temp directory exists
-os.makedirs("./temp", exist_ok=True)
 
 
 @app.on_event("startup")
@@ -164,158 +138,6 @@ async def health_check():
     return {"status": "healthy", "service": "neume-api", "version": "1.0.0"}
 
 
-@app.post("/api/analyze", response_model=AnalyzeResponse)
-@limiter.limit("10/hour")
-async def analyze_audio(request: Request, body: AnalyzeRequest):
-    """Analyze audio and extract chord progression."""
-    if not AUDIO_AVAILABLE:
-        return AnalyzeResponse(
-            success=False,
-            error=ErrorData(
-                code="AUDIO_UNAVAILABLE",
-                message="Audio processing dependencies not installed. Install essentia/librosa.",
-                retryable=False
-            )
-        )
-
-    try:
-        audio_file = None
-        title = "Unknown"
-        source_url = None
-
-        if body.type == "youtube":
-            if not body.videoId:
-                raise HTTPException(status_code=400, detail="videoId required for YouTube")
-
-            try:
-                download_result = await youtube_downloader.download_audio(body.videoId)
-                audio_file = download_result["filepath"]
-                title = download_result["title"]
-                source_url = body.youtubeUrl
-            except YouTubeDownloaderError as e:
-                return AnalyzeResponse(
-                    success=False,
-                    error=ErrorData(
-                        code="YOUTUBE_DOWNLOAD_FAILED",
-                        message=e.message,
-                        retryable=e.retryable
-                    )
-                )
-            except asyncio.TimeoutError:
-                return AnalyzeResponse(
-                    success=False,
-                    error=ErrorData(
-                        code="DOWNLOAD_TIMEOUT",
-                        message="Download timed out after 5 minutes",
-                        retryable=True
-                    )
-                )
-
-        elif body.type == "audio":
-            if not body.uploadId:
-                raise HTTPException(status_code=400, detail="uploadId required for audio file")
-
-            audio_file = f"./temp/{body.uploadId}.wav"
-            if not os.path.exists(audio_file):
-                raise HTTPException(status_code=404, detail="Uploaded file not found")
-            title = "Uploaded Audio"
-
-        else:
-            raise HTTPException(status_code=400, detail="Invalid type. Must be 'youtube' or 'audio'")
-
-        analysis = chord_extractor.extract_chords(
-            audio_file,
-            key_hint=body.keyHint,
-            mode_hint=body.modeHint
-        )
-
-        tempo = analysis["tempo"]
-        beats_per_second = tempo / 60.0
-
-        chords = []
-        for chord_data in analysis["chords"]:
-            start_beat = chord_data["startTime"] * beats_per_second
-            duration_beats = chord_data["duration"] * beats_per_second
-            # Use structured data from analyzer instead of re-parsing symbol
-            root = chord_data["root"]
-            quality = chord_data["quality"]
-            extensions = chord_data.get("extensions", {})
-
-            chords.append(ChordData(
-                startBeat=round(start_beat, 2),
-                duration=round(duration_beats, 2),
-                root=root,
-                quality=quality,
-                extensions=extensions,
-                confidence=chord_data["confidence"],
-                detectedIntervals=chord_data.get("detectedIntervals")
-            ))
-
-        if body.type == "youtube" and body.videoId:
-            youtube_downloader.cleanup(body.videoId)
-
-        return AnalyzeResponse(
-            success=True,
-            result=AnalysisResultData(
-                title=title,
-                key=analysis["key"],
-                mode=analysis["mode"],
-                tempo=round(analysis["tempo"]),
-                timeSignature="4/4",
-                chords=chords,
-                sourceUrl=source_url,
-                analyzedAt=datetime.now().isoformat()
-            )
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        return AnalyzeResponse(
-            success=False,
-            error=ErrorData(
-                code="ANALYSIS_FAILED",
-                message=str(e),
-                retryable=True
-            )
-        )
-
-
-@app.post("/api/upload", response_model=UploadResponse)
-async def upload_file(file: UploadFile = File(...)):
-    """Upload audio file for analysis."""
-    valid_types = ['audio/mpeg', 'audio/wav', 'audio/x-wav', 'audio/mp4', 'audio/m4a']
-    if file.content_type not in valid_types:
-        raise HTTPException(status_code=400, detail="Invalid file type. Supported: MP3, WAV, M4A")
-
-    upload_id = str(uuid.uuid4())
-    filepath = f"./temp/{upload_id}.wav"
-
-    try:
-        with open(filepath, "wb") as f:
-            content = await file.read()
-            if len(content) > 50 * 1024 * 1024:
-                raise HTTPException(status_code=400, detail="File must be under 50MB")
-            f.write(content)
-
-        return UploadResponse(
-            uploadId=upload_id,
-            expiresAt=(datetime.now() + timedelta(hours=1)).isoformat()
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
-
-
-@app.get("/api/analyze/status/{job_id}", response_model=StatusResponse)
-async def get_analysis_status(job_id: str):
-    """Check analysis progress for long-running jobs."""
-    return StatusResponse(
-        status="complete",
-        progress=100,
-        stage="Analysis complete"
-    )
 
 
 # Scale degree names for explanation prompts

@@ -57,8 +57,9 @@ export function rootToScaleDegree(root: string, key: MusicalKey): ScaleDegree {
 export function mapQuality(qualityString: string): ChordQuality {
   const normalized = qualityString.toLowerCase().trim();
 
-  // Map common quality variations
+  // Map common quality variations (including extended chords)
   const qualityMap: Record<string, ChordQuality> = {
+    // Basic triads
     major: 'major',
     maj: 'major',
     minor: 'minor',
@@ -67,6 +68,7 @@ export function mapQuality(qualityString: string): ChordQuality {
     dim: 'diminished',
     augmented: 'augmented',
     aug: 'augmented',
+    // Seventh chords
     dominant7: 'dom7',
     dom7: 'dom7',
     '7': 'dom7',
@@ -77,6 +79,33 @@ export function mapQuality(qualityString: string): ChordQuality {
     halfdim7: 'halfdim7',
     'm7b5': 'halfdim7',
     dim7: 'dim7',
+    // Ninth chords
+    maj9: 'maj9',
+    major9: 'maj9',
+    min9: 'min9',
+    minor9: 'min9',
+    dom9: 'dom9',
+    '9': 'dom9',
+    // Eleventh chords
+    min11: 'min11',
+    minor11: 'min11',
+    dom11: 'dom11',
+    '11': 'dom11',
+    // Thirteenth chords
+    maj13: 'maj13',
+    major13: 'maj13',
+    min13: 'min13',
+    minor13: 'min13',
+    dom13: 'dom13',
+    '13': 'dom13',
+    // Altered chords
+    alt: 'alt',
+    dom7b9: 'dom7b9',
+    '7b9': 'dom7b9',
+    dom7sharp9: 'dom7sharp9',
+    '7#9': 'dom7sharp9',
+    dom7sharp11: 'dom7sharp11',
+    '7#11': 'dom7sharp11',
   };
 
   return qualityMap[normalized] || 'major'; // Default to major if unknown

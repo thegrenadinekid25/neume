@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Snapshot } from '@/types';
 import { useSnapshotsStore } from '@/store/snapshots-store';
+import { showDestructiveConfirm } from '@/store/confirmation-store';
 import { SnapshotPreview } from './SnapshotPreview';
 import styles from './SnapshotCard.module.css';
 
@@ -18,10 +19,14 @@ export const SnapshotCard: React.FC<SnapshotCardProps> = ({
   const [isHovering, setIsHovering] = useState(false);
   const { toggleFavorite, deleteSnapshot } = useSnapshotsStore();
 
-  const handleDelete = async () => {
-    if (window.confirm(`Delete snapshot "${snapshot.name}"?`)) {
-      await deleteSnapshot(snapshot.id);
-    }
+  const handleDelete = () => {
+    showDestructiveConfirm(
+      'Delete Snapshot',
+      `Delete snapshot "${snapshot.name}"? This cannot be undone.`,
+      async () => {
+        await deleteSnapshot(snapshot.id);
+      }
+    );
   };
 
   const handleToggleFavorite = async () => {

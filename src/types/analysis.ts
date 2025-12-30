@@ -2,16 +2,23 @@
  * Analysis types for the Analyze Modal feature
  */
 
-export type UploadType = 'youtube' | 'audio';
+export type UploadType = 'youtube' | 'audio' | 'file';
+
+export type ImportFileFormat = 'midi' | 'musicxml';
 
 export interface AnalysisInput {
   type: UploadType;
+  // Legacy fields (deprecated - audio analysis removed)
   youtubeUrl?: string;
   videoId?: string;
   audioFile?: File;
   uploadId?: string;
   startTime?: number;
   endTime?: number;
+  // File import fields
+  importFile?: File;
+  importFormat?: ImportFileFormat;
+  // Common fields
   keyHint?: string;
   modeHint?: 'auto' | 'major' | 'minor';
 }

@@ -4,6 +4,7 @@ import { useSnapshotsStore } from '@/store/snapshots-store';
 import { useAppViewStore } from '@/store/app-view-store';
 import { useAuthStore } from '@/store/auth-store';
 import { progressionStorage } from '@/services/progression-storage';
+import { showDestructiveConfirm } from '@/store/confirmation-store';
 import { ProgressionGrid } from './ProgressionGrid';
 import { SnapshotsGrid } from './SnapshotsGrid';
 import { ExploreSection } from './ExploreSection';
@@ -36,11 +37,16 @@ export const Dashboard: React.FC = () => {
     navigateToCanvas();
   };
 
-  const handleDeleteProgression = async (progression: any) => {
-    if (!window.confirm(`Delete "${progression.title}"? This cannot be undone.`)) return;
-    await deleteProgression(progression.id);
-    // Refresh recent progressions after delete
-    progressionStorage.getRecent(5).then(setRecentProgressions);
+  const handleDeleteProgression = (progression: any) => {
+    showDestructiveConfirm(
+      'Delete Progression',
+      `Delete "${progression.title}"? This cannot be undone.`,
+      async () => {
+        await deleteProgression(progression.id);
+        // Refresh recent progressions after delete
+        progressionStorage.getRecent(5).then(setRecentProgressions);
+      }
+    );
   };
 
   const handleOpenSnapshot = (_snapshot: Snapshot) => {
@@ -48,9 +54,14 @@ export const Dashboard: React.FC = () => {
     openSnapshotsPanel();
   };
 
-  const handleDeleteSnapshot = async (snapshot: Snapshot) => {
-    if (!window.confirm(`Delete snapshot "${snapshot.name}"? This cannot be undone.`)) return;
-    await deleteSnapshot(snapshot.id);
+  const handleDeleteSnapshot = (snapshot: Snapshot) => {
+    showDestructiveConfirm(
+      'Delete Snapshot',
+      `Delete snapshot "${snapshot.name}"? This cannot be undone.`,
+      async () => {
+        await deleteSnapshot(snapshot.id);
+      }
+    );
   };
 
   return (

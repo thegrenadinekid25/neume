@@ -3,36 +3,18 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAnalysisStore } from '@/store/analysis-store';
 import { useBuildFromBonesStore } from '@/store/build-from-bones-store';
-import { parseYoutubeUrl, isValidYoutubeUrl } from '@/utils/youtube-parser';
 import { BuildFromBonesContent } from '@/components/shared/BuildFromBonesContent';
 import { useAppViewStore } from '@/store/app-view-store';
 import type { AnalysisInput } from '@/types/analysis';
 import styles from './AnalyzeModal.module.css';
 
-// Example YouTube videos for testing chord analysis - classical choral works
-const EXAMPLE_VIDEOS = [
-  {
-    title: 'O Magnum Mysterium - Morten Lauridsen',
-    url: 'https://www.youtube.com/watch?v=nn5ken3RJBo',
-  },
-  {
-    title: 'Sicut Cervus - Palestrina',
-    url: 'https://www.youtube.com/watch?v=BOqwCeHgFQQ',
-  },
-  {
-    title: 'Ave Verum Corpus - William Byrd',
-    url: 'https://www.youtube.com/watch?v=LTW1RS9LJBM',
-  },
-];
-
-// Supported audio formats and max file size (50MB)
-const SUPPORTED_FORMATS = ['.mp3', '.wav', '.m4a', '.ogg', '.flac'];
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+// Supported score file formats and max file size (10MB)
+const SUPPORTED_FORMATS = ['.mid', '.midi', '.musicxml', '.mxl', '.xml'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export const AnalyzeModal: React.FC = () => {
   const {
     isModalOpen,
-    activeTab,
     isAnalyzing,
     progress,
     error,
@@ -42,7 +24,6 @@ export const AnalyzeModal: React.FC = () => {
     isDeconstructing,
     deconstructionError,
     closeModal,
-    setActiveTab,
     startAnalysis,
     startDeconstruction,
     setError,
@@ -56,12 +37,8 @@ export const AnalyzeModal: React.FC = () => {
   } = useBuildFromBonesStore();
 
   // Form state
-  const [youtubeUrl, setYoutubeUrl] = useState('');
-  const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [urlError, setUrlError] = useState('');
+  const [importFile, setImportFile] = useState<File | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
   const [keyHint, setKeyHint] = useState('auto');
   const [modeHint, setModeHint] = useState<'auto' | 'major' | 'minor'>('auto');
 
@@ -75,33 +52,19 @@ export const AnalyzeModal: React.FC = () => {
   // Reset form when modal opens
   useEffect(() => {
     if (isModalOpen) {
-      setYoutubeUrl('');
-      setAudioFile(null);
-      setUrlError('');
+      setImportFile(null);
       setShowAdvanced(false);
-      setStartTime('');
-      setEndTime('');
       setKeyHint('auto');
       setModeHint('auto');
     }
   }, [isModalOpen]);
 
-  // Handle YouTube URL input
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const url = e.target.value;
-    setYoutubeUrl(url);
-
-    if (url && !isValidYoutubeUrl(url)) {
-      setUrlError('Please enter a valid YouTube URL');
-    } else {
-      setUrlError('');
-    }
-  };
-
-  // Handle example link click
-  const handleExampleLinkClick = (url: string) => {
-    setYoutubeUrl(url);
-    setUrlError('');
+  // Get file format from filename
+  const getFileFormat = (filename: string): 'midi' | 'musicxml' | null => {
+    const ext = filename.toLowerCase().split('.').pop();
+    if (ext === 'mid' || ext === 'midi') return 'midi';
+    if (ext === 'musicxml' || ext === 'mxl' || ext === 'xml') return 'musicxml';
+    return null;
   };
 
   // Handle file selection from input
@@ -128,13 +91,13 @@ export const AnalyzeModal: React.FC = () => {
     if (file.size > MAX_FILE_SIZE) {
       setError({
         code: 'FILE_TOO_LARGE',
-        message: 'File is too large. Maximum size is 50MB.',
+        message: 'File is too large. Maximum size is 10MB.',
         retryable: false,
       });
       return;
     }
 
-    setAudioFile(file);
+    setImportFile(file);
   };
 
   // Handle drag over
@@ -162,7 +125,7 @@ export const AnalyzeModal: React.FC = () => {
 
   // Remove selected file
   const handleRemoveFile = () => {
-    setAudioFile(null);
+    setImportFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -170,50 +133,34 @@ export const AnalyzeModal: React.FC = () => {
 
   // Handle analyze button click
   const handleAnalyze = async () => {
-    if (activeTab === 'youtube') {
-      if (!youtubeUrl || urlError) {
-        setUrlError('Please enter a valid YouTube URL');
-        return;
-      }
-
-      const videoId = parseYoutubeUrl(youtubeUrl);
-      if (!videoId) {
-        setUrlError('Could not extract video ID from URL');
-        return;
-      }
-
-      const input: AnalysisInput = {
-        type: 'youtube',
-        youtubeUrl,
-        videoId,
-        startTime: startTime ? parseInt(startTime) : undefined,
-        endTime: endTime ? parseInt(endTime) : undefined,
-        keyHint: keyHint === 'auto' ? undefined : keyHint,
-        modeHint: modeHint === 'auto' ? undefined : modeHint,
-      };
-
-      await startAnalysis(input);
-    } else {
-      if (!audioFile) {
-        setError({
-          code: 'INVALID_FORMAT',
-          message: 'Please select an audio file',
-          retryable: false,
-        });
-        return;
-      }
-
-      const input: AnalysisInput = {
-        type: 'audio',
-        audioFile,
-        startTime: startTime ? parseInt(startTime) : undefined,
-        endTime: endTime ? parseInt(endTime) : undefined,
-        keyHint: keyHint === 'auto' ? undefined : keyHint,
-        modeHint: modeHint === 'auto' ? undefined : modeHint,
-      };
-
-      await startAnalysis(input);
+    if (!importFile) {
+      setError({
+        code: 'INVALID_FORMAT',
+        message: 'Please select a score file',
+        retryable: false,
+      });
+      return;
     }
+
+    const format = getFileFormat(importFile.name);
+    if (!format) {
+      setError({
+        code: 'INVALID_FORMAT',
+        message: 'Unsupported file format',
+        retryable: false,
+      });
+      return;
+    }
+
+    const input: AnalysisInput = {
+      type: 'file',
+      importFile,
+      importFormat: format,
+      keyHint: keyHint === 'auto' ? undefined : keyHint,
+      modeHint: modeHint === 'auto' ? undefined : modeHint,
+    };
+
+    await startAnalysis(input);
   };
 
   // Handle "Go to Canvas" button
@@ -283,23 +230,6 @@ export const AnalyzeModal: React.FC = () => {
               </button>
             </div>
 
-            {/* Tab Navigation - input tabs or results tabs */}
-            {!showResultsView && !isAnalyzing && !progress && (
-              <div className={styles.tabNav}>
-                <button
-                  className={`${styles.tabButton} ${activeTab === 'youtube' ? styles.active : ''}`}
-                  onClick={() => setActiveTab('youtube')}
-                >
-                  YouTube URL
-                </button>
-                <button
-                  className={`${styles.tabButton} ${activeTab === 'audio' ? styles.active : ''}`}
-                  onClick={() => setActiveTab('audio')}
-                >
-                  Audio File
-                </button>
-              </div>
-            )}
 
             {/* Results View Tabs */}
             {showResultsView && (
@@ -407,114 +337,76 @@ export const AnalyzeModal: React.FC = () => {
                 </>
               ) : !isAnalyzing && !progress ? (
                 <>
-                  {/* YouTube Tab */}
-                  {activeTab === 'youtube' && (
-                    <>
-                      <div className={styles.inputGroup}>
-                        <label className={styles.inputLabel}>YouTube URL</label>
-                        <input
-                          type="text"
-                          className={`${styles.urlInput} ${urlError ? styles.error : ''}`}
-                          placeholder="https://youtube.com/watch?v=..."
-                          value={youtubeUrl}
-                          onChange={handleUrlChange}
-                          disabled={isAnalyzing}
-                          aria-describedby={urlError ? 'url-error' : undefined}
-                        />
-                        {urlError && (
-                          <div id="url-error" className={styles.errorText}>
-                            {urlError}
-                          </div>
-                        )}
-                        <div className={styles.helpText}>
-                          Paste a YouTube video URL to analyze its chord progression
-                        </div>
-                      </div>
+                  {/* Score File Upload */}
+                  <div
+                    className={`${styles.dropZone} ${dragOverRef.current ? styles.dragOver : ''}`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Drop score file here or click to select"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        fileInputRef.current?.click();
+                      }
+                    }}
+                  >
+                    <div className={styles.dropZoneIcon}>Score</div>
+                    <div className={styles.dropZoneText}>Drop score file here</div>
+                    <div className={styles.dropZoneSubtext}>
+                      or click to select
+                    </div>
+                    <button
+                      className={styles.filePickerButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                      disabled={isAnalyzing}
+                    >
+                      Choose File
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      hidden
+                      accept={SUPPORTED_FORMATS.join(',')}
+                      onChange={handleFileSelect}
+                      disabled={isAnalyzing}
+                      aria-label="Select score file"
+                    />
+                  </div>
 
-                      {/* Example links */}
-                      <div className={styles.exampleLinks}>
-                        <p className={styles.exampleLinksTitle}>Example Videos</p>
-                        {EXAMPLE_VIDEOS.map((video, idx) => (
-                          <button
-                            type="button"
-                            key={idx}
-                            className={styles.exampleLink}
-                            onClick={() => handleExampleLinkClick(video.url)}
-                            title={video.title}
-                          >
-                            {video.title}
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-
-                  {/* Audio Tab */}
-                  {activeTab === 'audio' && (
-                    <>
-                      <div
-                        className={`${styles.dropZone} ${dragOverRef.current ? styles.dragOver : ''}`}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                        onClick={() => fileInputRef.current?.click()}
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Drop audio file here or click to select"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            fileInputRef.current?.click();
-                          }
-                        }}
+                  {importFile && (
+                    <div className={styles.selectedFile}>
+                      <span className={styles.fileName}>
+                        {importFile.name}
+                      </span>
+                      <button
+                        className={styles.removeFile}
+                        onClick={handleRemoveFile}
+                        disabled={isAnalyzing}
+                        aria-label="Remove file"
+                        title="Remove file"
                       >
-                        <div className={styles.dropZoneIcon}>Audio</div>
-                        <div className={styles.dropZoneText}>Drop audio file here</div>
-                        <div className={styles.dropZoneSubtext}>
-                          or click to select
-                        </div>
-                        <button
-                          className={styles.filePickerButton}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            fileInputRef.current?.click();
-                          }}
-                          disabled={isAnalyzing}
-                        >
-                          Choose File
-                        </button>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          hidden
-                          accept={SUPPORTED_FORMATS.join(',')}
-                          onChange={handleFileSelect}
-                          disabled={isAnalyzing}
-                          aria-label="Select audio file"
-                        />
-                      </div>
-
-                      {audioFile && (
-                        <div className={styles.selectedFile}>
-                          <span className={styles.fileName}>
-                            {audioFile.name}
-                          </span>
-                          <button
-                            className={styles.removeFile}
-                            onClick={handleRemoveFile}
-                            disabled={isAnalyzing}
-                            aria-label="Remove file"
-                            title="Remove file"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      )}
-
-                      <div className={styles.helpText}>
-                        Supported formats: {SUPPORTED_FORMATS.join(', ')} (Max 50MB)
-                      </div>
-                    </>
+                        ✕
+                      </button>
+                    </div>
                   )}
+
+                  <div className={styles.helpText}>
+                    Supported: MIDI (.mid) and MusicXML (.musicxml, .mxl)
+                  </div>
+
+                  <div className={styles.helpText}>
+                    <strong>Where to find score files:</strong>
+                    <br />
+                    Export from Sibelius, Finale, Dorico, MuseScore
+                    <br />
+                    Download MIDI from musescore.com
+                  </div>
 
                   {/* Advanced Options */}
                   <button
@@ -526,32 +418,6 @@ export const AnalyzeModal: React.FC = () => {
                   </button>
 
                   <div className={`${styles.advancedOptions} ${showAdvanced ? styles.open : ''}`}>
-                    <div className={styles.timeInput}>
-                      <label className={styles.inputLabel}>Start Time (s)</label>
-                      <input
-                        type="number"
-                        className={styles.timeInputField}
-                        placeholder="0"
-                        value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
-                        disabled={isAnalyzing}
-                        min="0"
-                      />
-                    </div>
-
-                    <div className={styles.timeInput}>
-                      <label className={styles.inputLabel}>End Time (s)</label>
-                      <input
-                        type="number"
-                        className={styles.timeInputField}
-                        placeholder="Duration"
-                        value={endTime}
-                        onChange={(e) => setEndTime(e.target.value)}
-                        disabled={isAnalyzing}
-                        min="0"
-                      />
-                    </div>
-
                     <div className={styles.inputGroup}>
                       <label className={styles.inputLabel} htmlFor="key-select">
                         Key Hint
@@ -655,7 +521,7 @@ export const AnalyzeModal: React.FC = () => {
                   <button
                     className={styles.analyzeButton}
                     onClick={handleAnalyze}
-                    disabled={isAnalyzing || (activeTab === 'youtube' ? !youtubeUrl || !!urlError : !audioFile)}
+                    disabled={isAnalyzing || !importFile}
                   >
                     {isAnalyzing && <div className={styles.spinner} />}
                     {isAnalyzing ? 'Analyzing...' : 'Analyze'}

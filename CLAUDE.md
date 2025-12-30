@@ -103,6 +103,26 @@ npm run build
 npm run preview
 ```
 
+## Big Changes Workflow
+
+For significant features or refactors, use this Claude Code workflow:
+
+1. **Plan with Opus** - Enter plan mode and use an Opus subagent to:
+   - Explore the codebase thoroughly
+   - Design the implementation approach
+   - Identify all files to create/modify/delete
+   - Consider edge cases and testing strategy
+
+2. **Review the plan** - Get user approval before implementing
+
+3. **Execute with Haiku** - Use Haiku subagents for grunt work:
+   - File parsing and exploration
+   - Repetitive code changes
+   - Running tests and builds
+   - Cleanup tasks
+
+This maximizes quality (Opus planning) while minimizing cost (Haiku execution).
+
 ## Notes
 - Auth modal uses flexbox wrapper for centering (Framer Motion conflicts with transform)
 - Landing page shown to unauthenticated users on dashboard view
