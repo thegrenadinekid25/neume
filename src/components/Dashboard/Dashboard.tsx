@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useProgressionsStore } from '@/store/progressions-store';
 import { useAppViewStore } from '@/store/app-view-store';
+import { useAuthStore } from '@/store/auth-store';
 import { progressionStorage } from '@/services/progression-storage';
 import { ProgressionGrid } from './ProgressionGrid';
 import { ExploreSection } from './ExploreSection';
@@ -10,7 +11,10 @@ import styles from './Dashboard.module.css';
 export const Dashboard: React.FC = () => {
   const { savedProgressions, isLoading, loadProgressions } = useProgressionsStore();
   const navigateToCanvas = useAppViewStore((s) => s.navigateToCanvas);
+  const { user, profile, signOut } = useAuthStore();
   const [recentProgressions, setRecentProgressions] = useState<any[]>([]);
+
+  const displayName = profile?.display_name || user?.email?.split('@')[0] || 'User';
 
   useEffect(() => {
     loadProgressions();
@@ -31,6 +35,12 @@ export const Dashboard: React.FC = () => {
     <div className={styles.dashboard}>
       <header className={styles.header}>
         <h1 className={styles.logo}>NEUME</h1>
+        <div className={styles.userSection}>
+          <span className={styles.userName}>{displayName}</span>
+          <button className={styles.signOutButton} onClick={signOut}>
+            Sign Out
+          </button>
+        </div>
       </header>
 
       <main className={styles.content}>

@@ -36,3 +36,34 @@
   color: var(--warm-charcoal, #3D3632);
   margin: 0 0 var(--spacing-md, 16px) 0;
 }
+
+.userSection {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.userName {
+  font-family: var(--font-ui, 'Space Grotesk', sans-serif);
+  font-size: 0.95rem;
+  color: var(--warm-text-secondary, #7A7067);
+}
+
+.signOutButton {
+  padding: 8px 16px;
+  font-family: var(--font-ui, 'Space Grotesk', sans-serif);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--warm-text-secondary, #7A7067);
+  background: transparent;
+  border: 1px solid var(--border-light, #E0E0E0);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.signOutButton:hover {
+  background: var(--warm-linen, #EDE8E0);
+  border-color: var(--warm-text-secondary, #7A7067);
+  color: var(--warm-text-primary, #3D3530);
+}
